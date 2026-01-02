@@ -1,0 +1,28 @@
+<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur5"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur10"/>
+      <feMerge>
+        <feMergeNode in="blur5"/>
+        <feMergeNode in="blur10"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="500" height="500" fill="black"/>
+  <g fill="none" stroke-width="2.5" filter="url(#neon-glow)" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="#00e5ff" d="M180,150 C170,120 185,100 195,110 C205,120 195,140 185,160 C175,180 160,200 150,220 C140,240 145,260 160,270 C175,280 200,275 210,260 C220,245 230,220 240,200"/>
+    <path stroke="#00e5ff" d="M270,110 C260,130 250,160 245,180"/>
+    <path stroke="#ff6d00" d="M195,110 C205,105 220,110 230,125 C240,140 255,155 270,160 C285,165 300,180 315,195 C330,210 345,220 360,230 C375,240 380,255 370,270 C360,285 340,295 320,300 C300,305 280,300 260,295 C240,290 225,285 210,275"/>
+    <path stroke="#ff6d00" d="M230,125 C240,120 250,125 255,135 C260,145 255,155 245,165 C235,175 220,185 205,190"/>
+    <path stroke="#ff6d00" d="M270,160 C280,155 290,160 295,170 C300,180 295,190 285,200"/>
+    <path stroke="#00e5ff" d="M315,195 C325,190 335,195 340,205 C345,215 340,225 330,235"/>
+    <path stroke="#00e5ff" d="M320,300 C330,310 340,320 350,330"/>
+    <path stroke="#ff6d00" d="M260,295 C255,315 250,335 245,355 C240,375 235,395 230,415"/>
+    <path stroke="#ff6d00" d="M210,275 C205,295 200,315 195,335 C190,355 185,375 180,395"/>
+    <circle cx="280" cy="210" r="3" fill="#ff6d00"/>
+    <circle cx="240" cy="260" r="3" fill="#00e5ff"/>
+    <circle cx="330" cy="250" r="3" fill="#ff6d00"/>
+  </g>
+</svg>
