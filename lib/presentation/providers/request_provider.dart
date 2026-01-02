@@ -1,13 +1,13 @@
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
-// --- 1. EL ESTADO (La foto del momento) ---
+// --- ESTADO ---
 class RequestState {
   final bool isLoading;
-  final dynamic data; // El cuerpo de la respuesta (JSON o String)
-  final int? statusCode; // 200, 404, 500...
-  final String? error; // Mensaje de error legible
-  final int? durationMs; // Cuánto tardó el request
+  final dynamic data;
+  final int? statusCode;
+  final String? error;
+  final int? durationMs;
 
   RequestState({
     this.isLoading = false,
@@ -17,7 +17,6 @@ class RequestState {
     this.durationMs,
   });
 
-  // Helper para copiar el estado y cambiar solo lo necesario
   RequestState copyWith({
     bool? isLoading,
     dynamic data,
@@ -35,81 +34,73 @@ class RequestState {
   }
 }
 
-// --- 2. EL NOTIFIER (La Lógica de Negocio) ---
+// --- NOTIFIER ---
 class RequestNotifier extends StateNotifier<RequestState> {
-  // OJO: En la fase de Infraestructura moveremos Dio a una capa 'Data',
-  // pero para el MVP está bien instanciarlo aquí.
   final Dio _dio = Dio();
 
   RequestNotifier() : super(RequestState());
 
-  Future<void> fetchData({required String method, required String url}) async {
-    // 1. Validaciones básicas
+  Future<void> fetchData({
+    required String method,
+    required String url,
+    Map<String, dynamic>? queryParams, // Nuevo
+    Map<String, dynamic>? headers, // Nuevo
+    dynamic body, // Nuevo
+  }) async {
     if (url.trim().isEmpty) {
-      state = state.copyWith(error: 'La URL no puede estar vacía, compa.');
+      state = state.copyWith(error: 'La URL no puede estar vacía.');
       return;
     }
 
-    // 2. Estado de "Cargando" (Reseteamos error y data previa)
     state = RequestState(isLoading: true);
-
     final stopwatch = Stopwatch()..start();
 
     try {
-      // 3. El Disparo
       final response = await _dio.request(
         url,
+        queryParameters: queryParams, // Enviamos params
+        data: body, // Enviamos body
         options: Options(
           method: method,
-          responseType: ResponseType.json, // Intentamos parsear JSON
-          receiveTimeout: const Duration(seconds: 10),
+          headers: headers, // Enviamos headers
+          responseType: ResponseType.json,
+          receiveTimeout: const Duration(seconds: 15),
         ),
       );
 
       stopwatch.stop();
 
-      // 4. Éxito (200-299)
       state = RequestState(
         isLoading: false,
-        data: response.data, // Dio ya decodifica el JSON aquí
+        data: response.data,
         statusCode: response.statusCode,
         durationMs: stopwatch.elapsedMilliseconds,
       );
     } on DioException catch (e) {
       stopwatch.stop();
-      // 5. Manejo de Errores HTTP controlados (404, 500, Timeouts)
+      String errorMsg = e.message ?? 'Error de red';
+      dynamic errorData = e.response?.data;
 
-      String errorMsg = 'Error desconocido';
-      dynamic errorData;
-
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-          errorMsg = 'Tiempo de conexión agotado.';
-          break;
-        case DioExceptionType.badResponse:
-          errorMsg =
-              'El servidor respondió con error: ${e.response?.statusCode}';
-          errorData = e.response?.data; // A veces el error trae JSON útil
-          break;
-        default:
-          errorMsg = e.message ?? 'Error de red';
+      if (e.type == DioExceptionType.connectionTimeout) {
+        errorMsg = 'Tiempo de conexión agotado.';
+      } else if (e.type == DioExceptionType.badResponse) {
+        errorMsg = 'Error del servidor: ${e.response?.statusCode}';
       }
 
       state = RequestState(
         isLoading: false,
         error: errorMsg,
         statusCode: e.response?.statusCode,
-        data: errorData, // Mostramos la data del error si existe
+        data: errorData,
         durationMs: stopwatch.elapsedMilliseconds,
       );
     } catch (e) {
-      // 6. Errores de Dart (Parseo, lógica, etc)
       state = RequestState(isLoading: false, error: e.toString());
     }
   }
 }
 
-// --- 3. EL PROVIDER GLOBAL ---
+// --- PROVIDER ---
 final requestProvider = StateNotifierProvider<RequestNotifier, RequestState>((
   ref,
 ) {
