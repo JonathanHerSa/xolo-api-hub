@@ -1,141 +1,236 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// Imports necesarios para leer todos los datos
+
+import '../../core/theme/xolo_theme.dart';
 import '../providers/form_providers.dart';
 import '../providers/request_provider.dart';
 
-class UrlInputBar extends ConsumerWidget {
+class UrlInputBar extends ConsumerStatefulWidget {
   const UrlInputBar({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Escuchamos valores básicos
+  ConsumerState<UrlInputBar> createState() => _UrlInputBarState();
+}
+
+class _UrlInputBarState extends ConsumerState<UrlInputBar> {
+  late TextEditingController _urlController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializar con el valor actual del provider
+    final initialUrl = ref.read(urlQueryProvider);
+    _urlController = TextEditingController(text: initialUrl);
+  }
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final selectedMethod = ref.watch(selectedMethodProvider);
     final requestState = ref.watch(requestProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    // Función auxiliar para color del método
-    Color getMethodColor(String method) {
-      switch (method) {
-        case 'GET':
-          return Colors.blueAccent;
-        case 'POST':
-          return Colors.greenAccent;
-        case 'DELETE':
-          return Colors.redAccent;
-        case 'PUT':
-          return Colors.orangeAccent;
-        case 'PATCH':
-          return Colors.purpleAccent;
-        default:
-          return Colors.grey;
+    // Escuchar cambios externos del provider (ej: al cargar del historial)
+    ref.listen<String>(urlQueryProvider, (previous, next) {
+      if (_urlController.text != next) {
+        _urlController.text = next;
+        // Mover cursor al final
+        _urlController.selection = TextSelection.fromPosition(
+          TextPosition(offset: next.length),
+        );
       }
-    }
+    });
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2C2C),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white10),
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Row(
         children: [
-          // A. DROPDOWN DE MÉTODO
-          DropdownButton<String>(
-            value: selectedMethod,
-            dropdownColor: const Color(0xFF2C2C2C),
-            underline: const SizedBox(),
-            style: TextStyle(
-              color: getMethodColor(selectedMethod),
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Courier',
-            ),
-            items: httpMethods.map((method) {
-              return DropdownMenuItem(value: method, child: Text(method));
-            }).toList(),
-            onChanged: (value) {
-              if (value != null)
-                ref.read(selectedMethodProvider.notifier).state = value;
-            },
-          ),
+          // Method Selector
+          _buildMethodDropdown(selectedMethod, colorScheme),
 
-          Container(
-            width: 1,
-            height: 24,
-            color: Colors.white24,
-            margin: const EdgeInsets.symmetric(horizontal: 12),
-          ),
+          // Divider
+          Container(width: 1, height: 28, color: colorScheme.outline),
 
-          // B. INPUT DE URL
+          // URL Input
           Expanded(
             child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'https://api.ejemplo.com',
-                hintStyle: TextStyle(color: Colors.white24),
+              controller: _urlController,
+              decoration: InputDecoration(
+                hintText: 'https://api.example.com/endpoint',
                 border: InputBorder.none,
-                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                hintStyle: TextStyle(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  fontSize: 14,
+                ),
               ),
-              style: const TextStyle(
-                fontFamily: 'Courier',
-                color: Colors.white,
-              ),
+              style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
               onChanged: (value) {
                 ref.read(urlQueryProvider.notifier).state = value;
               },
+              onSubmitted: (_) => _sendRequest(),
             ),
           ),
 
-          // C. BOTÓN SEND (Aquí está la magia)
-          IconButton(
-            icon: requestState.isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.blueAccent,
-                    ),
-                  )
-                : const Icon(Icons.send, color: Colors.blueAccent),
-            onPressed: requestState.isLoading
-                ? null
-                : () {
-                    // 1. Recopilar Datos
-                    final method = ref.read(selectedMethodProvider);
-                    final url = ref.read(urlQueryProvider);
-                    final paramsList = ref.read(paramsProvider);
-                    final headersList = ref.read(headersProvider);
-                    final rawBody = ref.read(bodyContentProvider);
-
-                    // 2. Transformar Listas a Mapas (ignorando vacíos o inactivos)
-                    final Map<String, dynamic> paramsMap = {};
-                    for (var item in paramsList) {
-                      if (item.key.isNotEmpty && item.isActive) {
-                        paramsMap[item.key] = item.value;
-                      }
-                    }
-
-                    final Map<String, dynamic> headersMap = {};
-                    for (var item in headersList) {
-                      if (item.key.isNotEmpty && item.isActive) {
-                        headersMap[item.key] = item.value;
-                      }
-                    }
-
-                    // 3. Disparar Request
-                    ref
-                        .read(requestProvider.notifier)
-                        .fetchData(
-                          method: method,
-                          url: url,
-                          queryParams: paramsMap,
-                          headers: headersMap,
-                          body: rawBody.isNotEmpty ? rawBody : null,
-                        );
-                  },
+          // Send Button
+          Padding(
+            padding: const EdgeInsets.all(6),
+            child: Material(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                onTap: requestState.isLoading ? null : _sendRequest,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: requestState.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Send',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            SizedBox(width: 6),
+                            Icon(
+                              Icons.arrow_forward,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildMethodDropdown(String selectedMethod, ColorScheme colorScheme) {
+    final methodColor = XoloTheme.getMethodColor(selectedMethod);
+
+    return PopupMenuButton<String>(
+      initialValue: selectedMethod,
+      onSelected: (value) {
+        ref.read(selectedMethodProvider.notifier).state = value;
+      },
+      offset: const Offset(0, 45),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      color: colorScheme.surfaceContainerHighest,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: methodColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              selectedMethod,
+              style: TextStyle(
+                color: methodColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down,
+              size: 18,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (context) => httpMethods.map((method) {
+        final color = XoloTheme.getMethodColor(method);
+        return PopupMenuItem(
+          value: method,
+          child: Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                method,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  void _sendRequest() {
+    final method = ref.read(selectedMethodProvider);
+    final url = ref.read(urlQueryProvider);
+    final paramsList = ref.read(paramsProvider);
+    final headersList = ref.read(headersProvider);
+    final rawBody = ref.read(bodyContentProvider);
+
+    final Map<String, dynamic> paramsMap = {};
+    for (var item in paramsList) {
+      if (item.key.isNotEmpty && item.isActive) {
+        paramsMap[item.key] = item.value;
+      }
+    }
+
+    final Map<String, dynamic> headersMap = {};
+    for (var item in headersList) {
+      if (item.key.isNotEmpty && item.isActive) {
+        headersMap[item.key] = item.value;
+      }
+    }
+
+    ref
+        .read(requestProvider.notifier)
+        .fetchData(
+          method: method,
+          url: url,
+          queryParams: paramsMap,
+          headers: headersMap,
+          body: rawBody.isNotEmpty ? rawBody : null,
+        );
   }
 }

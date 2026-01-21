@@ -2,14 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
-// 1. Importamos la Entidad (El modelo de datos)
 import '../../domain/entities/key_value_pair.dart';
-
-// 2. IMPORTANTE: Importamos donde definiste la clase KeyValueNotifier
 import '../providers/form_providers.dart';
 
 class KeyValueTable extends ConsumerWidget {
-  // Definimos que este widget recibe un Provider específico de tipo KeyValueNotifier
   final StateNotifierProvider<KeyValueNotifier, List<KeyValuePair>> provider;
   final String keyPlaceholder;
   final String valuePlaceholder;
@@ -17,117 +13,153 @@ class KeyValueTable extends ConsumerWidget {
   const KeyValueTable({
     super.key,
     required this.provider,
-    this.keyPlaceholder = "Key",
-    this.valuePlaceholder = "Value",
+    this.keyPlaceholder = 'Key',
+    this.valuePlaceholder = 'Value',
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Escuchamos la lista de filas (Headers o Params)
     final rows = ref.watch(provider);
-
-    // Obtenemos el controlador para ejecutar funciones (add/remove/update)
     final notifier = ref.read(provider.notifier);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return ListView.separated(
-      padding: const EdgeInsets.only(
-        top: 8,
-        bottom: 60,
-      ), // Espacio para que no lo tape el teclado
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: rows.length,
-      separatorBuilder: (_, __) =>
-          const Divider(height: 1, color: Colors.white10),
       itemBuilder: (context, index) {
         final item = rows[index];
+        final isLast = index == rows.length - 1;
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.5),
+                width: 0.5,
+              ),
+            ),
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // --- COLUMNA KEY ---
+              // Toggle Active
+              GestureDetector(
+                onTap: () {
+                  // Toggle active state (to be implemented in notifier)
+                },
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    color: item.isActive
+                        ? colorScheme.primary.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: item.isActive
+                          ? colorScheme.primary
+                          : colorScheme.outline,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: item.isActive
+                      ? Icon(Icons.check, size: 12, color: colorScheme.primary)
+                      : null,
+                ),
+              ),
+
+              // Key Input
               Expanded(
                 flex: 4,
-                child: TextFormField(
-                  // Truco sucio para el MVP: Usamos un controller desechable inicializado con el valor.
-                  // (Nota: En producción idealmente se usan controllers persistentes, pero esto funciona)
-                  controller: TextEditingController(text: item.key)
-                    ..selection = TextSelection.fromPosition(
-                      TextPosition(offset: item.key.length),
-                    ),
-                  decoration: InputDecoration(
-                    hintText: keyPlaceholder,
-                    hintStyle: const TextStyle(
-                      color: Colors.white24,
-                      fontSize: 13,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                  ),
-                  style: const TextStyle(
-                    color: Colors.lightBlueAccent,
-                    fontFamily: 'Courier',
-                    fontSize: 14,
-                  ),
+                child: _buildInput(
+                  context: context,
+                  initialValue: item.key,
+                  placeholder: keyPlaceholder,
                   onChanged: (val) => notifier.updateKey(index, val),
+                  isKey: true,
                 ),
               ),
 
-              // Divisor vertical sutil
-              Container(
-                width: 1,
-                height: 20,
-                color: Colors.white12,
-                margin: const EdgeInsets.symmetric(horizontal: 8),
+              // Equals sign
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  '=',
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w300,
+                    fontSize: 16,
+                  ),
+                ),
               ),
 
-              // --- COLUMNA VALUE ---
+              // Value Input
               Expanded(
                 flex: 5,
-                child: TextFormField(
-                  controller: TextEditingController(text: item.value)
-                    ..selection = TextSelection.fromPosition(
-                      TextPosition(offset: item.value.length),
-                    ),
-                  decoration: InputDecoration(
-                    hintText: valuePlaceholder,
-                    hintStyle: const TextStyle(
-                      color: Colors.white24,
-                      fontSize: 13,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                  ),
-                  style: const TextStyle(
-                    color: Colors.orangeAccent,
-                    fontFamily: 'Courier',
-                    fontSize: 14,
-                  ),
+                child: _buildInput(
+                  context: context,
+                  initialValue: item.value,
+                  placeholder: valuePlaceholder,
                   onChanged: (val) => notifier.updateValue(index, val),
+                  isKey: false,
                 ),
               ),
 
-              // --- BOTÓN ELIMINAR ---
-              // Solo mostramos el botón de borrar si NO es la última fila vacía
-              // (Para que siempre haya una fila disponible para escribir)
-              if (index != rows.length - 1)
+              // Delete Button
+              if (!isLast)
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close,
                     size: 16,
-                    color: Colors.white30,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                   ),
-                  constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  padding: EdgeInsets.zero,
                   onPressed: () => notifier.removeRow(index),
+                  splashRadius: 16,
                 )
               else
-                // Espaciador invisible para mantener alineación
                 const SizedBox(width: 32),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildInput({
+    required BuildContext context,
+    required String initialValue,
+    required String placeholder,
+    required ValueChanged<String> onChanged,
+    required bool isKey,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return TextFormField(
+      initialValue: initialValue,
+      decoration: InputDecoration(
+        hintText: placeholder,
+        hintStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+          fontSize: 13,
+        ),
+        border: InputBorder.none,
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      ),
+      style: TextStyle(
+        color: isKey ? colorScheme.primary : colorScheme.onSurface,
+        fontSize: 13,
+        fontFamily: 'JetBrains Mono',
+      ),
+      onChanged: onChanged,
     );
   }
 }
