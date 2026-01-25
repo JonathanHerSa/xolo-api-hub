@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class SchemaHelper {
   /// Generates a sample JSON object/value from a schema.
   static dynamic generateSample(Map<String, dynamic> schema) {

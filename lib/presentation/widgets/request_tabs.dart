@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../core/utils/schema_helper.dart';
+import 'code_snippet_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/request_provider.dart';
 import '../providers/request_session_provider.dart';
@@ -75,37 +76,57 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(8),
-            color: Colors.red.withValues(alpha: 0.1),
+            color: Colors.red.withOpacity(0.1),
             child: Text(
               'Error: $error',
               style: const TextStyle(color: Colors.red),
             ),
           ),
 
-        TabBar(
-          controller: _tabController,
-          labelColor: colorScheme.primary,
-          unselectedLabelColor: colorScheme.onSurfaceVariant,
-          indicatorColor: colorScheme.primary,
-          labelPadding: EdgeInsets.zero, // Compact tabs
-          tabs: [
-            const Tab(text: 'Params'),
-            const Tab(text: 'Auth'),
-            const Tab(text: 'Headers'),
-            const Tab(text: 'Body'),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Response'),
-                  if (statusCode != null) ...[
-                    const SizedBox(width: 4),
-                    _StatusBadge(statusCode: statusCode),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TabBar(
+                  controller: _tabController,
+                  labelColor: colorScheme.primary,
+                  unselectedLabelColor: colorScheme.onSurfaceVariant,
+                  indicatorColor: colorScheme.primary,
+                  labelPadding: EdgeInsets.zero, // Compact tabs
+                  tabs: [
+                    const Tab(text: 'Params'),
+                    const Tab(text: 'Auth'),
+                    const Tab(text: 'Headers'),
+                    const Tab(text: 'Body'),
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Response'),
+                          if (statusCode != null) ...[
+                            const SizedBox(width: 4),
+                            _StatusBadge(statusCode: statusCode),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.code),
+                tooltip: 'Show Code',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => CodeSnippetDialog(tabId: widget.tabId),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
         Expanded(
           child: TabBarView(

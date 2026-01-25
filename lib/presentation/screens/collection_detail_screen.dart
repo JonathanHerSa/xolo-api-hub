@@ -9,26 +9,71 @@ import '../providers/tabs_provider.dart';
 import '../providers/request_session_provider.dart';
 import '../widgets/draggable_tiles.dart';
 
-class CollectionDetailScreen extends ConsumerWidget {
+class CollectionDetailScreen extends ConsumerStatefulWidget {
   final Collection collection;
 
   const CollectionDetailScreen({super.key, required this.collection});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CollectionDetailScreen> createState() =>
+      _CollectionDetailScreenState();
+}
+
+class _CollectionDetailScreenState
+    extends ConsumerState<CollectionDetailScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final activeWorkspaceId = ref.watch(activeWorkspaceIdProvider);
 
     // Observamos sub-colecciones y requests
     final subCollectionsAsync = ref.watch(
-      subCollectionsProvider(collection.id),
+      subCollectionsProvider(widget.collection.id), // Use widget.collection
     );
-    final requestsAsync = ref.watch(collectionRequestsProvider(collection.id));
+    final requestsAsync = ref.watch(
+      collectionRequestsProvider(widget.collection.id),
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(collection.name),
+        title: Text(widget.collection.name),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (val) =>
+                  setState(() => _searchQuery = val.toLowerCase()),
+              decoration: InputDecoration(
+                hintText: 'Buscar en ${widget.collection.name}...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                prefixIconConstraints: const BoxConstraints(minWidth: 36),
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
+              ),
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.note_add_outlined),
@@ -55,7 +100,12 @@ class CollectionDetailScreen extends ConsumerWidget {
             // SECCIÓN: SUBCARPETAS
             subCollectionsAsync.when(
               data: (subs) {
-                if (subs.isEmpty) return const SizedBox.shrink();
+                // Filter
+                final filtered = subs
+                    .where((s) => s.name.toLowerCase().contains(_searchQuery))
+                    .toList();
+                if (filtered.isEmpty) return const SizedBox.shrink();
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -70,7 +120,7 @@ class CollectionDetailScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    ...subs.map(
+                    ...filtered.map(
                       (sub) => DraggableCollectionTile(
                         collection: sub,
                         activeWorkspaceId: activeWorkspaceId,
@@ -103,7 +153,23 @@ class CollectionDetailScreen extends ConsumerWidget {
             // SECCIÓN: REQUESTS
             requestsAsync.when(
               data: (requests) {
-                if (requests.isEmpty) {
+                // Filter
+                final filtered = requests
+                    .where((r) => r.name.toLowerCase().contains(_searchQuery))
+                    .toList();
+
+                if (filtered.isEmpty) {
+                  if (_searchQuery.isNotEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Center(
+                        child: Text(
+                          'No se encontraron requests',
+                          style: TextStyle(color: colorScheme.outline),
+                        ),
+                      ),
+                    );
+                  }
                   return Padding(
                     padding: const EdgeInsets.all(32.0),
                     child: Center(
@@ -145,9 +211,9 @@ class CollectionDetailScreen extends ConsumerWidget {
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: requests.length,
+                      itemCount: filtered.length,
                       itemBuilder: (context, index) {
-                        final req = requests[index];
+                        final req = filtered[index];
                         return DraggableRequestTile(
                           req: req,
                           onTap: () => _loadRequest(context, ref, req),
@@ -226,7 +292,7 @@ class CollectionDetailScreen extends ConsumerWidget {
                     .read(collectionsControllerProvider.notifier)
                     .createCollection(
                       name: controller.text,
-                      parentId: collection.id, // Current collection ID
+                      parentId: widget.collection.id, // Current collection ID
                     );
                 if (ctx.mounted) Navigator.pop(ctx);
               }
@@ -286,7 +352,7 @@ class CollectionDetailScreen extends ConsumerWidget {
                       name: nameCtrl.text,
                       method: selectedMethod,
                       url: '',
-                      collectionId: collection.id,
+                      collectionId: widget.collection.id,
                     );
 
                     if (ctx.mounted) {
@@ -310,7 +376,7 @@ class CollectionDetailScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final controller = TextEditingController(text: collection.name);
+    final controller = TextEditingController(text: widget.collection.name);
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -331,9 +397,9 @@ class CollectionDetailScreen extends ConsumerWidget {
                 await ref
                     .read(collectionsControllerProvider.notifier)
                     .renameCollection(
-                      collection.id,
+                      widget.collection.id,
                       controller.text,
-                      collection.description,
+                      widget.collection.description,
                     );
                 if (ctx.mounted) {
                   Navigator.pop(ctx);

@@ -3,6 +3,7 @@ import '../screens/saved_requests_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/environments_screen.dart';
 import 'import_collection_dialog.dart';
+import 'command_palette.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
