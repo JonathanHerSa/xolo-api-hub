@@ -1058,6 +1058,20 @@ class $HistoryEntriesTable extends HistoryEntries
       'REFERENCES saved_requests (id)',
     ),
   );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<int> workspaceId = GeneratedColumn<int>(
+    'workspace_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES collections (id)',
+    ),
+  );
   static const VerificationMeta _methodMeta = const VerificationMeta('method');
   @override
   late final GeneratedColumn<String> method = GeneratedColumn<String>(
@@ -1156,6 +1170,7 @@ class $HistoryEntriesTable extends HistoryEntries
   List<GeneratedColumn> get $columns => [
     id,
     savedRequestId,
+    workspaceId,
     method,
     url,
     headersJson,
@@ -1187,6 +1202,15 @@ class $HistoryEntriesTable extends HistoryEntries
         savedRequestId.isAcceptableOrUnknown(
           data['saved_request_id']!,
           _savedRequestIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
         ),
       );
     }
@@ -1271,6 +1295,10 @@ class $HistoryEntriesTable extends HistoryEntries
         DriftSqlType.int,
         data['${effectivePrefix}saved_request_id'],
       ),
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}workspace_id'],
+      ),
       method: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}method'],
@@ -1319,6 +1347,7 @@ class $HistoryEntriesTable extends HistoryEntries
 class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
   final int id;
   final int? savedRequestId;
+  final int? workspaceId;
   final String method;
   final String url;
   final String? headersJson;
@@ -1331,6 +1360,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
   const HistoryEntry({
     required this.id,
     this.savedRequestId,
+    this.workspaceId,
     required this.method,
     required this.url,
     this.headersJson,
@@ -1347,6 +1377,9 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     map['id'] = Variable<int>(id);
     if (!nullToAbsent || savedRequestId != null) {
       map['saved_request_id'] = Variable<int>(savedRequestId);
+    }
+    if (!nullToAbsent || workspaceId != null) {
+      map['workspace_id'] = Variable<int>(workspaceId);
     }
     map['method'] = Variable<String>(method);
     map['url'] = Variable<String>(url);
@@ -1378,6 +1411,9 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       savedRequestId: savedRequestId == null && nullToAbsent
           ? const Value.absent()
           : Value(savedRequestId),
+      workspaceId: workspaceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workspaceId),
       method: Value(method),
       url: Value(url),
       headersJson: headersJson == null && nullToAbsent
@@ -1408,6 +1444,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     return HistoryEntry(
       id: serializer.fromJson<int>(json['id']),
       savedRequestId: serializer.fromJson<int?>(json['savedRequestId']),
+      workspaceId: serializer.fromJson<int?>(json['workspaceId']),
       method: serializer.fromJson<String>(json['method']),
       url: serializer.fromJson<String>(json['url']),
       headersJson: serializer.fromJson<String?>(json['headersJson']),
@@ -1425,6 +1462,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'savedRequestId': serializer.toJson<int?>(savedRequestId),
+      'workspaceId': serializer.toJson<int?>(workspaceId),
       'method': serializer.toJson<String>(method),
       'url': serializer.toJson<String>(url),
       'headersJson': serializer.toJson<String?>(headersJson),
@@ -1440,6 +1478,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
   HistoryEntry copyWith({
     int? id,
     Value<int?> savedRequestId = const Value.absent(),
+    Value<int?> workspaceId = const Value.absent(),
     String? method,
     String? url,
     Value<String?> headersJson = const Value.absent(),
@@ -1454,6 +1493,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     savedRequestId: savedRequestId.present
         ? savedRequestId.value
         : this.savedRequestId,
+    workspaceId: workspaceId.present ? workspaceId.value : this.workspaceId,
     method: method ?? this.method,
     url: url ?? this.url,
     headersJson: headersJson.present ? headersJson.value : this.headersJson,
@@ -1470,6 +1510,9 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       savedRequestId: data.savedRequestId.present
           ? data.savedRequestId.value
           : this.savedRequestId,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
       method: data.method.present ? data.method.value : this.method,
       url: data.url.present ? data.url.value : this.url,
       headersJson: data.headersJson.present
@@ -1499,6 +1542,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     return (StringBuffer('HistoryEntry(')
           ..write('id: $id, ')
           ..write('savedRequestId: $savedRequestId, ')
+          ..write('workspaceId: $workspaceId, ')
           ..write('method: $method, ')
           ..write('url: $url, ')
           ..write('headersJson: $headersJson, ')
@@ -1516,6 +1560,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
   int get hashCode => Object.hash(
     id,
     savedRequestId,
+    workspaceId,
     method,
     url,
     headersJson,
@@ -1532,6 +1577,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       (other is HistoryEntry &&
           other.id == this.id &&
           other.savedRequestId == this.savedRequestId &&
+          other.workspaceId == this.workspaceId &&
           other.method == this.method &&
           other.url == this.url &&
           other.headersJson == this.headersJson &&
@@ -1546,6 +1592,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
 class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
   final Value<int> id;
   final Value<int?> savedRequestId;
+  final Value<int?> workspaceId;
   final Value<String> method;
   final Value<String> url;
   final Value<String?> headersJson;
@@ -1558,6 +1605,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
   const HistoryEntriesCompanion({
     this.id = const Value.absent(),
     this.savedRequestId = const Value.absent(),
+    this.workspaceId = const Value.absent(),
     this.method = const Value.absent(),
     this.url = const Value.absent(),
     this.headersJson = const Value.absent(),
@@ -1571,6 +1619,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
   HistoryEntriesCompanion.insert({
     this.id = const Value.absent(),
     this.savedRequestId = const Value.absent(),
+    this.workspaceId = const Value.absent(),
     required String method,
     required String url,
     this.headersJson = const Value.absent(),
@@ -1585,6 +1634,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
   static Insertable<HistoryEntry> custom({
     Expression<int>? id,
     Expression<int>? savedRequestId,
+    Expression<int>? workspaceId,
     Expression<String>? method,
     Expression<String>? url,
     Expression<String>? headersJson,
@@ -1598,6 +1648,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (savedRequestId != null) 'saved_request_id': savedRequestId,
+      if (workspaceId != null) 'workspace_id': workspaceId,
       if (method != null) 'method': method,
       if (url != null) 'url': url,
       if (headersJson != null) 'headers_json': headersJson,
@@ -1613,6 +1664,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
   HistoryEntriesCompanion copyWith({
     Value<int>? id,
     Value<int?>? savedRequestId,
+    Value<int?>? workspaceId,
     Value<String>? method,
     Value<String>? url,
     Value<String?>? headersJson,
@@ -1626,6 +1678,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     return HistoryEntriesCompanion(
       id: id ?? this.id,
       savedRequestId: savedRequestId ?? this.savedRequestId,
+      workspaceId: workspaceId ?? this.workspaceId,
       method: method ?? this.method,
       url: url ?? this.url,
       headersJson: headersJson ?? this.headersJson,
@@ -1646,6 +1699,9 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     }
     if (savedRequestId.present) {
       map['saved_request_id'] = Variable<int>(savedRequestId.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<int>(workspaceId.value);
     }
     if (method.present) {
       map['method'] = Variable<String>(method.value);
@@ -1682,6 +1738,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     return (StringBuffer('HistoryEntriesCompanion(')
           ..write('id: $id, ')
           ..write('savedRequestId: $savedRequestId, ')
+          ..write('workspaceId: $workspaceId, ')
           ..write('method: $method, ')
           ..write('url: $url, ')
           ..write('headersJson: $headersJson, ')
@@ -1728,6 +1785,20 @@ class $EnvironmentsTable extends Environments
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _collectionIdMeta = const VerificationMeta(
+    'collectionId',
+  );
+  @override
+  late final GeneratedColumn<int> collectionId = GeneratedColumn<int>(
+    'collection_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES collections (id)',
+    ),
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -1756,7 +1827,13 @@ class $EnvironmentsTable extends Environments
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, isActive, createdAt];
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    collectionId,
+    isActive,
+    createdAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1779,6 +1856,15 @@ class $EnvironmentsTable extends Environments
       );
     } else if (isInserting) {
       context.missing(_nameMeta);
+    }
+    if (data.containsKey('collection_id')) {
+      context.handle(
+        _collectionIdMeta,
+        collectionId.isAcceptableOrUnknown(
+          data['collection_id']!,
+          _collectionIdMeta,
+        ),
+      );
     }
     if (data.containsKey('is_active')) {
       context.handle(
@@ -1809,6 +1895,10 @@ class $EnvironmentsTable extends Environments
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      collectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}collection_id'],
+      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -1829,11 +1919,13 @@ class $EnvironmentsTable extends Environments
 class Environment extends DataClass implements Insertable<Environment> {
   final int id;
   final String name;
+  final int? collectionId;
   final bool isActive;
   final DateTime createdAt;
   const Environment({
     required this.id,
     required this.name,
+    this.collectionId,
     required this.isActive,
     required this.createdAt,
   });
@@ -1842,6 +1934,9 @@ class Environment extends DataClass implements Insertable<Environment> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || collectionId != null) {
+      map['collection_id'] = Variable<int>(collectionId);
+    }
     map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -1851,6 +1946,9 @@ class Environment extends DataClass implements Insertable<Environment> {
     return EnvironmentsCompanion(
       id: Value(id),
       name: Value(name),
+      collectionId: collectionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(collectionId),
       isActive: Value(isActive),
       createdAt: Value(createdAt),
     );
@@ -1864,6 +1962,7 @@ class Environment extends DataClass implements Insertable<Environment> {
     return Environment(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      collectionId: serializer.fromJson<int?>(json['collectionId']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -1874,6 +1973,7 @@ class Environment extends DataClass implements Insertable<Environment> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
+      'collectionId': serializer.toJson<int?>(collectionId),
       'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -1882,11 +1982,13 @@ class Environment extends DataClass implements Insertable<Environment> {
   Environment copyWith({
     int? id,
     String? name,
+    Value<int?> collectionId = const Value.absent(),
     bool? isActive,
     DateTime? createdAt,
   }) => Environment(
     id: id ?? this.id,
     name: name ?? this.name,
+    collectionId: collectionId.present ? collectionId.value : this.collectionId,
     isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -1894,6 +1996,9 @@ class Environment extends DataClass implements Insertable<Environment> {
     return Environment(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      collectionId: data.collectionId.present
+          ? data.collectionId.value
+          : this.collectionId,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -1904,6 +2009,7 @@ class Environment extends DataClass implements Insertable<Environment> {
     return (StringBuffer('Environment(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('collectionId: $collectionId, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -1911,13 +2017,14 @@ class Environment extends DataClass implements Insertable<Environment> {
   }
 
   @override
-  int get hashCode => Object.hash(id, name, isActive, createdAt);
+  int get hashCode => Object.hash(id, name, collectionId, isActive, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Environment &&
           other.id == this.id &&
           other.name == this.name &&
+          other.collectionId == this.collectionId &&
           other.isActive == this.isActive &&
           other.createdAt == this.createdAt);
 }
@@ -1925,29 +2032,34 @@ class Environment extends DataClass implements Insertable<Environment> {
 class EnvironmentsCompanion extends UpdateCompanion<Environment> {
   final Value<int> id;
   final Value<String> name;
+  final Value<int?> collectionId;
   final Value<bool> isActive;
   final Value<DateTime> createdAt;
   const EnvironmentsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.collectionId = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   EnvironmentsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
+    this.collectionId = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Environment> custom({
     Expression<int>? id,
     Expression<String>? name,
+    Expression<int>? collectionId,
     Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (collectionId != null) 'collection_id': collectionId,
       if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -1956,12 +2068,14 @@ class EnvironmentsCompanion extends UpdateCompanion<Environment> {
   EnvironmentsCompanion copyWith({
     Value<int>? id,
     Value<String>? name,
+    Value<int?>? collectionId,
     Value<bool>? isActive,
     Value<DateTime>? createdAt,
   }) {
     return EnvironmentsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      collectionId: collectionId ?? this.collectionId,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -1975,6 +2089,9 @@ class EnvironmentsCompanion extends UpdateCompanion<Environment> {
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
+    }
+    if (collectionId.present) {
+      map['collection_id'] = Variable<int>(collectionId.value);
     }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
@@ -1990,6 +2107,7 @@ class EnvironmentsCompanion extends UpdateCompanion<Environment> {
     return (StringBuffer('EnvironmentsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('collectionId: $collectionId, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -2052,6 +2170,20 @@ class $EnvVariablesTable extends EnvVariables
       'REFERENCES environments (id)',
     ),
   );
+  static const VerificationMeta _collectionIdMeta = const VerificationMeta(
+    'collectionId',
+  );
+  @override
+  late final GeneratedColumn<int> collectionId = GeneratedColumn<int>(
+    'collection_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES collections (id)',
+    ),
+  );
   static const VerificationMeta _scopeMeta = const VerificationMeta('scope');
   @override
   late final GeneratedColumn<String> scope = GeneratedColumn<String>(
@@ -2080,6 +2212,7 @@ class $EnvVariablesTable extends EnvVariables
     key,
     value,
     environmentId,
+    collectionId,
     scope,
     createdAt,
   ];
@@ -2123,6 +2256,15 @@ class $EnvVariablesTable extends EnvVariables
         ),
       );
     }
+    if (data.containsKey('collection_id')) {
+      context.handle(
+        _collectionIdMeta,
+        collectionId.isAcceptableOrUnknown(
+          data['collection_id']!,
+          _collectionIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('scope')) {
       context.handle(
         _scopeMeta,
@@ -2160,6 +2302,10 @@ class $EnvVariablesTable extends EnvVariables
         DriftSqlType.int,
         data['${effectivePrefix}environment_id'],
       ),
+      collectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}collection_id'],
+      ),
       scope: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}scope'],
@@ -2182,6 +2328,7 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
   final String key;
   final String value;
   final int? environmentId;
+  final int? collectionId;
   final String scope;
   final DateTime createdAt;
   const EnvVariable({
@@ -2189,6 +2336,7 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
     required this.key,
     required this.value,
     this.environmentId,
+    this.collectionId,
     required this.scope,
     required this.createdAt,
   });
@@ -2200,6 +2348,9 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
     map['value'] = Variable<String>(value);
     if (!nullToAbsent || environmentId != null) {
       map['environment_id'] = Variable<int>(environmentId);
+    }
+    if (!nullToAbsent || collectionId != null) {
+      map['collection_id'] = Variable<int>(collectionId);
     }
     map['scope'] = Variable<String>(scope);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -2214,6 +2365,9 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
       environmentId: environmentId == null && nullToAbsent
           ? const Value.absent()
           : Value(environmentId),
+      collectionId: collectionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(collectionId),
       scope: Value(scope),
       createdAt: Value(createdAt),
     );
@@ -2229,6 +2383,7 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
       key: serializer.fromJson<String>(json['key']),
       value: serializer.fromJson<String>(json['value']),
       environmentId: serializer.fromJson<int?>(json['environmentId']),
+      collectionId: serializer.fromJson<int?>(json['collectionId']),
       scope: serializer.fromJson<String>(json['scope']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -2241,6 +2396,7 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
       'key': serializer.toJson<String>(key),
       'value': serializer.toJson<String>(value),
       'environmentId': serializer.toJson<int?>(environmentId),
+      'collectionId': serializer.toJson<int?>(collectionId),
       'scope': serializer.toJson<String>(scope),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -2251,6 +2407,7 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
     String? key,
     String? value,
     Value<int?> environmentId = const Value.absent(),
+    Value<int?> collectionId = const Value.absent(),
     String? scope,
     DateTime? createdAt,
   }) => EnvVariable(
@@ -2260,6 +2417,7 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
     environmentId: environmentId.present
         ? environmentId.value
         : this.environmentId,
+    collectionId: collectionId.present ? collectionId.value : this.collectionId,
     scope: scope ?? this.scope,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -2271,6 +2429,9 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
       environmentId: data.environmentId.present
           ? data.environmentId.value
           : this.environmentId,
+      collectionId: data.collectionId.present
+          ? data.collectionId.value
+          : this.collectionId,
       scope: data.scope.present ? data.scope.value : this.scope,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -2283,6 +2444,7 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
           ..write('key: $key, ')
           ..write('value: $value, ')
           ..write('environmentId: $environmentId, ')
+          ..write('collectionId: $collectionId, ')
           ..write('scope: $scope, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -2290,8 +2452,15 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, key, value, environmentId, scope, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    key,
+    value,
+    environmentId,
+    collectionId,
+    scope,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2300,6 +2469,7 @@ class EnvVariable extends DataClass implements Insertable<EnvVariable> {
           other.key == this.key &&
           other.value == this.value &&
           other.environmentId == this.environmentId &&
+          other.collectionId == this.collectionId &&
           other.scope == this.scope &&
           other.createdAt == this.createdAt);
 }
@@ -2309,6 +2479,7 @@ class EnvVariablesCompanion extends UpdateCompanion<EnvVariable> {
   final Value<String> key;
   final Value<String> value;
   final Value<int?> environmentId;
+  final Value<int?> collectionId;
   final Value<String> scope;
   final Value<DateTime> createdAt;
   const EnvVariablesCompanion({
@@ -2316,6 +2487,7 @@ class EnvVariablesCompanion extends UpdateCompanion<EnvVariable> {
     this.key = const Value.absent(),
     this.value = const Value.absent(),
     this.environmentId = const Value.absent(),
+    this.collectionId = const Value.absent(),
     this.scope = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -2324,6 +2496,7 @@ class EnvVariablesCompanion extends UpdateCompanion<EnvVariable> {
     required String key,
     required String value,
     this.environmentId = const Value.absent(),
+    this.collectionId = const Value.absent(),
     this.scope = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : key = Value(key),
@@ -2333,6 +2506,7 @@ class EnvVariablesCompanion extends UpdateCompanion<EnvVariable> {
     Expression<String>? key,
     Expression<String>? value,
     Expression<int>? environmentId,
+    Expression<int>? collectionId,
     Expression<String>? scope,
     Expression<DateTime>? createdAt,
   }) {
@@ -2341,6 +2515,7 @@ class EnvVariablesCompanion extends UpdateCompanion<EnvVariable> {
       if (key != null) 'key': key,
       if (value != null) 'value': value,
       if (environmentId != null) 'environment_id': environmentId,
+      if (collectionId != null) 'collection_id': collectionId,
       if (scope != null) 'scope': scope,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -2351,6 +2526,7 @@ class EnvVariablesCompanion extends UpdateCompanion<EnvVariable> {
     Value<String>? key,
     Value<String>? value,
     Value<int?>? environmentId,
+    Value<int?>? collectionId,
     Value<String>? scope,
     Value<DateTime>? createdAt,
   }) {
@@ -2359,6 +2535,7 @@ class EnvVariablesCompanion extends UpdateCompanion<EnvVariable> {
       key: key ?? this.key,
       value: value ?? this.value,
       environmentId: environmentId ?? this.environmentId,
+      collectionId: collectionId ?? this.collectionId,
       scope: scope ?? this.scope,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -2379,6 +2556,9 @@ class EnvVariablesCompanion extends UpdateCompanion<EnvVariable> {
     if (environmentId.present) {
       map['environment_id'] = Variable<int>(environmentId.value);
     }
+    if (collectionId.present) {
+      map['collection_id'] = Variable<int>(collectionId.value);
+    }
     if (scope.present) {
       map['scope'] = Variable<String>(scope.value);
     }
@@ -2395,8 +2575,221 @@ class EnvVariablesCompanion extends UpdateCompanion<EnvVariable> {
           ..write('key: $key, ')
           ..write('value: $value, ')
           ..write('environmentId: $environmentId, ')
+          ..write('collectionId: $collectionId, ')
           ..write('scope: $scope, ')
           ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AppSettingsTable extends AppSettings
+    with TableInfo<$AppSettingsTable, AppSetting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 50,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AppSetting> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  AppSetting map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppSetting(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+    );
+  }
+
+  @override
+  $AppSettingsTable createAlias(String alias) {
+    return $AppSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class AppSetting extends DataClass implements Insertable<AppSetting> {
+  final String key;
+  final String value;
+  const AppSetting({required this.key, required this.value});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    return map;
+  }
+
+  AppSettingsCompanion toCompanion(bool nullToAbsent) {
+    return AppSettingsCompanion(key: Value(key), value: Value(value));
+  }
+
+  factory AppSetting.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppSetting(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+    };
+  }
+
+  AppSetting copyWith({String? key, String? value}) =>
+      AppSetting(key: key ?? this.key, value: value ?? this.value);
+  AppSetting copyWithCompanion(AppSettingsCompanion data) {
+    return AppSetting(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSetting(')
+          ..write('key: $key, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppSetting &&
+          other.key == this.key &&
+          other.value == this.value);
+}
+
+class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
+  final Value<String> key;
+  final Value<String> value;
+  final Value<int> rowid;
+  const AppSettingsCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AppSettingsCompanion.insert({
+    required String key,
+    required String value,
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       value = Value(value);
+  static Insertable<AppSetting> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AppSettingsCompanion copyWith({
+    Value<String>? key,
+    Value<String>? value,
+    Value<int>? rowid,
+  }) {
+    return AppSettingsCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingsCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -2410,6 +2803,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $HistoryEntriesTable historyEntries = $HistoryEntriesTable(this);
   late final $EnvironmentsTable environments = $EnvironmentsTable(this);
   late final $EnvVariablesTable envVariables = $EnvVariablesTable(this);
+  late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2420,6 +2814,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     historyEntries,
     environments,
     envVariables,
+    appSettings,
   ];
 }
 
@@ -2479,6 +2874,69 @@ final class $$CollectionsTableReferences
     ).filter((f) => f.collectionId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_savedRequestsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$HistoryEntriesTable, List<HistoryEntry>>
+  _historyEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.historyEntries,
+    aliasName: $_aliasNameGenerator(
+      db.collections.id,
+      db.historyEntries.workspaceId,
+    ),
+  );
+
+  $$HistoryEntriesTableProcessedTableManager get historyEntriesRefs {
+    final manager = $$HistoryEntriesTableTableManager(
+      $_db,
+      $_db.historyEntries,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_historyEntriesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$EnvironmentsTable, List<Environment>>
+  _environmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.environments,
+    aliasName: $_aliasNameGenerator(
+      db.collections.id,
+      db.environments.collectionId,
+    ),
+  );
+
+  $$EnvironmentsTableProcessedTableManager get environmentsRefs {
+    final manager = $$EnvironmentsTableTableManager(
+      $_db,
+      $_db.environments,
+    ).filter((f) => f.collectionId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_environmentsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$EnvVariablesTable, List<EnvVariable>>
+  _envVariablesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.envVariables,
+    aliasName: $_aliasNameGenerator(
+      db.collections.id,
+      db.envVariables.collectionId,
+    ),
+  );
+
+  $$EnvVariablesTableProcessedTableManager get envVariablesRefs {
+    final manager = $$EnvVariablesTableTableManager(
+      $_db,
+      $_db.envVariables,
+    ).filter((f) => f.collectionId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_envVariablesRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -2553,6 +3011,81 @@ class $$CollectionsTableFilterComposer
           }) => $$SavedRequestsTableFilterComposer(
             $db: $db,
             $table: $db.savedRequests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> historyEntriesRefs(
+    Expression<bool> Function($$HistoryEntriesTableFilterComposer f) f,
+  ) {
+    final $$HistoryEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.historyEntries,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HistoryEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.historyEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> environmentsRefs(
+    Expression<bool> Function($$EnvironmentsTableFilterComposer f) f,
+  ) {
+    final $$EnvironmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.environments,
+      getReferencedColumn: (t) => t.collectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EnvironmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.environments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> envVariablesRefs(
+    Expression<bool> Function($$EnvVariablesTableFilterComposer f) f,
+  ) {
+    final $$EnvVariablesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.envVariables,
+      getReferencedColumn: (t) => t.collectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EnvVariablesTableFilterComposer(
+            $db: $db,
+            $table: $db.envVariables,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2686,6 +3219,81 @@ class $$CollectionsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> historyEntriesRefs<T extends Object>(
+    Expression<T> Function($$HistoryEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$HistoryEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.historyEntries,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HistoryEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.historyEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> environmentsRefs<T extends Object>(
+    Expression<T> Function($$EnvironmentsTableAnnotationComposer a) f,
+  ) {
+    final $$EnvironmentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.environments,
+      getReferencedColumn: (t) => t.collectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EnvironmentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.environments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> envVariablesRefs<T extends Object>(
+    Expression<T> Function($$EnvVariablesTableAnnotationComposer a) f,
+  ) {
+    final $$EnvVariablesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.envVariables,
+      getReferencedColumn: (t) => t.collectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EnvVariablesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.envVariables,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$CollectionsTableTableManager
@@ -2701,7 +3309,13 @@ class $$CollectionsTableTableManager
           $$CollectionsTableUpdateCompanionBuilder,
           (Collection, $$CollectionsTableReferences),
           Collection,
-          PrefetchHooks Function({bool parentId, bool savedRequestsRefs})
+          PrefetchHooks Function({
+            bool parentId,
+            bool savedRequestsRefs,
+            bool historyEntriesRefs,
+            bool environmentsRefs,
+            bool envVariablesRefs,
+          })
         > {
   $$CollectionsTableTableManager(_$AppDatabase db, $CollectionsTable table)
     : super(
@@ -2751,11 +3365,20 @@ class $$CollectionsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({parentId = false, savedRequestsRefs = false}) {
+              ({
+                parentId = false,
+                savedRequestsRefs = false,
+                historyEntriesRefs = false,
+                environmentsRefs = false,
+                envVariablesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (savedRequestsRefs) db.savedRequests,
+                    if (historyEntriesRefs) db.historyEntries,
+                    if (environmentsRefs) db.environments,
+                    if (envVariablesRefs) db.envVariables,
                   ],
                   addJoins:
                       <
@@ -2814,6 +3437,69 @@ class $$CollectionsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (historyEntriesRefs)
+                        await $_getPrefetchedData<
+                          Collection,
+                          $CollectionsTable,
+                          HistoryEntry
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CollectionsTableReferences
+                              ._historyEntriesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CollectionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).historyEntriesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (environmentsRefs)
+                        await $_getPrefetchedData<
+                          Collection,
+                          $CollectionsTable,
+                          Environment
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CollectionsTableReferences
+                              ._environmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CollectionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).environmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.collectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (envVariablesRefs)
+                        await $_getPrefetchedData<
+                          Collection,
+                          $CollectionsTable,
+                          EnvVariable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CollectionsTableReferences
+                              ._envVariablesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CollectionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).envVariablesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.collectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -2834,7 +3520,13 @@ typedef $$CollectionsTableProcessedTableManager =
       $$CollectionsTableUpdateCompanionBuilder,
       (Collection, $$CollectionsTableReferences),
       Collection,
-      PrefetchHooks Function({bool parentId, bool savedRequestsRefs})
+      PrefetchHooks Function({
+        bool parentId,
+        bool savedRequestsRefs,
+        bool historyEntriesRefs,
+        bool environmentsRefs,
+        bool envVariablesRefs,
+      })
     >;
 typedef $$SavedRequestsTableCreateCompanionBuilder =
     SavedRequestsCompanion Function({
@@ -3373,6 +4065,7 @@ typedef $$HistoryEntriesTableCreateCompanionBuilder =
     HistoryEntriesCompanion Function({
       Value<int> id,
       Value<int?> savedRequestId,
+      Value<int?> workspaceId,
       required String method,
       required String url,
       Value<String?> headersJson,
@@ -3387,6 +4080,7 @@ typedef $$HistoryEntriesTableUpdateCompanionBuilder =
     HistoryEntriesCompanion Function({
       Value<int> id,
       Value<int?> savedRequestId,
+      Value<int?> workspaceId,
       Value<String> method,
       Value<String> url,
       Value<String?> headersJson,
@@ -3422,6 +4116,25 @@ final class $$HistoryEntriesTableReferences
       $_db.savedRequests,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_savedRequestIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $CollectionsTable _workspaceIdTable(_$AppDatabase db) =>
+      db.collections.createAlias(
+        $_aliasNameGenerator(db.historyEntries.workspaceId, db.collections.id),
+      );
+
+  $$CollectionsTableProcessedTableManager? get workspaceId {
+    final $_column = $_itemColumn<int>('workspace_id');
+    if ($_column == null) return null;
+    final manager = $$CollectionsTableTableManager(
+      $_db,
+      $_db.collections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -3502,6 +4215,29 @@ class $$HistoryEntriesTableFilterComposer
           }) => $$SavedRequestsTableFilterComposer(
             $db: $db,
             $table: $db.savedRequests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CollectionsTableFilterComposer get workspaceId {
+    final $$CollectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.collections,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3593,6 +4329,29 @@ class $$HistoryEntriesTableOrderingComposer
     );
     return composer;
   }
+
+  $$CollectionsTableOrderingComposer get workspaceId {
+    final $$CollectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$HistoryEntriesTableAnnotationComposer
@@ -3668,6 +4427,29 @@ class $$HistoryEntriesTableAnnotationComposer
     );
     return composer;
   }
+
+  $$CollectionsTableAnnotationComposer get workspaceId {
+    final $$CollectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$HistoryEntriesTableTableManager
@@ -3683,7 +4465,7 @@ class $$HistoryEntriesTableTableManager
           $$HistoryEntriesTableUpdateCompanionBuilder,
           (HistoryEntry, $$HistoryEntriesTableReferences),
           HistoryEntry,
-          PrefetchHooks Function({bool savedRequestId})
+          PrefetchHooks Function({bool savedRequestId, bool workspaceId})
         > {
   $$HistoryEntriesTableTableManager(
     _$AppDatabase db,
@@ -3702,6 +4484,7 @@ class $$HistoryEntriesTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<int?> savedRequestId = const Value.absent(),
+                Value<int?> workspaceId = const Value.absent(),
                 Value<String> method = const Value.absent(),
                 Value<String> url = const Value.absent(),
                 Value<String?> headersJson = const Value.absent(),
@@ -3714,6 +4497,7 @@ class $$HistoryEntriesTableTableManager
               }) => HistoryEntriesCompanion(
                 id: id,
                 savedRequestId: savedRequestId,
+                workspaceId: workspaceId,
                 method: method,
                 url: url,
                 headersJson: headersJson,
@@ -3728,6 +4512,7 @@ class $$HistoryEntriesTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<int?> savedRequestId = const Value.absent(),
+                Value<int?> workspaceId = const Value.absent(),
                 required String method,
                 required String url,
                 Value<String?> headersJson = const Value.absent(),
@@ -3740,6 +4525,7 @@ class $$HistoryEntriesTableTableManager
               }) => HistoryEntriesCompanion.insert(
                 id: id,
                 savedRequestId: savedRequestId,
+                workspaceId: workspaceId,
                 method: method,
                 url: url,
                 headersJson: headersJson,
@@ -3758,48 +4544,65 @@ class $$HistoryEntriesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({savedRequestId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (savedRequestId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.savedRequestId,
-                                referencedTable: $$HistoryEntriesTableReferences
-                                    ._savedRequestIdTable(db),
-                                referencedColumn:
-                                    $$HistoryEntriesTableReferences
-                                        ._savedRequestIdTable(db)
-                                        .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({savedRequestId = false, workspaceId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (savedRequestId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.savedRequestId,
+                                    referencedTable:
+                                        $$HistoryEntriesTableReferences
+                                            ._savedRequestIdTable(db),
+                                    referencedColumn:
+                                        $$HistoryEntriesTableReferences
+                                            ._savedRequestIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (workspaceId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.workspaceId,
+                                    referencedTable:
+                                        $$HistoryEntriesTableReferences
+                                            ._workspaceIdTable(db),
+                                    referencedColumn:
+                                        $$HistoryEntriesTableReferences
+                                            ._workspaceIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -3816,12 +4619,13 @@ typedef $$HistoryEntriesTableProcessedTableManager =
       $$HistoryEntriesTableUpdateCompanionBuilder,
       (HistoryEntry, $$HistoryEntriesTableReferences),
       HistoryEntry,
-      PrefetchHooks Function({bool savedRequestId})
+      PrefetchHooks Function({bool savedRequestId, bool workspaceId})
     >;
 typedef $$EnvironmentsTableCreateCompanionBuilder =
     EnvironmentsCompanion Function({
       Value<int> id,
       required String name,
+      Value<int?> collectionId,
       Value<bool> isActive,
       Value<DateTime> createdAt,
     });
@@ -3829,6 +4633,7 @@ typedef $$EnvironmentsTableUpdateCompanionBuilder =
     EnvironmentsCompanion Function({
       Value<int> id,
       Value<String> name,
+      Value<int?> collectionId,
       Value<bool> isActive,
       Value<DateTime> createdAt,
     });
@@ -3836,6 +4641,25 @@ typedef $$EnvironmentsTableUpdateCompanionBuilder =
 final class $$EnvironmentsTableReferences
     extends BaseReferences<_$AppDatabase, $EnvironmentsTable, Environment> {
   $$EnvironmentsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $CollectionsTable _collectionIdTable(_$AppDatabase db) =>
+      db.collections.createAlias(
+        $_aliasNameGenerator(db.environments.collectionId, db.collections.id),
+      );
+
+  $$CollectionsTableProcessedTableManager? get collectionId {
+    final $_column = $_itemColumn<int>('collection_id');
+    if ($_column == null) return null;
+    final manager = $$CollectionsTableTableManager(
+      $_db,
+      $_db.collections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_collectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 
   static MultiTypedResultKey<$EnvVariablesTable, List<EnvVariable>>
   _envVariablesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
@@ -3887,6 +4711,29 @@ class $$EnvironmentsTableFilterComposer
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$CollectionsTableFilterComposer get collectionId {
+    final $$CollectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   Expression<bool> envVariablesRefs(
     Expression<bool> Function($$EnvVariablesTableFilterComposer f) f,
@@ -3942,6 +4789,29 @@ class $$EnvironmentsTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$CollectionsTableOrderingComposer get collectionId {
+    final $$CollectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$EnvironmentsTableAnnotationComposer
@@ -3964,6 +4834,29 @@ class $$EnvironmentsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$CollectionsTableAnnotationComposer get collectionId {
+    final $$CollectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   Expression<T> envVariablesRefs<T extends Object>(
     Expression<T> Function($$EnvVariablesTableAnnotationComposer a) f,
@@ -4004,7 +4897,7 @@ class $$EnvironmentsTableTableManager
           $$EnvironmentsTableUpdateCompanionBuilder,
           (Environment, $$EnvironmentsTableReferences),
           Environment,
-          PrefetchHooks Function({bool envVariablesRefs})
+          PrefetchHooks Function({bool collectionId, bool envVariablesRefs})
         > {
   $$EnvironmentsTableTableManager(_$AppDatabase db, $EnvironmentsTable table)
     : super(
@@ -4021,11 +4914,13 @@ class $$EnvironmentsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<int?> collectionId = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => EnvironmentsCompanion(
                 id: id,
                 name: name,
+                collectionId: collectionId,
                 isActive: isActive,
                 createdAt: createdAt,
               ),
@@ -4033,11 +4928,13 @@ class $$EnvironmentsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
+                Value<int?> collectionId = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => EnvironmentsCompanion.insert(
                 id: id,
                 name: name,
+                collectionId: collectionId,
                 isActive: isActive,
                 createdAt: createdAt,
               ),
@@ -4049,38 +4946,74 @@ class $$EnvironmentsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({envVariablesRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (envVariablesRefs) db.envVariables],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (envVariablesRefs)
-                    await $_getPrefetchedData<
-                      Environment,
-                      $EnvironmentsTable,
-                      EnvVariable
-                    >(
-                      currentTable: table,
-                      referencedTable: $$EnvironmentsTableReferences
-                          ._envVariablesRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$EnvironmentsTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).envVariablesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.environmentId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({collectionId = false, envVariablesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (envVariablesRefs) db.envVariables,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (collectionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.collectionId,
+                                    referencedTable:
+                                        $$EnvironmentsTableReferences
+                                            ._collectionIdTable(db),
+                                    referencedColumn:
+                                        $$EnvironmentsTableReferences
+                                            ._collectionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (envVariablesRefs)
+                        await $_getPrefetchedData<
+                          Environment,
+                          $EnvironmentsTable,
+                          EnvVariable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$EnvironmentsTableReferences
+                              ._envVariablesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$EnvironmentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).envVariablesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.environmentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -4097,7 +5030,7 @@ typedef $$EnvironmentsTableProcessedTableManager =
       $$EnvironmentsTableUpdateCompanionBuilder,
       (Environment, $$EnvironmentsTableReferences),
       Environment,
-      PrefetchHooks Function({bool envVariablesRefs})
+      PrefetchHooks Function({bool collectionId, bool envVariablesRefs})
     >;
 typedef $$EnvVariablesTableCreateCompanionBuilder =
     EnvVariablesCompanion Function({
@@ -4105,6 +5038,7 @@ typedef $$EnvVariablesTableCreateCompanionBuilder =
       required String key,
       required String value,
       Value<int?> environmentId,
+      Value<int?> collectionId,
       Value<String> scope,
       Value<DateTime> createdAt,
     });
@@ -4114,6 +5048,7 @@ typedef $$EnvVariablesTableUpdateCompanionBuilder =
       Value<String> key,
       Value<String> value,
       Value<int?> environmentId,
+      Value<int?> collectionId,
       Value<String> scope,
       Value<DateTime> createdAt,
     });
@@ -4135,6 +5070,25 @@ final class $$EnvVariablesTableReferences
       $_db.environments,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_environmentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $CollectionsTable _collectionIdTable(_$AppDatabase db) =>
+      db.collections.createAlias(
+        $_aliasNameGenerator(db.envVariables.collectionId, db.collections.id),
+      );
+
+  $$CollectionsTableProcessedTableManager? get collectionId {
+    final $_column = $_itemColumn<int>('collection_id');
+    if ($_column == null) return null;
+    final manager = $$CollectionsTableTableManager(
+      $_db,
+      $_db.collections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_collectionIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -4190,6 +5144,29 @@ class $$EnvVariablesTableFilterComposer
           }) => $$EnvironmentsTableFilterComposer(
             $db: $db,
             $table: $db.environments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CollectionsTableFilterComposer get collectionId {
+    final $$CollectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.collections,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4256,6 +5233,29 @@ class $$EnvVariablesTableOrderingComposer
     );
     return composer;
   }
+
+  $$CollectionsTableOrderingComposer get collectionId {
+    final $$CollectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$EnvVariablesTableAnnotationComposer
@@ -4304,6 +5304,29 @@ class $$EnvVariablesTableAnnotationComposer
     );
     return composer;
   }
+
+  $$CollectionsTableAnnotationComposer get collectionId {
+    final $$CollectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$EnvVariablesTableTableManager
@@ -4319,7 +5342,7 @@ class $$EnvVariablesTableTableManager
           $$EnvVariablesTableUpdateCompanionBuilder,
           (EnvVariable, $$EnvVariablesTableReferences),
           EnvVariable,
-          PrefetchHooks Function({bool environmentId})
+          PrefetchHooks Function({bool environmentId, bool collectionId})
         > {
   $$EnvVariablesTableTableManager(_$AppDatabase db, $EnvVariablesTable table)
     : super(
@@ -4338,6 +5361,7 @@ class $$EnvVariablesTableTableManager
                 Value<String> key = const Value.absent(),
                 Value<String> value = const Value.absent(),
                 Value<int?> environmentId = const Value.absent(),
+                Value<int?> collectionId = const Value.absent(),
                 Value<String> scope = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => EnvVariablesCompanion(
@@ -4345,6 +5369,7 @@ class $$EnvVariablesTableTableManager
                 key: key,
                 value: value,
                 environmentId: environmentId,
+                collectionId: collectionId,
                 scope: scope,
                 createdAt: createdAt,
               ),
@@ -4354,6 +5379,7 @@ class $$EnvVariablesTableTableManager
                 required String key,
                 required String value,
                 Value<int?> environmentId = const Value.absent(),
+                Value<int?> collectionId = const Value.absent(),
                 Value<String> scope = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => EnvVariablesCompanion.insert(
@@ -4361,6 +5387,7 @@ class $$EnvVariablesTableTableManager
                 key: key,
                 value: value,
                 environmentId: environmentId,
+                collectionId: collectionId,
                 scope: scope,
                 createdAt: createdAt,
               ),
@@ -4372,47 +5399,65 @@ class $$EnvVariablesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({environmentId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (environmentId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.environmentId,
-                                referencedTable: $$EnvVariablesTableReferences
-                                    ._environmentIdTable(db),
-                                referencedColumn: $$EnvVariablesTableReferences
-                                    ._environmentIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({environmentId = false, collectionId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (environmentId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.environmentId,
+                                    referencedTable:
+                                        $$EnvVariablesTableReferences
+                                            ._environmentIdTable(db),
+                                    referencedColumn:
+                                        $$EnvVariablesTableReferences
+                                            ._environmentIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (collectionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.collectionId,
+                                    referencedTable:
+                                        $$EnvVariablesTableReferences
+                                            ._collectionIdTable(db),
+                                    referencedColumn:
+                                        $$EnvVariablesTableReferences
+                                            ._collectionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -4429,7 +5474,146 @@ typedef $$EnvVariablesTableProcessedTableManager =
       $$EnvVariablesTableUpdateCompanionBuilder,
       (EnvVariable, $$EnvVariablesTableReferences),
       EnvVariable,
-      PrefetchHooks Function({bool environmentId})
+      PrefetchHooks Function({bool environmentId, bool collectionId})
+    >;
+typedef $$AppSettingsTableCreateCompanionBuilder =
+    AppSettingsCompanion Function({
+      required String key,
+      required String value,
+      Value<int> rowid,
+    });
+typedef $$AppSettingsTableUpdateCompanionBuilder =
+    AppSettingsCompanion Function({
+      Value<String> key,
+      Value<String> value,
+      Value<int> rowid,
+    });
+
+class $$AppSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AppSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AppSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$AppSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AppSettingsTable,
+          AppSetting,
+          $$AppSettingsTableFilterComposer,
+          $$AppSettingsTableOrderingComposer,
+          $$AppSettingsTableAnnotationComposer,
+          $$AppSettingsTableCreateCompanionBuilder,
+          $$AppSettingsTableUpdateCompanionBuilder,
+          (
+            AppSetting,
+            BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>,
+          ),
+          AppSetting,
+          PrefetchHooks Function()
+        > {
+  $$AppSettingsTableTableManager(_$AppDatabase db, $AppSettingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AppSettingsCompanion(key: key, value: value, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required String key,
+                required String value,
+                Value<int> rowid = const Value.absent(),
+              }) => AppSettingsCompanion.insert(
+                key: key,
+                value: value,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AppSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AppSettingsTable,
+      AppSetting,
+      $$AppSettingsTableFilterComposer,
+      $$AppSettingsTableOrderingComposer,
+      $$AppSettingsTableAnnotationComposer,
+      $$AppSettingsTableCreateCompanionBuilder,
+      $$AppSettingsTableUpdateCompanionBuilder,
+      (
+        AppSetting,
+        BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>,
+      ),
+      AppSetting,
+      PrefetchHooks Function()
     >;
 
 class $AppDatabaseManager {
@@ -4445,4 +5629,6 @@ class $AppDatabaseManager {
       $$EnvironmentsTableTableManager(_db, _db.environments);
   $$EnvVariablesTableTableManager get envVariables =>
       $$EnvVariablesTableTableManager(_db, _db.envVariables);
+  $$AppSettingsTableTableManager get appSettings =>
+      $$AppSettingsTableTableManager(_db, _db.appSettings);
 }

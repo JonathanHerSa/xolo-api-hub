@@ -1,13 +1,30 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/key_value_pair.dart';
 
 // --- 1. CONFIGURACIÓN BÁSICA (URL y Método) ---
 
-// El método HTTP seleccionado (GET, POST, etc.)
-final selectedMethodProvider = StateProvider<String>((ref) => 'GET');
+// Migrando StateProvider a Notifier para compatibilidad total
+class SelectedMethodNotifier extends Notifier<String> {
+  @override
+  String build() => 'GET';
 
-// La URL que escribe el usuario
-final urlQueryProvider = StateProvider<String>((ref) => '');
+  void set(String value) => state = value;
+}
+
+final selectedMethodProvider = NotifierProvider<SelectedMethodNotifier, String>(
+  SelectedMethodNotifier.new,
+);
+
+class UrlQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void set(String value) => state = value;
+}
+
+final urlQueryProvider = NotifierProvider<UrlQueryNotifier, String>(
+  UrlQueryNotifier.new,
+);
 
 // Lista estática de métodos soportados
 final List<String> httpMethods = [
@@ -22,24 +39,22 @@ final List<String> httpMethods = [
 
 // --- 2. LÓGICA DE TABLAS (Headers y Params) ---
 
-/// Clase que maneja la lógica de añadir filas vacías automáticamente
-class KeyValueNotifier extends StateNotifier<List<KeyValuePair>> {
-  // Inicializamos con una fila vacía siempre
-  KeyValueNotifier() : super([KeyValuePair()]);
+/// Clase BASE para headers y params.
+/// Para reutilizar lógica, usaremos mixin o abstract class?
+/// Notifier funciona por tipo. Si uso la misma clase para dos providers, es independiente.
+class KeyValueNotifier extends Notifier<List<KeyValuePair>> {
+  @override
+  List<KeyValuePair> build() {
+    return [KeyValuePair()];
+  }
 
-  // Actualizar la "Clave"
   void updateKey(int index, String newKey) {
-    // 1. Creamos una copia segura de la lista
     final newList = [...state];
-    // 2. Modificamos el item específico
     newList[index] = newList[index].copyWith(key: newKey);
-    // 3. Actualizamos el estado
     state = newList;
-    // 4. Verificamos si necesitamos agregar una fila nueva al final
     _ensureEmptyRow();
   }
 
-  // Actualizar el "Valor"
   void updateValue(int index, String newValue) {
     final newList = [...state];
     newList[index] = newList[index].copyWith(value: newValue);
@@ -47,21 +62,30 @@ class KeyValueNotifier extends StateNotifier<List<KeyValuePair>> {
     _ensureEmptyRow();
   }
 
-  // Eliminar una fila (Botón de basura)
+  void updateList(List<KeyValuePair> newList) {
+    if (newList.isEmpty) {
+      state = [KeyValuePair()];
+    } else {
+      state = [...newList];
+      _ensureEmptyRow();
+    }
+  }
+
   void removeRow(int index) {
-    // Nunca dejamos la lista vacía, mínimo debe haber 1 row (aunque esté vacía)
     if (state.length > 1) {
       final newList = [...state];
       newList.removeAt(index);
       state = newList;
     } else {
-      // Si es la única y la borran, solo la limpiamos
       state = [KeyValuePair()];
     }
   }
 
-  // Lógica UX: Si la última fila ya tiene texto, agregamos una nueva vacía abajo
   void _ensureEmptyRow() {
+    if (state.isEmpty) {
+      state = [KeyValuePair()];
+      return;
+    }
     final lastItem = state.last;
     if (lastItem.key.isNotEmpty || lastItem.value.isNotEmpty) {
       state = [...state, KeyValuePair()];
@@ -69,20 +93,58 @@ class KeyValueNotifier extends StateNotifier<List<KeyValuePair>> {
   }
 }
 
-// Provider independiente para HEADERS
-final headersProvider =
-    StateNotifierProvider<KeyValueNotifier, List<KeyValuePair>>((ref) {
-      return KeyValueNotifier();
-    });
+// Necesitamos subclases distintas si queremos definirlos por tipo?
+// No, NotifierProvider(Class.new) crea instancias distintas.
+// Pero para tipar KeyValueTable...
+// Definamos el tipo Providers.
 
-// Provider independiente para QUERY PARAMS
-// (Reutilizamos la misma lógica de clase, pero es una instancia separada en memoria)
-final paramsProvider =
-    StateNotifierProvider<KeyValueNotifier, List<KeyValuePair>>((ref) {
-      return KeyValueNotifier();
-    });
+final headersProvider = NotifierProvider<HeadersNotifier, List<KeyValuePair>>(
+  HeadersNotifier.new,
+);
+
+class HeadersNotifier extends KeyValueNotifier {}
+
+final paramsProvider = NotifierProvider<ParamsNotifier, List<KeyValuePair>>(
+  ParamsNotifier.new,
+);
+
+class ParamsNotifier extends KeyValueNotifier {}
 
 // --- 3. BODY DEL REQUEST ---
 
-// Por ahora manejaremos el Body como un string crudo (Raw JSON)
-final bodyContentProvider = StateProvider<String>((ref) => '');
+class BodyContentNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+  // Setter directo expose
+  // state setter is protected.
+  // Exposem os propiedad set.
+  @override
+  set state(String val) => super.state = val;
+}
+// Hack para compatibilidad con code que usa .state = val?
+// No, Notifier no permite .state =. Debe ser un método.
+// Pero ref.read(provider.notifier).state = val ?
+// La propiedad 'state' de Notifier es protected.
+// Debemos añadir método 'update'.
+
+final bodyContentProvider = NotifierProvider<_BodyNotifier, String>(
+  _BodyNotifier.new,
+);
+
+class _BodyNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+
+  @override
+  set state(String value) {
+    // Override? No es un override valido publico.
+    super.state = value;
+  }
+
+  // Mejor metodo update
+  void update(String val) => state = val;
+}
+
+// Extension para facilitar migración de .state = x
+// No podemos interseptar .state.
+// Tendremos que cambiar los call sites: ref.read(p.notifier).state = x -> ref.read(p.notifier).update(x)

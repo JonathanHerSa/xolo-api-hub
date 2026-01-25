@@ -1,10 +1,13 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/database.dart';
+import '../../core/utils/variable_parser.dart';
 import 'database_providers.dart';
+import 'environment_provider.dart';
+import 'workspace_provider.dart';
 
 // =============================================================================
 // ESTADO
@@ -43,14 +46,19 @@ class RequestState {
 }
 
 // =============================================================================
-// NOTIFIER
+// NOTIFIER (Riverpod 2.0+)
 // =============================================================================
 
-class RequestNotifier extends StateNotifier<RequestState> {
+class RequestNotifier extends Notifier<RequestState> {
   final Dio _dio = Dio();
-  final AppDatabase _db;
 
-  RequestNotifier(this._db) : super(RequestState());
+  // Acceso lazy a la base de datos
+  AppDatabase get _db => ref.read(databaseProvider);
+
+  @override
+  RequestState build() {
+    return RequestState();
+  }
 
   Future<void> fetchData({
     required String method,
@@ -71,15 +79,42 @@ class RequestNotifier extends StateNotifier<RequestState> {
     String? responseBody;
     String? errorMsg;
     dynamic responseData;
+    String attemptUrl = url;
 
     try {
+      // 1. Obtener variables resueltas (Global + Env) de forma síncrona
+      final variables = ref.read(resolvedVariablesProvider);
+
+      print(
+        'DEBUG: FetchData Start. URL: $url. Vars: ${variables.keys.length}',
+      ); // Debug Log
+
+      // 2. Parsear URL, Headers, Params y Body
+      final parsedUrl = VariableParser.parse(url, variables);
+      attemptUrl = parsedUrl;
+
+      final parsedParams = queryParams != null
+          ? VariableParser.parseMap(queryParams, variables)
+          : null;
+
+      final parsedHeaders = headers != null
+          ? VariableParser.parseMap(headers, variables)
+          : null;
+
+      dynamic parsedBody = body;
+      if (body is String) {
+        parsedBody = VariableParser.parse(body, variables);
+      } else if (body is Map<String, dynamic>) {
+        parsedBody = VariableParser.parseMap(body, variables);
+      }
+
       final response = await _dio.request(
-        url,
-        queryParameters: queryParams,
-        data: body,
+        parsedUrl,
+        queryParameters: parsedParams,
+        data: parsedBody,
         options: Options(
           method: method,
-          headers: headers,
+          headers: parsedHeaders,
           responseType: ResponseType.json,
           receiveTimeout: const Duration(seconds: 15),
         ),
@@ -99,7 +134,13 @@ class RequestNotifier extends StateNotifier<RequestState> {
       );
     } on DioException catch (e) {
       stopwatch.stop();
-      errorMsg = e.message ?? 'Error de red';
+      final errorPrefix = e.message ?? 'Error de red';
+      errorMsg = '$errorPrefix\n(URL: $attemptUrl)';
+
+      if (e.message?.contains('is not a valid URI') ?? false) {
+        errorMsg = 'URL inválida después de variables:\n$attemptUrl';
+      }
+
       responseData = e.response?.data;
       statusCode = e.response?.statusCode;
       responseBody = _encodeResponse(e.response?.data);
@@ -119,26 +160,28 @@ class RequestNotifier extends StateNotifier<RequestState> {
       );
     } catch (e) {
       stopwatch.stop();
-      state = RequestState(isLoading: false, error: e.toString());
+      state = RequestState(isLoading: false, error: '$e\n(URL: $attemptUrl)');
     }
 
     // =========================================================================
     // GUARDAR EN HISTORIAL (siempre, éxito o error)
     // =========================================================================
     try {
+      final workspaceId = ref.read(activeWorkspaceIdProvider);
+
       await _db.insertHistory(
         method: method,
-        url: url,
+        url: url, // Guardamos la URL ORIGINAL con {{variables}}
         headersJson: headers != null ? jsonEncode(headers) : null,
         paramsJson: queryParams != null ? jsonEncode(queryParams) : null,
         body: body is String ? body : (body != null ? jsonEncode(body) : null),
         statusCode: statusCode,
         responseBody: responseBody,
         durationMs: stopwatch.elapsedMilliseconds,
+        workspaceId: workspaceId,
       );
     } catch (_) {
       // Silenciosamente ignorar errores de guardado en historial
-      // No queremos que falle el request por problemas de persistencia
     }
   }
 
@@ -183,9 +226,6 @@ class RequestNotifier extends StateNotifier<RequestState> {
 // PROVIDER
 // =============================================================================
 
-final requestProvider = StateNotifierProvider<RequestNotifier, RequestState>((
-  ref,
-) {
-  final db = ref.watch(databaseProvider);
-  return RequestNotifier(db);
-});
+final requestProvider = NotifierProvider<RequestNotifier, RequestState>(
+  RequestNotifier.new,
+);

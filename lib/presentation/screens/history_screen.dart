@@ -1,69 +1,55 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/theme/xolo_theme.dart';
 import '../../data/local/database.dart';
 import '../providers/database_providers.dart';
+import '../providers/history_provider.dart';
 import '../providers/request_provider.dart';
 import '../providers/form_providers.dart';
+import '../providers/workspace_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(historyStreamProvider);
-    final colorScheme = Theme.of(context).colorScheme;
+    // Usamos el nuevo provider específico de historial
+    final historyAsync = ref.watch(recentHistoryStreamProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Historial'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Limpiar historial',
+            icon: const Icon(Icons.delete_sweep_outlined),
+            tooltip: 'Limpiar historial (Contexto actual)',
             onPressed: () => _confirmClearHistory(context, ref),
           ),
         ],
       ),
       body: historyAsync.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(color: colorScheme.primary),
-        ),
-        error: (err, stack) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: colorScheme.error),
-              const SizedBox(height: 12),
-              Text('Error: $err', style: TextStyle(color: colorScheme.error)),
-            ],
-          ),
-        ),
         data: (history) {
           if (history.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.history, size: 64, color: colorScheme.outline),
+                  Icon(
+                    Icons.history,
+                    size: 64,
+                    color: colorScheme.outline.withValues(alpha: 0.5),
+                  ),
                   const SizedBox(height: 16),
                   Text(
-                    'Sin historial',
+                    'No hay historial reciente',
                     style: TextStyle(
                       color: colorScheme.onSurfaceVariant,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Los requests que ejecutes aparecerán aquí',
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.7,
-                      ),
-                      fontSize: 14,
+                      fontSize: 16,
                     ),
                   ),
                 ],
@@ -76,10 +62,12 @@ class HistoryScreen extends ConsumerWidget {
             itemCount: history.length,
             itemBuilder: (context, index) {
               final entry = history[index];
-              return _HistoryTile(entry: entry);
+              return _HistoryItem(entry: entry);
             },
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
   }
@@ -88,23 +76,22 @@ class HistoryScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('¿Limpiar historial?'),
-        content: const Text('Esta acción no se puede deshacer.'),
+        title: const Text('Limpiar Historial?'),
+        content: const Text('Se eliminarán las entradas de este Workspace.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
           ),
-          TextButton(
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              final db = ref.read(databaseProvider);
-              await db.clearHistory();
+              // Limpiar solo historial del workspace activo
+              final workspaceId = ref.read(activeWorkspaceIdProvider);
+              await ref.read(databaseProvider).clearHistory(workspaceId);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: Text(
-              'Eliminar',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
+            child: const Text('Limpiar'),
           ),
         ],
       ),
@@ -112,112 +99,112 @@ class HistoryScreen extends ConsumerWidget {
   }
 }
 
-class _HistoryTile extends ConsumerWidget {
+class _HistoryItem extends ConsumerWidget {
   final HistoryEntry entry;
 
-  const _HistoryTile({required this.entry});
+  const _HistoryItem({required this.entry});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final methodColor = XoloTheme.getMethodColor(entry.method);
-    final statusColor = XoloTheme.getStatusColor(entry.statusCode);
+
+    // Status color logic (2xx success, else error)
+    final isSuccess =
+        entry.statusCode != null &&
+        entry.statusCode! >= 200 &&
+        entry.statusCode! < 300;
+    final statusColor = isSuccess ? XoloTheme.statusSuccess : colorScheme.error;
 
     return InkWell(
-      onTap: () => _loadAndExecute(context, ref),
-      onLongPress: () => _showDetails(context),
+      onTap: () => _loadHistoryItem(context, ref),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: colorScheme.outline.withValues(alpha: 0.3),
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
           ),
         ),
         child: Row(
           children: [
-            // Method badge
+            // Status Code Badge
             Container(
-              width: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              width: 50,
+              padding: const EdgeInsets.symmetric(vertical: 4),
               decoration: BoxDecoration(
-                color: methodColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
+                color: statusColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                entry.method,
+                entry.statusCode?.toString() ?? 'ERR',
                 style: TextStyle(
-                  color: methodColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
+                  color: statusColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
                 ),
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
 
-            // URL and time
+            // Method Badge
+            Text(
+              entry.method,
+              style: TextStyle(
+                color: methodColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // URL & Time
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _truncateUrl(entry.url),
+                    entry.url,
                     style: TextStyle(
                       color: colorScheme.onSurface,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatTime(entry.executedAt),
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        _formatTime(entry.executedAt),
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      if (entry.durationMs != null) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            '•',
+                            style: TextStyle(color: colorScheme.outline),
+                          ),
+                        ),
+                        Text(
+                          '${entry.durationMs}ms',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
-            ),
-
-            // Status and duration
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (entry.statusCode != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '${entry.statusCode}',
-                      style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                if (entry.durationMs != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    '${entry.durationMs}ms',
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ],
             ),
           ],
         ),
@@ -225,102 +212,26 @@ class _HistoryTile extends ConsumerWidget {
     );
   }
 
-  void _loadAndExecute(BuildContext context, WidgetRef ref) {
-    ref.read(selectedMethodProvider.notifier).state = entry.method;
-    ref.read(urlQueryProvider.notifier).state = entry.url;
-    if (entry.body != null) {
-      ref.read(bodyContentProvider.notifier).state = entry.body!;
-    }
-    Navigator.pop(context);
-    ref.read(requestProvider.notifier).replayFromHistory(entry);
-  }
-
-  void _showDetails(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final methodColor = XoloTheme.getMethodColor(entry.method);
-
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: methodColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      entry.method,
-                      style: TextStyle(
-                        color: methodColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  if (entry.statusCode != null)
-                    Text(
-                      '${entry.statusCode}',
-                      style: TextStyle(
-                        color: XoloTheme.getStatusColor(entry.statusCode),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'URL',
-                style: TextStyle(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 6),
-              SelectableText(
-                entry.url,
-                style: TextStyle(color: colorScheme.onSurface, fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '${_formatTime(entry.executedAt)} • ${entry.durationMs ?? 0}ms',
-                style: TextStyle(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _truncateUrl(String url) {
-    return url.replaceFirst('https://', '').replaceFirst('http://', '');
-  }
-
-  String _formatTime(DateTime time) {
+  String _formatTime(DateTime dt) {
+    // Si es hoy, mostrar hora. Si no, fecha.
     final now = DateTime.now();
-    final diff = now.difference(time);
+    final diff = now.difference(dt);
+    if (diff.inDays == 0 && now.day == dt.day) {
+      return DateFormat.Hm().format(dt);
+    }
+    return DateFormat.MMMd().format(dt);
+  }
 
-    if (diff.inMinutes < 1) return 'Ahora';
-    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
-    if (diff.inHours < 24) return 'Hace ${diff.inHours}h';
-    if (diff.inDays == 1) return 'Ayer';
-    if (diff.inDays < 7) return 'Hace ${diff.inDays} días';
-    return '${time.day}/${time.month}/${time.year}';
+  void _loadHistoryItem(BuildContext context, WidgetRef ref) {
+    ref.read(requestProvider.notifier).replayFromHistory(entry);
+    ref.read(selectedMethodProvider.notifier).set(entry.method);
+    ref.read(urlQueryProvider.notifier).set(entry.url);
+
+    // Switch to request tab logic (si hubiera tabs en home, pero aqui solo cargamos)
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Request cargado desde historial')),
+    );
+    // Volver atrás
+    Navigator.pop(context);
   }
 }

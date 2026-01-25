@@ -11,6 +11,15 @@ part 'database.g.dart';
 // TABLAS
 // =============================================================================
 
+/// Configuración de la App (Persistencia simple)
+class AppSettings extends Table {
+  TextColumn get key => text().withLength(min: 1, max: 50)();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
 /// Requests guardados/reutilizables
 class SavedRequests extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -27,11 +36,15 @@ class SavedRequests extends Table {
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
 }
 
-/// Historial automático de ejecuciones
+/// Historial automático de ejecuciones (Ahora con Workspace Context)
 class HistoryEntries extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get savedRequestId =>
       integer().nullable().references(SavedRequests, #id)();
+  // NUEVO: Contexto de Workspace
+  IntColumn get workspaceId =>
+      integer().nullable().references(Collections, #id)();
+
   TextColumn get method => text()();
   TextColumn get url => text()();
   TextColumn get headersJson => text().nullable()();
@@ -43,7 +56,7 @@ class HistoryEntries extends Table {
   DateTimeColumn get executedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-/// Colecciones para organizar requests
+/// Colecciones (Proyectos y Carpetas)
 class Collections extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 1, max: 100)();
@@ -52,23 +65,38 @@ class Collections extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-/// Entornos (Dev, Stage, Prod) - Preparado para Fase 2
+/// Entornos (Dev, Stage, Prod)
+/// Ahora pertenecen a una Colección/Workspace específico.
 class Environments extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 1, max: 50)();
+
+  // NUEVO: Pertenencia a Workspace
+  // Si null, es "Global del Usuario" (disponible en todos o en ninguno? Definamos "Sin Workspace" como su propio contexto)
+  IntColumn get collectionId =>
+      integer().nullable().references(Collections, #id)();
+
   BoolColumn get isActive => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-/// Variables por scope - Preparado para Fase 2
-/// Renombrada a EnvVariables para evitar conflicto con Variable de Drift
+/// Variables (Global del Workspace o Específica del Entorno del Workspace)
 class EnvVariables extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get key => text().withLength(min: 1, max: 100)();
   TextColumn get value => text()();
+  // Scope Env Específico
   IntColumn get environmentId =>
       integer().nullable().references(Environments, #id)();
+  // Scope Global de Workspace
+  IntColumn get collectionId =>
+      integer().nullable().references(Collections, #id)();
+
   TextColumn get scope => text().withDefault(const Constant('global'))();
+  // scope 'env' = environmentId != null
+  // scope 'global' = collectionId != null && environmentId == null
+  // scope 'user_global' = both null (si lo soportamos)
+
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -83,27 +111,179 @@ class EnvVariables extends Table {
     Collections,
     Environments,
     EnvVariables,
+    AppSettings,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 1; // V2 file = New fresh start
 
   // ---------------------------------------------------------------------------
-  // HISTORY QUERIES
+  // APP SETTINGS (KV STORE)
   // ---------------------------------------------------------------------------
 
-  /// Obtener historial reciente (stream reactivo)
-  Stream<List<HistoryEntry>> watchRecentHistory({int limit = 50}) {
+  Future<void> setSetting(String key, String value) {
+    return into(appSettings).insertOnConflictUpdate(
+      AppSettingsCompanion.insert(key: key, value: value),
+    );
+  }
+
+  Future<String?> getSetting(String key) async {
+    final result = await (select(
+      appSettings,
+    )..where((t) => t.key.equals(key))).getSingleOrNull();
+    return result?.value;
+  }
+
+  Stream<String?> watchSetting(String key) {
+    return (select(appSettings)..where((t) => t.key.equals(key)))
+        .watchSingleOrNull()
+        .map((r) => r?.value);
+  }
+
+  // ---------------------------------------------------------------------------
+  // COLLECTIONS (WORKSPACES)
+  // ---------------------------------------------------------------------------
+
+  /// Obtener colecciones raíz (Proyectos/Workspaces)
+  Stream<List<Collection>> watchRootCollections() {
+    return (select(collections)
+          ..where((t) => t.parentId.isNull())
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .watch();
+  }
+
+  Stream<List<Collection>> watchSubCollections(int parentId) {
+    return (select(collections)
+          ..where((t) => t.parentId.equals(parentId))
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .watch();
+  }
+
+  /// Trae TODAS las colecciones para armar árbol en memoria
+  Stream<List<Collection>> watchAllCollections() {
+    return (select(
+      collections,
+    )..orderBy([(t) => OrderingTerm(expression: t.name)])).watch();
+  }
+
+  Stream<List<SavedRequest>> watchRequestsInCollection(int collectionId) {
+    return (select(savedRequests)
+          ..where(
+            (t) =>
+                t.collectionId.equals(collectionId) & t.isDeleted.equals(false),
+          )
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .watch();
+  }
+
+  Stream<List<SavedRequest>> watchUnclassifiedRequests() {
+    return (select(savedRequests)
+          ..where((t) => t.collectionId.isNull() & t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .watch();
+  }
+
+  Future<int> createCollection({
+    required String name,
+    String? description,
+    int? parentId,
+  }) {
+    return into(collections).insert(
+      CollectionsCompanion.insert(
+        name: name,
+        description: Value(description),
+        parentId: Value(parentId),
+      ),
+    );
+  }
+
+  Future<bool> updateCollection(int id, String name, String? description) {
+    return (update(collections)..where((t) => t.id.equals(id)))
+        .write(
+          CollectionsCompanion(
+            name: Value(name),
+            description: Value(description),
+          ),
+        )
+        .then((rows) => rows > 0);
+  }
+
+  Future<void> deleteCollection(int id) async {
+    await transaction(() async {
+      final children = await (select(
+        collections,
+      )..where((t) => t.parentId.equals(id))).get();
+
+      for (final child in children) {
+        await deleteCollection(child.id);
+      }
+
+      await (update(
+        savedRequests,
+      )..where((t) => t.collectionId.equals(id))).write(
+        const SavedRequestsCompanion(
+          isDeleted: Value(true),
+          collectionId: Value(null),
+        ),
+      );
+
+      // Eliminar Entornos asociados al Workspace (si es root)
+      await (delete(
+        environments,
+      )..where((t) => t.collectionId.equals(id))).go();
+
+      await (delete(collections)..where((t) => t.id.equals(id))).go();
+    });
+  }
+
+  Future<bool> moveRequest(int requestId, int? collectionId) async {
+    final count =
+        await (update(savedRequests)..where((t) => t.id.equals(requestId)))
+            .write(SavedRequestsCompanion(collectionId: Value(collectionId)));
+    return count > 0;
+  }
+
+  Future<List<Collection>> getCollectionPath(int collectionId) async {
+    final path = <Collection>[];
+    int? currentId = collectionId;
+
+    while (currentId != null) {
+      final collection = await (select(
+        collections,
+      )..where((t) => t.id.equals(currentId!))).getSingleOrNull();
+
+      if (collection != null) {
+        path.insert(0, collection);
+        currentId = collection.parentId;
+      } else {
+        break;
+      }
+    }
+    return path;
+  }
+
+  // ---------------------------------------------------------------------------
+  // HISTORY QUERIES (Scoped)
+  // ---------------------------------------------------------------------------
+
+  /// Historial filtrado por Workspace
+  Stream<List<HistoryEntry>> watchRecentHistory(
+    int? workspaceId, {
+    int limit = 50,
+  }) {
     return (select(historyEntries)
+          ..where((t) {
+            if (workspaceId == null) return t.workspaceId.isNull();
+            return t.workspaceId.equals(workspaceId);
+          })
           ..orderBy([(t) => OrderingTerm.desc(t.executedAt)])
           ..limit(limit))
         .watch();
   }
 
-  /// Insertar una entrada en el historial
   Future<int> insertHistory({
     required String method,
     required String url,
@@ -114,6 +294,7 @@ class AppDatabase extends _$AppDatabase {
     String? responseBody,
     int? durationMs,
     int? savedRequestId,
+    int? workspaceId, // Add
   }) {
     return into(historyEntries).insert(
       HistoryEntriesCompanion.insert(
@@ -126,34 +307,35 @@ class AppDatabase extends _$AppDatabase {
         responseBody: Value(responseBody),
         durationMs: Value(durationMs),
         savedRequestId: Value(savedRequestId),
+        workspaceId: Value(workspaceId),
       ),
     );
   }
 
-  /// Obtener entrada de historial por ID
   Future<HistoryEntry?> getHistoryById(int id) {
     return (select(
       historyEntries,
     )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
-  /// Limpiar historial antiguo
   Future<int> deleteHistoryOlderThan(DateTime date) {
     return (delete(
       historyEntries,
     )..where((t) => t.executedAt.isSmallerThanValue(date))).go();
   }
 
-  /// Limpiar todo el historial
-  Future<int> clearHistory() {
-    return delete(historyEntries).go();
+  Future<int> clearHistory(int? workspaceId) {
+    return (delete(historyEntries)..where((t) {
+          if (workspaceId == null) return t.workspaceId.isNull();
+          return t.workspaceId.equals(workspaceId);
+        }))
+        .go();
   }
 
   // ---------------------------------------------------------------------------
   // SAVED REQUESTS QUERIES
   // ---------------------------------------------------------------------------
 
-  /// Obtener todos los requests guardados (sin soft delete)
   Stream<List<SavedRequest>> watchSavedRequests() {
     return (select(savedRequests)
           ..where((t) => t.isDeleted.equals(false))
@@ -161,8 +343,8 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
-  /// Guardar un request
-  Future<int> saveRequest({
+  // RENAMED: createRequest matches UI
+  Future<int> createRequest({
     required String name,
     required String method,
     required String url,
@@ -184,7 +366,6 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  /// Soft delete de un request
   Future<bool> softDeleteRequest(int id) async {
     final count = await (update(savedRequests)..where((t) => t.id.equals(id)))
         .write(
@@ -196,7 +377,6 @@ class AppDatabase extends _$AppDatabase {
     return count > 0;
   }
 
-  /// Restaurar un request eliminado
   Future<bool> restoreRequest(int id) async {
     final count = await (update(savedRequests)..where((t) => t.id.equals(id)))
         .write(
@@ -207,16 +387,163 @@ class AppDatabase extends _$AppDatabase {
         );
     return count > 0;
   }
-}
 
-// =============================================================================
-// CONNECTION HELPER
-// =============================================================================
+  // ---------------------------------------------------------------------------
+  // ENVIRONMENTS & VARIABLES QUERIES (Scoped)
+  // ---------------------------------------------------------------------------
+
+  /// Obtener entornos de un workspace dado
+  Stream<List<Environment>> watchEnvironments(int? workspaceId) {
+    return (select(environments)
+          ..where((t) {
+            if (workspaceId == null) return t.collectionId.isNull();
+            return t.collectionId.equals(workspaceId);
+          })
+          ..orderBy([(t) => OrderingTerm(expression: t.name)]))
+        .watch();
+  }
+
+  Stream<int?> watchActiveEnvironmentId(int? workspaceId) {
+    return (select(environments)..where(
+          (t) =>
+              t.isActive.equals(true) &
+              (workspaceId == null
+                  ? t.collectionId.isNull()
+                  : t.collectionId.equals(workspaceId)),
+        ))
+        .watchSingleOrNull()
+        .map((env) => env?.id);
+  }
+
+  Future<int> createEnvironment(String name, int? workspaceId) {
+    return into(environments).insert(
+      EnvironmentsCompanion.insert(
+        name: name,
+        collectionId: Value(workspaceId),
+      ),
+    );
+  }
+
+  Future<void> setActiveEnvironment(int? envId, int? workspaceId) async {
+    // Desactivar todos en ESTE workspace
+    await (update(environments)..where(
+          (t) => workspaceId == null
+              ? t.collectionId.isNull()
+              : t.collectionId.equals(workspaceId),
+        ))
+        .write(const EnvironmentsCompanion(isActive: Value(false)));
+
+    if (envId != null) {
+      await (update(environments)..where((t) => t.id.equals(envId))).write(
+        const EnvironmentsCompanion(isActive: Value(true)),
+      );
+    }
+  }
+
+  Future<int> deleteEnvironment(int id) async {
+    return await transaction(() async {
+      await (delete(
+        envVariables,
+      )..where((t) => t.environmentId.equals(id))).go();
+      return await (delete(environments)..where((t) => t.id.equals(id))).go();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // VARIABLES QUERIES (Updated & Consolidated)
+  // ---------------------------------------------------------------------------
+
+  /// Obtiene las variables resueltas para un contexto dado.
+  /// Trae:
+  /// 1. Variables del entorno activo (si activeEnvId != null)
+  /// 2. Variables globales del workspace (si workspaceId != null)
+  /// 3. Variables globales de usuario (ambos null)
+  Stream<List<EnvVariable>> watchResolvedVariables(
+    int? workspaceId,
+    int? activeEnvId,
+  ) {
+    return (select(envVariables)..where((t) {
+          // Logic:
+          // (environmentId == activeId) OR (collectionId == workspaceId AND environmentId IS NULL)
+
+          Expression<bool> predicate = const Constant(false);
+
+          if (activeEnvId != null) {
+            predicate = predicate | t.environmentId.equals(activeEnvId);
+          }
+
+          if (workspaceId != null) {
+            predicate =
+                predicate |
+                (t.collectionId.equals(workspaceId) & t.environmentId.isNull());
+          } else {
+            // "Sin Clasificar" / Global: traemos las que no tienen ni env ni collection
+            predicate =
+                predicate |
+                (t.collectionId.isNull() & t.environmentId.isNull());
+          }
+
+          return predicate;
+        }))
+        .watch();
+  }
+
+  /// Watch crud variables list (para la pantalla de edición)
+  /// Si envId != null, mostramos variables de ese env.
+  /// Si envId == null, mostramos variables globales del workspace.
+  Stream<List<EnvVariable>> watchVariables(
+    int? workspaceId,
+    int? environmentId,
+  ) {
+    return (select(envVariables)..where((t) {
+          if (environmentId != null) {
+            return t.environmentId.equals(environmentId);
+          }
+          // Globales del workspace
+          if (workspaceId != null) {
+            return t.collectionId.equals(workspaceId) &
+                t.environmentId.isNull();
+          }
+          // Globales de usuario (Sin workspace)
+          return t.collectionId.isNull() & t.environmentId.isNull();
+        }))
+        .watch();
+  }
+
+  Future<int> upsertVariable({
+    int? id,
+    required String key,
+    required String value,
+    int? environmentId,
+    int? workspaceId,
+  }) {
+    if (id != null) {
+      return (update(envVariables)..where((t) => t.id.equals(id))).write(
+        EnvVariablesCompanion(key: Value(key), value: Value(value)),
+      );
+    } else {
+      return into(envVariables).insert(
+        EnvVariablesCompanion.insert(
+          key: key,
+          value: value,
+          environmentId: Value(environmentId),
+          collectionId: Value(workspaceId),
+          scope: Value(environmentId != null ? 'env' : 'global'),
+        ),
+      );
+    }
+  }
+
+  /// Eliminar variable
+  Future<int> deleteVariable(int id) {
+    return (delete(envVariables)..where((t) => t.id.equals(id))).go();
+  }
+}
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'xolo.sqlite'));
+    final file = File(p.join(dbFolder.path, 'xolo_v3.sqlite'));
     return NativeDatabase.createInBackground(file);
   });
 }

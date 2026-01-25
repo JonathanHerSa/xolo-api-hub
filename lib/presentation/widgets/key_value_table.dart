@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../domain/entities/key_value_pair.dart';
 import '../providers/form_providers.dart';
 
-class KeyValueTable extends ConsumerWidget {
-  final StateNotifierProvider<KeyValueNotifier, List<KeyValuePair>> provider;
+class KeyValueTable<N extends KeyValueNotifier> extends ConsumerWidget {
+  final NotifierProvider<N, List<KeyValuePair>> provider;
   final String keyPlaceholder;
   final String valuePlaceholder;
 
@@ -19,8 +18,8 @@ class KeyValueTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rows = ref.watch(provider);
-    final notifier = ref.read(provider.notifier);
+    final rows = ref.watch(provider); // Watch state
+    final notifier = ref.read(provider.notifier); // Get notifier instance
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -47,7 +46,7 @@ class KeyValueTable extends ConsumerWidget {
               // Toggle Active
               GestureDetector(
                 onTap: () {
-                  // Toggle active state (to be implemented in notifier)
+                  // Toggle active logic here
                 },
                 child: Container(
                   width: 18,
@@ -83,14 +82,12 @@ class KeyValueTable extends ConsumerWidget {
                 ),
               ),
 
-              // Equals sign
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   '=',
                   style: TextStyle(
                     color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w300,
                     fontSize: 16,
                   ),
                 ),
@@ -108,7 +105,7 @@ class KeyValueTable extends ConsumerWidget {
                 ),
               ),
 
-              // Delete Button
+              // Delete
               if (!isLast)
                 IconButton(
                   icon: Icon(
@@ -116,13 +113,12 @@ class KeyValueTable extends ConsumerWidget {
                     size: 16,
                     color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                   ),
+                  padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(
                     minWidth: 32,
                     minHeight: 32,
                   ),
-                  padding: EdgeInsets.zero,
                   onPressed: () => notifier.removeRow(index),
-                  splashRadius: 16,
                 )
               else
                 const SizedBox(width: 32),
@@ -141,7 +137,6 @@ class KeyValueTable extends ConsumerWidget {
     required bool isKey,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-
     return TextFormField(
       initialValue: initialValue,
       decoration: InputDecoration(

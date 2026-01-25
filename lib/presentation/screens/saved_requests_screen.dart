@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,299 +5,427 @@ import '../../core/theme/xolo_theme.dart';
 import '../../data/local/database.dart';
 import '../providers/database_providers.dart';
 import '../providers/form_providers.dart';
+import '../providers/request_provider.dart';
+import '../providers/collections_provider.dart';
+import '../providers/workspace_provider.dart';
+import 'collection_detail_screen.dart';
 
-class SavedRequestsScreen extends ConsumerWidget {
+class SavedRequestsScreen extends ConsumerStatefulWidget {
   const SavedRequestsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final savedAsync = ref.watch(savedRequestsStreamProvider);
-    final colorScheme = Theme.of(context).colorScheme;
+  ConsumerState<SavedRequestsScreen> createState() =>
+      _SavedRequestsScreenState();
+}
+
+class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final rootCollectionsAsync = ref.watch(rootCollectionsProvider);
+    final unclassifiedAsync = ref.watch(unclassifiedRequestsProvider);
+    final activeWorkspaceId = ref.watch(activeWorkspaceIdProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis Requests')),
-      body: savedAsync.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(color: colorScheme.primary),
-        ),
-        error: (err, stack) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: colorScheme.error),
-              const SizedBox(height: 12),
-              Text('Error: $err', style: TextStyle(color: colorScheme.error)),
-            ],
+      appBar: AppBar(
+        title: const Text('Mis Proyectos y Requests'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.create_new_folder_outlined),
+            tooltip: 'Nuevo Proyecto',
+            onPressed: () => _showCreateCollectionDialog(null),
           ),
-        ),
-        data: (requests) {
-          if (requests.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.folder_open_outlined,
-                    size: 64,
-                    color: colorScheme.outline,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Sin requests guardados',
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Guarda requests con el botón ★',
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.7,
-                      ),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: requests.length,
-            itemBuilder: (context, index) {
-              return _SavedRequestTile(request: requests[index]);
-            },
-          );
-        },
+        ],
       ),
-    );
-  }
-}
-
-class _SavedRequestTile extends ConsumerWidget {
-  final SavedRequest request;
-
-  const _SavedRequestTile({required this.request});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final methodColor = XoloTheme.getMethodColor(request.method);
-
-    return Dismissible(
-      key: Key('saved_${request.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
-        color: colorScheme.error,
-        child: const Icon(Icons.delete_outline, color: Colors.white),
-      ),
-      confirmDismiss: (direction) async {
-        return await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: const Text('¿Eliminar request?'),
-                content: Text('Se eliminará "${request.name}"'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('Cancelar'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    child: Text(
-                      'Eliminar',
-                      style: TextStyle(color: colorScheme.error),
-                    ),
-                  ),
-                ],
-              ),
-            ) ??
-            false;
-      },
-      onDismissed: (direction) async {
-        final db = ref.read(databaseProvider);
-        await db.softDeleteRequest(request.id);
-      },
-      child: InkWell(
-        onTap: () => _loadRequest(context, ref),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: colorScheme.outline.withValues(alpha: 0.3),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'PROYECTOS / WORKSPACES',
+                style: TextStyle(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                  fontSize: 12,
+                ),
               ),
             ),
-          ),
-          child: Row(
-            children: [
-              // Method badge
-              Container(
-                width: 56,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  color: methodColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  request.method,
-                  style: TextStyle(
-                    color: methodColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
+
+            rootCollectionsAsync.when(
+              data: (collections) {
+                if (collections.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Card(
+                      color: colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.3,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.lightbulb_outline,
+                              color: colorScheme.tertiary,
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Crea un proyecto para aislar tus entornos y variables.',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: collections.length,
+                  itemBuilder: (context, index) {
+                    final col = collections[index];
+                    final isActive = activeWorkspaceId == col.id;
+
+                    return ListTile(
+                      leading: Icon(
+                        isActive ? Icons.folder_special : Icons.folder,
+                        color: isActive
+                            ? colorScheme.primary
+                            : colorScheme.secondary,
+                      ),
+                      title: Text(
+                        col.name,
+                        style: TextStyle(
+                          fontWeight: isActive
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      subtitle: Text(col.description ?? ""),
+                      trailing: PopupMenuButton<String>(
+                        onSelected: (val) {
+                          if (val == 'delete') _confirmDeleteCollection(col);
+                          if (val == 'activate')
+                            ref
+                                .read(activeWorkspaceIdProvider.notifier)
+                                .setWorkspace(col.id);
+                        },
+                        itemBuilder: (ctx) => [
+                          if (!isActive)
+                            const PopupMenuItem(
+                              value: 'activate',
+                              child: Text('Activar Workspace'),
+                            ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text(
+                              'Eliminar',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                CollectionDetailScreen(collection: col),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: LinearProgressIndicator()),
+              error: (e, s) => Text('Error: $e'),
+            ),
+
+            const Divider(height: 32),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Text(
+                    'SIN CLASIFICAR',
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                      fontSize: 12,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                  const Spacer(),
+                  Icon(
+                    Icons.bug_report_outlined,
+                    size: 16,
+                    color: colorScheme.outline,
+                  ),
+                ],
               ),
-              const SizedBox(width: 14),
+            ),
 
-              // Name and URL
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      request.name,
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+            unclassifiedAsync.when(
+              data: (requests) {
+                if (requests.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Center(
+                      child: Text(
+                        'No hay requests sueltos',
+                        style: TextStyle(color: colorScheme.outline),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _truncateUrl(request.url),
-                      style: TextStyle(
-                        color: colorScheme.onSurfaceVariant,
-                        fontSize: 12,
+                  );
+                }
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: requests.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, indent: 16),
+                  itemBuilder: (ctx, index) {
+                    final req = requests[index];
+                    final methodColor = XoloTheme.getMethodColor(req.method);
+                    return ListTile(
+                      dense: true,
+                      leading: Text(
+                        req.method,
+                        style: TextStyle(
+                          color: methodColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
+                      title: Text(req.name),
+                      subtitle: Text(
+                        req.url,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () => _loadRequest(req),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.more_vert),
+                        onPressed: () {
+                          ref.read(databaseProvider).softDeleteRequest(req.id);
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+              loading: () => const SizedBox(
+                height: 50,
+                child: Center(child: CircularProgressIndicator()),
               ),
-
-              Icon(Icons.chevron_right, color: colorScheme.outline),
-            ],
-          ),
+              error: (e, s) => Text('Error: $e'),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _loadRequest(BuildContext context, WidgetRef ref) {
-    ref.read(selectedMethodProvider.notifier).state = request.method;
-    ref.read(urlQueryProvider.notifier).state = request.url;
-    if (request.body != null) {
-      ref.read(bodyContentProvider.notifier).state = request.body!;
+  void _loadRequest(SavedRequest req) {
+    ref.read(selectedMethodProvider.notifier).set(req.method);
+    ref.read(urlQueryProvider.notifier).set(req.url);
+    if (req.body != null) {
+      ref.read(bodyContentProvider.notifier).update(req.body!);
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Cargado: ${request.name}'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-    Navigator.pop(context);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Cargado: ${req.name}')));
+    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
-  String _truncateUrl(String url) {
-    return url.replaceFirst('https://', '').replaceFirst('http://', '');
+  Future<void> _showCreateCollectionDialog(int? parentId) async {
+    final controller = TextEditingController();
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nuevo Proyecto / Carpeta'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: 'Nombre'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (controller.text.isNotEmpty) {
+                await ref
+                    .read(collectionsControllerProvider.notifier)
+                    .createCollection(
+                      name: controller.text,
+                      parentId: parentId,
+                    );
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Crear'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteCollection(Collection col) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Eliminar "${col.name}"?'),
+        content: const Text(
+          'Se eliminarán todos los requests y entornos contenidos. Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              final activeId = ref.read(activeWorkspaceIdProvider);
+              if (activeId == col.id) {
+                ref.read(activeWorkspaceIdProvider.notifier).setWorkspace(null);
+              }
+              await ref.read(databaseProvider).deleteCollection(col.id);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Eliminar Todo'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-// ============================================================================
-// DIALOG PARA GUARDAR REQUEST
-// ============================================================================
-
+// FUNCION GLOBAL PARA LLAMAR DESDE HOME
 Future<void> showSaveRequestDialog({
   required BuildContext context,
   required WidgetRef ref,
 }) async {
-  final nameController = TextEditingController();
-  final colorScheme = Theme.of(context).colorScheme;
-
-  final result = await showDialog<String>(
+  await showDialog(
     context: context,
-    builder: (ctx) => AlertDialog(
+    builder: (context) => _SaveRequestDialog(ref: ref),
+  );
+}
+
+class _SaveRequestDialog extends StatefulWidget {
+  final WidgetRef ref;
+  const _SaveRequestDialog({required this.ref});
+
+  @override
+  State<_SaveRequestDialog> createState() => _SaveRequestDialogState();
+}
+
+class _SaveRequestDialogState extends State<_SaveRequestDialog> {
+  final _nameCtrl = TextEditingController();
+  int? _selectedCollectionId; // Null = Unclassified
+
+  @override
+  Widget build(BuildContext context) {
+    final collectionsAsync = widget.ref.watch(
+      flattenedCollectionsStreamProvider,
+    );
+
+    return AlertDialog(
       title: const Text('Guardar Request'),
-      content: TextField(
-        controller: nameController,
-        autofocus: true,
-        decoration: InputDecoration(
-          hintText: 'Nombre del request',
-          filled: true,
-          fillColor: colorScheme.surfaceContainerHighest,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Nombre del Request',
+                hintText: 'Ej: Get Users',
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<int?>(
+              decoration: const InputDecoration(
+                labelText: 'Carpeta / Proyecto',
+              ),
+              initialValue: _selectedCollectionId,
+              isExpanded: true,
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Sin Clasificar (Raíz)'),
+                ),
+                ...collectionsAsync.when(
+                  data: (cols) => cols.map(
+                    (c) => DropdownMenuItem(
+                      value: c.collection.id,
+                      child: Text(
+                        // Indentación visual usando espacios no rompibles o unicode arrows
+                        '${'  ' * c.depth}${c.depth > 0 ? '└ ' : ''}${c.collection.name}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  loading: () => [],
+                  error: (_, __) => [],
+                ),
+              ],
+              onChanged: (val) => setState(() => _selectedCollectionId = val),
+            ),
+          ],
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(ctx),
+          onPressed: () => Navigator.pop(context),
           child: const Text('Cancelar'),
         ),
-        TextButton(
-          onPressed: () {
-            final name = nameController.text.trim();
-            if (name.isNotEmpty) {
-              Navigator.pop(ctx, name);
+        FilledButton.icon(
+          label: const Text('Guardar'),
+          icon: const Icon(Icons.save),
+          onPressed: () async {
+            if (_nameCtrl.text.isEmpty) return;
+
+            final name = _nameCtrl.text;
+            final collectionId = _selectedCollectionId;
+
+            final method = widget.ref.read(selectedMethodProvider);
+            final url = widget.ref.read(urlQueryProvider);
+            final body = widget.ref.read(bodyContentProvider);
+
+            await widget.ref
+                .read(databaseProvider)
+                .createRequest(
+                  name: name,
+                  method: method,
+                  url: url,
+                  body: body,
+                  collectionId: collectionId,
+                );
+
+            if (context.mounted) {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Request guardado exitosamente')),
+              );
             }
           },
-          child: const Text('Guardar'),
         ),
       ],
-    ),
-  );
-
-  if (result != null && result.isNotEmpty) {
-    await _saveCurrentRequest(ref, result);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Guardado: $result'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
+    );
   }
-}
-
-Future<void> _saveCurrentRequest(WidgetRef ref, String name) async {
-  final db = ref.read(databaseProvider);
-  final method = ref.read(selectedMethodProvider);
-  final url = ref.read(urlQueryProvider);
-  final body = ref.read(bodyContentProvider);
-  final headersList = ref.read(headersProvider);
-  final paramsList = ref.read(paramsProvider);
-
-  final Map<String, String> headersMap = {};
-  for (var item in headersList) {
-    if (item.key.isNotEmpty && item.isActive) {
-      headersMap[item.key] = item.value;
-    }
-  }
-
-  final Map<String, String> paramsMap = {};
-  for (var item in paramsList) {
-    if (item.key.isNotEmpty && item.isActive) {
-      paramsMap[item.key] = item.value;
-    }
-  }
-
-  await db.saveRequest(
-    name: name,
-    method: method,
-    url: url,
-    body: body.isNotEmpty ? body : null,
-    headersJson: headersMap.isNotEmpty ? jsonEncode(headersMap) : null,
-    paramsJson: paramsMap.isNotEmpty ? jsonEncode(paramsMap) : null,
-  );
 }
