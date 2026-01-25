@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// JSON Viewer optimizado con nodos colapsables
 /// INICIA COLAPSADO para evitar renderizar todo de golpe
@@ -27,13 +29,66 @@ class _JsonViewerState extends State<JsonViewer> {
 
   @override
   Widget build(BuildContext context) {
-    return Scrollbar(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: _buildNode(widget.data, '', 0, null),
-      ),
+    return Stack(
+      children: [
+        SelectionArea(
+          child: Scrollbar(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: _buildNode(widget.data, '', 0, null),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: IconButton(
+            icon: const Icon(Icons.copy, size: 16),
+            tooltip: 'Copiar JSON',
+            style: IconButton.styleFrom(
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+              padding: const EdgeInsets.all(8),
+            ),
+            onPressed: () {
+              final text = const JsonEncoder.withIndent(
+                '  ',
+              ).convert(widget.data);
+              Clipboard.setData(ClipboardData(text: text));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('JSON copiado al portapapeles')),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
+
+  // ... (rest of build methods)
+
+  // --- REFINED COLORS (Dracula/Monokai inspired but cleaner) ---
+
+  static const _darkColors = _JsonColors(
+    key: Color(0xFFFF7B72), // Soft Red (GitHub Dark key)
+    string: Color(0xFFA5D6FF), // Soft Blue/Cyan
+    number: Color(0xFF79C0FF), // Blue
+    boolean: Color(0xFF56D364), // Green
+    nullValue: Color(0xFF6E7681), // Grey
+    punctuation: Color(0xFFC9D1D9), // White/Grey
+    collapsed: Color(0xFF8B949E),
+  );
+
+  static const _lightColors = _JsonColors(
+    key: Color(0xFFD32F2F), // Crimson
+    string: Color(0xFF0984E3), // Vibrant Blue
+    number: Color(0xFF0097E6), // Bright Blue
+    boolean: Color(0xFF27AE60), // Green
+    nullValue: Color(0xFF7F8C8D),
+    punctuation: Color(0xFF2D3436),
+    collapsed: Color(0xFFAAAAAA),
+  );
 
   Widget _buildNode(dynamic value, String path, int indent, String? keyName) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -271,26 +326,6 @@ class _JsonViewerState extends State<JsonViewer> {
       }
     });
   }
-
-  static const _darkColors = _JsonColors(
-    key: Color(0xFFF87171), // Coral (carmesí claro)
-    string: Color(0xFF34D399), // Verde
-    number: Color(0xFFFBBF24), // Amarillo
-    boolean: Color(0xFF60A5FA), // Azul
-    nullValue: Color(0xFF6B7280),
-    punctuation: Color(0xFF6B7280),
-    collapsed: Color(0xFF9CA3AF),
-  );
-
-  static const _lightColors = _JsonColors(
-    key: Color(0xFFB91C1C), // Carmesí
-    string: Color(0xFF059669), // Verde
-    number: Color(0xFFD97706), // Naranja
-    boolean: Color(0xFF2563EB), // Azul
-    nullValue: Color(0xFF6B7280),
-    punctuation: Color(0xFF6B7280),
-    collapsed: Color(0xFF9CA3AF),
-  );
 }
 
 class _JsonColors {

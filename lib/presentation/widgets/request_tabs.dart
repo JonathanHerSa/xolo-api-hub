@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/form_providers.dart';
 import '../providers/request_provider.dart';
+import '../providers/request_session_provider.dart';
 
 import 'key_value_table.dart';
 import 'json_viewer.dart';
 
 class RequestTabs extends ConsumerStatefulWidget {
-  const RequestTabs({super.key});
+  final String tabId;
+  const RequestTabs({super.key, required this.tabId});
 
   @override
   ConsumerState<RequestTabs> createState() => _RequestTabsState();
@@ -31,21 +32,53 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
 
   @override
   Widget build(BuildContext context) {
-    final requestState = ref.watch(requestProvider);
+    // 1. Watch Request State (Execution)
+    final requestAsync = ref.watch(requestProvider(widget.tabId));
+    final requestState = requestAsync.asData?.value;
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    // Combined Loading State
+    final isLoading =
+        requestAsync.isLoading || (requestState?.isLoading ?? false);
+    final error = requestAsync.error?.toString() ?? requestState?.error;
+    final statusCode = requestState?.statusCode;
+    final data = requestState?.data;
+
     // Auto-switch to response tab on success
-    ref.listen(requestProvider, (previous, next) {
-      if ((previous?.isLoading == true) &&
-          (next.isLoading == false) &&
-          (next.data != null || next.error != null)) {
+    ref.listen(requestProvider(widget.tabId), (previous, next) {
+      final prevLoading =
+          previous?.isLoading == true ||
+          (previous?.asData?.value.isLoading ?? false);
+      final nextLoading =
+          next.isLoading || (next.asData?.value.isLoading ?? false);
+
+      final nextData = next.asData?.value.data;
+      final nextError = next.error ?? next.asData?.value.error;
+
+      if (prevLoading &&
+          !nextLoading &&
+          (nextData != null || nextError != null)) {
         _tabController.animateTo(3); // Index 3 = Response
       }
     });
 
     return Column(
       children: [
+        if (isLoading) const LinearProgressIndicator(),
+
+        if (error != null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8),
+            color: Colors.red.withValues(alpha: 0.1),
+            child: Text(
+              'Error: $error',
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+
         TabBar(
           controller: _tabController,
           labelColor: colorScheme.primary,
@@ -60,12 +93,10 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Respons',
-                  ), // "Respons" para ahorrar espacio? Mejor Response.
-                  if (requestState.statusCode != null) ...[
+                  const Text('Response'),
+                  if (statusCode != null) ...[
                     const SizedBox(width: 4),
-                    _StatusBadge(statusCode: requestState.statusCode!),
+                    _StatusBadge(statusCode: statusCode),
                   ],
                 ],
               ),
@@ -78,21 +109,23 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
             children: [
               // 1. PARAMS
               KeyValueTable(
-                provider: paramsProvider,
+                tabId: widget.tabId,
+                type: TableType.params,
                 keyPlaceholder: 'Query Param',
               ),
 
               // 2. HEADERS
               KeyValueTable(
-                provider: headersProvider,
+                tabId: widget.tabId,
+                type: TableType.headers,
                 keyPlaceholder: 'Header',
               ),
 
               // 3. BODY
-              const _BodyTab(),
+              _BodyTab(tabId: widget.tabId),
 
               // 4. RESPONSE
-              _ResponseTab(state: requestState),
+              _ResponseTab(isLoading: isLoading, data: data, error: error),
             ],
           ),
         ),
@@ -129,33 +162,58 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-class _BodyTab extends ConsumerWidget {
-  const _BodyTab();
+class _BodyTab extends ConsumerStatefulWidget {
+  final String tabId;
+  const _BodyTab({required this.tabId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final bodyContent = ref.watch(bodyContentProvider);
-    // Usamos un TextEditingController DESCARTABLE para mostrar el valor actual.
-    // Para escribir, usamos onChanged.
-    // Esto evita el problema de cursor si mantenemos el provider sync? NO.
-    // El cursor salta al final si reconstruimos el controller.
-    // Usamos un controller persistente en State si queremos.
-    // Para brevedad, TextController.fromValue con selection al final?
+  ConsumerState<_BodyTab> createState() => _BodyTabState();
+}
 
-    final controller = TextEditingController.fromValue(
-      TextEditingValue(
-        text: bodyContent,
-        selection: TextSelection.collapsed(
-          offset: bodyContent.length,
-        ), // Cursor al final siempre
-      ),
+class _BodyTabState extends ConsumerState<_BodyTab> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialBody =
+        ref.read(requestSessionProvider(widget.tabId)).asData?.value.body ?? '';
+    _controller = TextEditingController(text: initialBody);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<AsyncValue<RequestSession>>(
+      requestSessionProvider(widget.tabId),
+      (previous, next) {
+        final nextBody = next.asData?.value.body;
+        final prevBody = previous?.asData?.value.body;
+        
+        if (nextBody != null && _controller.text != nextBody) {
+             // Sync if it's an external load (previous empty/null)
+             if ((prevBody == null || prevBody.isEmpty) && nextBody.isNotEmpty) {
+                 _controller.text = nextBody;
+             }
+             // For now, we avoid overwriting user typing if they differ slightly
+             // but if they are drastically different (external reset), we should sync.
+             // Relying on previous being empty is a heuristic for "Load Request".
+        }
+      },
+      fireImmediately: true,
     );
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: TextField(
-        controller: controller,
-        onChanged: (val) => ref.read(bodyContentProvider.notifier).state = val,
+        controller: _controller,
+        onChanged: (val) =>
+            ref.read(requestSessionControllerProvider(widget.tabId)).setBody(val),
         maxLines: null,
         expands: true,
         textAlignVertical: TextAlignVertical.top,
@@ -170,30 +228,32 @@ class _BodyTab extends ConsumerWidget {
 }
 
 class _ResponseTab extends StatelessWidget {
-  final RequestState state;
+  final bool isLoading;
+  final dynamic data;
+  final String? error;
 
-  const _ResponseTab({required this.state});
+  const _ResponseTab({required this.isLoading, this.data, this.error});
 
   @override
   Widget build(BuildContext context) {
-    if (state.isLoading) {
+    if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (state.error != null) {
+    if (error != null) {
       return Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: SelectableText(
             // Copy paste enabled
-            'Error:\n${state.error}',
+            'Error:\n$error',
             style: const TextStyle(color: Colors.red, fontFamily: 'monospace'),
           ),
         ),
       );
     }
 
-    if (state.data == null) {
+    if (data == null) {
       return Center(
         child: Text(
           'Sin respuesta',
@@ -203,6 +263,6 @@ class _ResponseTab extends StatelessWidget {
     }
 
     // JSON Viewer correcto
-    return JsonViewer(data: state.data);
+    return JsonViewer(data: data);
   }
 }

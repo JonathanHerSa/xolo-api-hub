@@ -246,6 +246,14 @@ class AppDatabase extends _$AppDatabase {
     return count > 0;
   }
 
+  Future<bool> moveCollection(int collectionId, int? newParentId) async {
+    if (collectionId == newParentId) return false;
+    final count =
+        await (update(collections)..where((t) => t.id.equals(collectionId)))
+            .write(CollectionsCompanion(parentId: Value(newParentId)));
+    return count > 0;
+  }
+
   Future<List<Collection>> getCollectionPath(int collectionId) async {
     final path = <Collection>[];
     int? currentId = collectionId;
@@ -309,6 +317,30 @@ class AppDatabase extends _$AppDatabase {
         savedRequestId: Value(savedRequestId),
         workspaceId: Value(workspaceId),
       ),
+    );
+  }
+
+  // Alias for better readability / consistency with provider usage
+  Future<int> addHistoryItem({
+    required String method,
+    required String url,
+    int? statusCode,
+    int? durationMs,
+    int? responseSize, // Not stored in DB currently, ignored or mapped?
+    // DB has 'responseBody', provider passes 'responseSize'.
+    // Provider passed 'responseSize' but it wasn't in DB Schema?
+    // Let's check provider usage.
+    int? workspaceId,
+  }) {
+    // Provider calls: addHistoryItem(method, url, statusCode, durationMs, responseSize, workspaceId)
+    // We update params to match what we have.
+    return insertHistory(
+      method: method,
+      url: url,
+      statusCode: statusCode,
+      durationMs: durationMs,
+      workspaceId: workspaceId,
+      // We don't store responseSize explicitly in DB yet, doing nothing with it.
     );
   }
 

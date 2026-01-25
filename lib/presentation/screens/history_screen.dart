@@ -10,6 +10,8 @@ import '../providers/history_provider.dart';
 import '../providers/request_provider.dart';
 import '../providers/form_providers.dart';
 import '../providers/workspace_provider.dart';
+import '../providers/tabs_provider.dart';
+import '../providers/request_session_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -223,13 +225,26 @@ class _HistoryItem extends ConsumerWidget {
   }
 
   void _loadHistoryItem(BuildContext context, WidgetRef ref) {
-    ref.read(requestProvider.notifier).replayFromHistory(entry);
-    ref.read(selectedMethodProvider.notifier).set(entry.method);
-    ref.read(urlQueryProvider.notifier).set(entry.url);
+    // 1. Create new tab
+    final newTabId = ref.read(tabsProvider.notifier).addTab();
 
-    // Switch to request tab logic (si hubiera tabs en home, pero aqui solo cargamos)
+    // 2. Populate Session State
+    final sessionController = ref.read(
+      requestSessionControllerProvider(newTabId),
+    );
+    sessionController.setMethod(entry.method);
+    sessionController.setUrl(entry.url);
+    // Note: History currently doesn't store body or headers in a structured way to restore perfectly,
+    // but we restore what we have. Future improvement: Store full request snapshot.
+
+    // 3. Set Active
+    ref.read(tabsProvider.notifier).setActiveTab(newTabId);
+
+    // 4. Restore Response (Optional, for "Replay" feel) => Maybe not needed if we want user to click "Send"
+    // If we want to show the PAST response, we'd need to populate requestProvider(newTabId).restoreResponse(...)
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Request cargado desde historial')),
+      const SnackBar(content: Text('Request cargado en nueva pestaña')),
     );
     // Volver atrás
     Navigator.pop(context);

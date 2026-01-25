@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/xolo_theme.dart';
 import '../../data/local/database.dart';
 import '../providers/database_providers.dart';
-import '../providers/form_providers.dart';
-import '../providers/request_provider.dart';
 import '../providers/collections_provider.dart';
+import '../providers/workspace_provider.dart';
+import '../providers/tabs_provider.dart';
+import '../providers/request_session_provider.dart';
+import '../widgets/draggable_tiles.dart';
 
 class CollectionDetailScreen extends ConsumerWidget {
   final Collection collection;
@@ -17,6 +18,7 @@ class CollectionDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final activeWorkspaceId = ref.watch(activeWorkspaceIdProvider);
 
     // Observamos sub-colecciones y requests
     final subCollectionsAsync = ref.watch(
@@ -29,7 +31,7 @@ class CollectionDetailScreen extends ConsumerWidget {
         title: Text(collection.name),
         actions: [
           IconButton(
-            icon: const Icon(Icons.note_add_outlined), // o post_add
+            icon: const Icon(Icons.note_add_outlined),
             tooltip: 'Nuevo Request',
             onPressed: () => _showCreateRequestDialog(context, ref),
           ),
@@ -41,7 +43,6 @@ class CollectionDetailScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             onPressed: () {
-              // Editar esta carpeta
               _showEditCollectionDialog(context, ref);
             },
           ),
@@ -70,15 +71,10 @@ class CollectionDetailScreen extends ConsumerWidget {
                       ),
                     ),
                     ...subs.map(
-                      (sub) => ListTile(
-                        leading: Icon(
-                          Icons.folder,
-                          color: colorScheme.secondary,
-                        ),
-                        title: Text(sub.name),
-                        trailing: const Icon(Icons.chevron_right, size: 16),
+                      (sub) => DraggableCollectionTile(
+                        collection: sub,
+                        activeWorkspaceId: activeWorkspaceId,
                         onTap: () {
-                          // Navegar recursivamente
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -87,10 +83,13 @@ class CollectionDetailScreen extends ConsumerWidget {
                             ),
                           );
                         },
-                        onLongPress: () {
-                          // Opciones de borrar subcarpeta
-                          _confirmDeleteCollection(context, ref, sub);
+                        onActivate: () {
+                          ref
+                              .read(activeWorkspaceIdProvider.notifier)
+                              .setWorkspace(sub.id);
                         },
+                        onDelete: () =>
+                            _confirmDeleteCollection(context, ref, sub),
                       ),
                     ),
                     const Divider(),
@@ -105,8 +104,6 @@ class CollectionDetailScreen extends ConsumerWidget {
             requestsAsync.when(
               data: (requests) {
                 if (requests.isEmpty) {
-                  // Si no hay requests y no hay subcarpetas (check via provider async value? complicado aqui)
-                  // Simplemente mostramos mensaje si la lista es vacía.
                   return Padding(
                     padding: const EdgeInsets.all(32.0),
                     child: Center(
@@ -116,7 +113,7 @@ class CollectionDetailScreen extends ConsumerWidget {
                           Icon(
                             Icons.insert_drive_file_outlined,
                             size: 48,
-                            color: colorScheme.outline.withOpacity(0.3),
+                            color: colorScheme.outline.withValues(alpha: 0.3),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -151,51 +148,12 @@ class CollectionDetailScreen extends ConsumerWidget {
                       itemCount: requests.length,
                       itemBuilder: (context, index) {
                         final req = requests[index];
-                        final methodColor = XoloTheme.getMethodColor(
-                          req.method,
-                        );
-
-                        return ListTile(
-                          leading: SizedBox(
-                            width: 50,
-                            child: Text(
-                              req.method,
-                              style: TextStyle(
-                                color: methodColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            req.name,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          subtitle: Text(
-                            req.url,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (value) async {
-                              if (value == 'delete') {
-                                final db = ref.read(databaseProvider);
-                                await db.softDeleteRequest(req.id);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Text(
-                                  'Eliminar',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          ),
-                          onTap: () {
-                            _loadRequest(context, ref, req);
+                        return DraggableRequestTile(
+                          req: req,
+                          onTap: () => _loadRequest(context, ref, req),
+                          onDelete: () async {
+                            final db = ref.read(databaseProvider);
+                            await db.softDeleteRequest(req.id);
                           },
                         );
                       },
@@ -219,12 +177,22 @@ class CollectionDetailScreen extends ConsumerWidget {
   }
 
   void _loadRequest(BuildContext context, WidgetRef ref, SavedRequest req) {
-    ref.read(selectedMethodProvider.notifier).set(req.method);
-    ref.read(urlQueryProvider.notifier).set(req.url);
+    // 1. Create new tab
+    final newTabId = ref.read(tabsProvider.notifier).addTab();
+
+    // 2. Populate Session State
+    final sessionController = ref.read(
+      requestSessionControllerProvider(newTabId),
+    );
+    sessionController.setMethod(req.method);
+    sessionController.setUrl(req.url);
+    sessionController.setName(req.name);
 
     if (req.body != null) {
-      ref.read(bodyContentProvider.notifier).update(req.body!);
+      sessionController.setBody(req.body!);
     }
+    // 3. Set Active
+    ref.read(tabsProvider.notifier).setActiveTab(newTabId);
 
     ScaffoldMessenger.of(
       context,
@@ -369,13 +337,7 @@ class CollectionDetailScreen extends ConsumerWidget {
                     );
                 if (ctx.mounted) {
                   Navigator.pop(ctx);
-                  // Si el nombre cambia, el AppBar se actualiza reactivamente por el stream si estuviéramos viendo el stream
-                  // pero CollectionDetailScreen recibe 'collection' estático en constructor.
-                  // Problema: El título no cambiará hasta que volvamos atrás y entremos.
-                  // Solución: El widget debería observar la colección viva, no usar la estática excepto para ID.
-                  // Por simplicidad del fix rapido: Navigation pop o message.
-                  // Mejor: Hacer pop para forzar refresh al volver a entrar
-                  // Navigator.pop(context);
+                  Navigator.pop(context); // Force refresh by going back
                 }
               }
             },
@@ -391,6 +353,29 @@ class CollectionDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     Collection col,
   ) {
-    ref.read(collectionsControllerProvider.notifier).deleteCollection(col.id);
+    // Show confirmation logic
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Eliminar "${col.name}"?'),
+        content: const Text('Se eliminarán todos los requests contenidos.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              ref
+                  .read(collectionsControllerProvider.notifier)
+                  .deleteCollection(col.id);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
   }
 }

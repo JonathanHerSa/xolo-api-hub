@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/xolo_theme.dart';
 import '../../data/local/database.dart';
 import '../providers/database_providers.dart';
 import '../providers/form_providers.dart';
-import '../providers/request_provider.dart';
 import '../providers/collections_provider.dart';
 import '../providers/workspace_provider.dart';
+import '../providers/tabs_provider.dart';
+import '../providers/request_session_provider.dart';
 import 'collection_detail_screen.dart';
+import '../widgets/draggable_tiles.dart'; // IMPORT SHARED TILES
 
 class SavedRequestsScreen extends ConsumerStatefulWidget {
   const SavedRequestsScreen({super.key});
@@ -43,6 +44,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- WORKSPACES / COLLECTIONS ---
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
@@ -59,31 +61,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
             rootCollectionsAsync.when(
               data: (collections) {
                 if (collections.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Card(
-                      color: colorScheme.surfaceContainerHighest.withValues(
-                        alpha: 0.3,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.lightbulb_outline,
-                              color: colorScheme.tertiary,
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text(
-                                'Crea un proyecto para aislar tus entornos y variables.',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
+                  return _buildEmptyState(colorScheme);
                 }
 
                 return ListView.builder(
@@ -92,47 +70,9 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
                   itemCount: collections.length,
                   itemBuilder: (context, index) {
                     final col = collections[index];
-                    final isActive = activeWorkspaceId == col.id;
-
-                    return ListTile(
-                      leading: Icon(
-                        isActive ? Icons.folder_special : Icons.folder,
-                        color: isActive
-                            ? colorScheme.primary
-                            : colorScheme.secondary,
-                      ),
-                      title: Text(
-                        col.name,
-                        style: TextStyle(
-                          fontWeight: isActive
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                      ),
-                      subtitle: Text(col.description ?? ""),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (val) {
-                          if (val == 'delete') _confirmDeleteCollection(col);
-                          if (val == 'activate')
-                            ref
-                                .read(activeWorkspaceIdProvider.notifier)
-                                .setWorkspace(col.id);
-                        },
-                        itemBuilder: (ctx) => [
-                          if (!isActive)
-                            const PopupMenuItem(
-                              value: 'activate',
-                              child: Text('Activar Workspace'),
-                            ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Text(
-                              'Eliminar',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
-                      ),
+                    return DraggableCollectionTile(
+                      collection: col,
+                      activeWorkspaceId: activeWorkspaceId,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -142,6 +82,12 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
                           ),
                         );
                       },
+                      onActivate: () {
+                        ref
+                            .read(activeWorkspaceIdProvider.notifier)
+                            .setWorkspace(col.id);
+                      },
+                      onDelete: () => _confirmDeleteCollection(col),
                     );
                   },
                 );
@@ -152,95 +98,147 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
 
             const Divider(height: 32),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Text(
-                    'SIN CLASIFICAR',
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                      fontSize: 12,
-                    ),
+            // --- UNCLASSIFIED REQUESTS ---
+            DragTarget<SavedRequest>(
+              onWillAcceptWithDetails: (_) => true,
+              onAcceptWithDetails: (details) {
+                final req = details.data;
+                ref.read(databaseProvider).moveRequest(req.id, null);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Request "${req.name}" movido a raíz'),
                   ),
-                  const Spacer(),
-                  Icon(
-                    Icons.bug_report_outlined,
-                    size: 16,
-                    color: colorScheme.outline,
-                  ),
-                ],
-              ),
-            ),
-
-            unclassifiedAsync.when(
-              data: (requests) {
-                if (requests.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Center(
-                      child: Text(
-                        'No hay requests sueltos',
-                        style: TextStyle(color: colorScheme.outline),
-                      ),
-                    ),
-                  );
-                }
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: requests.length,
-                  separatorBuilder: (_, __) =>
-                      const Divider(height: 1, indent: 16),
-                  itemBuilder: (ctx, index) {
-                    final req = requests[index];
-                    final methodColor = XoloTheme.getMethodColor(req.method);
-                    return ListTile(
-                      dense: true,
-                      leading: Text(
-                        req.method,
-                        style: TextStyle(
-                          color: methodColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      title: Text(req.name),
-                      subtitle: Text(
-                        req.url,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onTap: () => _loadRequest(req),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.more_vert),
-                        onPressed: () {
-                          ref.read(databaseProvider).softDeleteRequest(req.id);
-                        },
-                      ),
-                    );
-                  },
                 );
               },
-              loading: () => const SizedBox(
-                height: 50,
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, s) => Text('Error: $e'),
+              builder: (context, candidateData, rejectedData) {
+                final isHovering = candidateData.isNotEmpty;
+
+                return Container(
+                  color: isHovering
+                      ? colorScheme.primary.withValues(alpha: 0.1)
+                      : Colors.transparent,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              'SIN CLASIFICAR (RAÍZ)',
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.0,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const Spacer(),
+                            Icon(
+                              Icons.bug_report_outlined,
+                              size: 16,
+                              color: colorScheme.outline,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      unclassifiedAsync.when(
+                        data: (requests) {
+                          if (requests.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.all(32.0),
+                              child: Center(
+                                child: Text(
+                                  'Arrastra requests aquí para sacarlos de carpetas',
+                                  style: TextStyle(
+                                    color: colorScheme.outline,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: requests.length,
+                            separatorBuilder: (_, __) =>
+                                const Divider(height: 1, indent: 16),
+                            itemBuilder: (ctx, index) {
+                              final req = requests[index];
+                              return DraggableRequestTile(
+                                req: req,
+                                onTap: () => _loadRequest(req),
+                                onDelete: () {
+                                  ref
+                                      .read(databaseProvider)
+                                      .softDeleteRequest(req.id);
+                                },
+                              );
+                            },
+                          );
+                        },
+                        loading: () => const SizedBox(
+                          height: 50,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        error: (e, s) => Text('Error: $e'),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
+            const SizedBox(height: 50),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildEmptyState(ColorScheme colorScheme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Icon(Icons.lightbulb_outline, color: colorScheme.tertiary),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Crea un proyecto para aislar tus entornos y variables.',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _loadRequest(SavedRequest req) {
-    ref.read(selectedMethodProvider.notifier).set(req.method);
-    ref.read(urlQueryProvider.notifier).set(req.url);
+    // 1. Create new tab
+    final newTabId = ref.read(tabsProvider.notifier).addTab();
+
+    // 2. Populate Session State
+    final sessionController = ref.read(
+      requestSessionControllerProvider(newTabId),
+    );
+    sessionController.setMethod(req.method);
+    sessionController.setUrl(req.url);
+    sessionController.setName(req.name);
+
     if (req.body != null) {
-      ref.read(bodyContentProvider.notifier).update(req.body!);
+      sessionController.setBody(req.body!);
     }
+    // 3. Set Active
+    ref.read(tabsProvider.notifier).setActiveTab(newTabId);
 
     ScaffoldMessenger.of(
       context,
@@ -374,7 +372,6 @@ class _SaveRequestDialogState extends State<_SaveRequestDialog> {
                     (c) => DropdownMenuItem(
                       value: c.collection.id,
                       child: Text(
-                        // Indentación visual usando espacios no rompibles o unicode arrows
                         '${'  ' * c.depth}${c.depth > 0 ? '└ ' : ''}${c.collection.name}',
                         overflow: TextOverflow.ellipsis,
                       ),

@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/xolo_theme.dart';
 import '../providers/environment_provider.dart';
-import '../providers/form_providers.dart';
 import '../providers/request_provider.dart';
+import '../providers/request_session_provider.dart';
 
 class UrlInputBar extends ConsumerStatefulWidget {
-  const UrlInputBar({super.key});
+  final String tabId;
+  const UrlInputBar({super.key, required this.tabId});
 
   @override
   ConsumerState<UrlInputBar> createState() => _UrlInputBarState();
@@ -22,7 +23,9 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
   @override
   void initState() {
     super.initState();
-    final initialUrl = ref.read(urlQueryProvider);
+    // Use .asData?.value instead of valueOrNull
+    final initialUrl =
+        ref.read(requestSessionProvider(widget.tabId)).asData?.value.url ?? '';
     _urlController = TextEditingController(text: initialUrl);
 
     _focusNode.addListener(() {
@@ -41,10 +44,8 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
   }
 
   void _onTextChanged(String text) {
-    // 1. Actualizar state (USANDO NUEVO METODO SET)
-    ref.read(urlQueryProvider.notifier).set(text);
+    ref.read(requestSessionControllerProvider(widget.tabId)).setUrl(text);
 
-    // 2. Lógica de Autocompletado
     final selection = _urlController.selection;
     if (!selection.isValid || selection.start < 2) {
       _removeOverlay();
@@ -165,8 +166,7 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
       TextPosition(offset: newCursorPos),
     );
 
-    // UPDATE STATE (FIXED)
-    ref.read(urlQueryProvider.notifier).set(newText);
+    ref.read(requestSessionControllerProvider(widget.tabId)).setUrl(newText);
     _removeOverlay();
   }
 
@@ -178,27 +178,49 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
   @override
   Widget build(BuildContext context) {
     ref.watch(resolvedVariablesProvider);
-    final selectedMethod = ref.watch(selectedMethodProvider);
-    final requestState = ref.watch(requestProvider);
+
+    final sessionAsync = ref.watch(requestSessionProvider(widget.tabId));
+    final requestAsync = ref.watch(requestProvider(widget.tabId));
+
+    final session = sessionAsync.asData?.value;
+    if (session == null) return const SizedBox.shrink();
+
+    final selectedMethod = session.method;
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    ref.listen<String>(urlQueryProvider, (previous, next) {
-      if (_urlController.text != next) {
-        _urlController.text = next;
-        _urlController.selection = TextSelection.fromPosition(
-          TextPosition(offset: next.length),
-        );
+    ref.listen<
+      AsyncValue<RequestSession>
+    >(requestSessionProvider(widget.tabId), (previous, next) {
+      final nextUrl = next.asData?.value.url;
+      // Solo actualizar si el texto es diferente y el foco no está activo (opcional)
+      // O si es la carga inicial (previous es loading/null)
+      final prevUrl = previous?.asData?.value.url;
+
+      if (nextUrl != null && _urlController.text != nextUrl) {
+        // Si el usuario está escribiendo y el cambio viene de su escritura (loopback), no movemos el cursor.
+        // Pero aquí estamos cargando desde fuera (Navigation).
+        // Para evitar problemas de cursor saltando, verificamos si el cambio es sustancial.
+
+        // Si anterior era null/vacio y ahora tiene valor, es una carga de request. Force update.
+        if ((prevUrl == null || prevUrl.isEmpty) && nextUrl.isNotEmpty) {
+          _urlController.text = nextUrl;
+          _urlController.selection = TextSelection.fromPosition(
+            TextPosition(offset: nextUrl.length),
+          );
+        }
+        // Si el cambio viene de otro lado (no local), podríamos querer actualizar,
+        // pero si tiene foco y estamos escribiendo, el provider ya tiene lo que escribimos.
+        // El problema es recibir updates externos mientras escribimos.
+        // Dado que RequestSession es local por tab, solo "nosotros" escribimos o "cargamos".
       }
-    });
+    }, fireImmediately: true);
 
     final resolvedVars = ref.watch(resolvedVariablesProvider);
     final baseUrl = resolvedVars['baseUrl'] ?? '';
     final hasBaseUrl = baseUrl.isNotEmpty;
 
-    // MANDATORY Enforcement:
-    // If baseUrl exists, ALWAYS show prefix and treat input as relative path.
-    // Absolute URLs are only for "No Context".
     final showPrefix = hasBaseUrl;
 
     return Container(
@@ -309,14 +331,14 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
               color: colorScheme.primary,
               borderRadius: BorderRadius.circular(8),
               child: InkWell(
-                onTap: requestState.isLoading ? null : _sendRequest,
+                onTap: requestAsync.isLoading ? null : _sendRequest,
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
                   ),
-                  child: requestState.isLoading
+                  child: requestAsync.isLoading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
@@ -354,7 +376,6 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
   }
 
   Widget _buildMethodDropdown(String selectedMethod, ColorScheme colorScheme) {
-    // Lista de métodos rápida
     final httpMethods = [
       'GET',
       'POST',
@@ -369,7 +390,9 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
     return PopupMenuButton<String>(
       initialValue: selectedMethod,
       onSelected: (value) {
-        ref.read(selectedMethodProvider.notifier).set(value);
+        ref
+            .read(requestSessionControllerProvider(widget.tabId))
+            .setMethod(value);
       },
       offset: const Offset(0, 45),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -433,13 +456,16 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
   }
 
   void _sendRequest() {
-    final method = ref.read(selectedMethodProvider);
-    var url = ref.read(urlQueryProvider);
+    final session = ref
+        .read(requestSessionProvider(widget.tabId))
+        .asData
+        ?.value;
+    if (session == null) return;
 
-    // SMART URL LOGIC
-    // SMART URL LOGIC (ENFORCED)
+    final method = session.method;
+    var url = session.url;
+
     final resolvedVars = ref.read(resolvedVariablesProvider);
-    // If baseUrl exists and is not empty (matching UI logic), enforce it.
     if (resolvedVars['baseUrl']?.isNotEmpty == true) {
       final isAbsolute =
           url.startsWith('http://') || url.startsWith('https://');
@@ -452,43 +478,34 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
             ),
             action: SnackBarAction(label: 'Entendido', onPressed: () {}),
             backgroundColor: Theme.of(context).colorScheme.error,
-            behavior:
-                SnackBarBehavior.floating, // Flotante para que se vea mejor
-            duration: const Duration(seconds: 4),
           ),
         );
-        // Detenemos la ejecución.
-        // Opcional: Podríamos ofrecer borrar el dominio automáticamente en el SnackBarAction.
         return;
       }
-
-      // Ensure slash handling
       if (!url.startsWith('/')) {
         url = '/$url';
       }
       url = '{{baseUrl}}$url';
     }
 
-    final paramsList = ref.read(paramsProvider);
-    final headersList = ref.read(headersProvider);
-    final rawBody = ref.read(bodyContentProvider);
-
     final Map<String, dynamic> paramsMap = {};
-    for (var item in paramsList) {
+    for (var item in session.params) {
       if (item.key.isNotEmpty && item.isActive) {
         paramsMap[item.key] = item.value;
       }
     }
 
     final Map<String, dynamic> headersMap = {};
-    for (var item in headersList) {
+    for (var item in session.headers) {
       if (item.key.isNotEmpty && item.isActive) {
         headersMap[item.key] = item.value;
       }
     }
 
+    final rawBody = session.body;
+
     ref
-        .read(requestProvider.notifier)
+        .read(requestControllerProvider(widget.tabId))
         .fetchData(
           method: method,
           url: url,

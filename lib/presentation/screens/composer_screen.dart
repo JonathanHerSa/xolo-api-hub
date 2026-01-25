@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/xolo_theme.dart';
-import '../providers/request_provider.dart';
-import '../providers/environment_provider.dart';
+import '../providers/tabs_provider.dart';
 import '../providers/workspace_provider.dart';
 import '../providers/collections_provider.dart';
+import '../providers/environment_provider.dart';
 import '../widgets/url_input_bar.dart';
 import '../widgets/request_tabs.dart';
+import '../widgets/browser_tab_bar.dart';
 import 'saved_requests_screen.dart'; // For dialog access
 
 class ComposerScreen extends ConsumerWidget {
@@ -18,6 +19,7 @@ class ComposerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final activeEnvIdAsync = ref.watch(activeEnvironmentIdProvider);
+    final tabs = ref.watch(tabsProvider);
 
     return Scaffold(
       drawer: drawer,
@@ -59,10 +61,27 @@ class ComposerScreen extends ConsumerWidget {
       body: SafeArea(
         top: false,
         bottom: true,
-        child: const Column(
+        child: Column(
           children: [
-            UrlInputBar(),
-            Expanded(child: RequestTabs()),
+            // BROWSER TABS
+            const BrowserTabBar(),
+
+            // ACTIVE TAB CONTENT
+            if (tabs.openTabIds.isEmpty)
+              const Expanded(child: Center(child: Text('No active tabs')))
+            else
+              Expanded(
+                key: ValueKey(tabs.activeTabId), // Force rebuild on tab switch
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, bottom: 0),
+                      child: UrlInputBar(tabId: tabs.activeTabId),
+                    ),
+                    Expanded(child: RequestTabs(tabId: tabs.activeTabId)),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

@@ -2,24 +2,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/key_value_pair.dart';
-import '../providers/form_providers.dart';
+import '../providers/request_session_provider.dart';
 
-class KeyValueTable<N extends KeyValueNotifier> extends ConsumerWidget {
-  final NotifierProvider<N, List<KeyValuePair>> provider;
+enum TableType { headers, params }
+
+class KeyValueTable extends ConsumerWidget {
+  final String tabId;
+  final TableType type;
   final String keyPlaceholder;
   final String valuePlaceholder;
 
   const KeyValueTable({
     super.key,
-    required this.provider,
+    required this.tabId,
+    required this.type,
     this.keyPlaceholder = 'Key',
     this.valuePlaceholder = 'Value',
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rows = ref.watch(provider); // Watch state
-    final notifier = ref.read(provider.notifier); // Get notifier instance
+    // Watch Async Stream
+    final sessionAsync = ref.watch(requestSessionProvider(tabId));
+    final session = sessionAsync.asData?.value;
+
+    // Loading/Error fallback
+    if (session == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final List<KeyValuePair> rows = type == TableType.headers
+        ? session.headers
+        : session.params;
+
+    // Controller for updates
+    final controller = ref.read(requestSessionControllerProvider(tabId));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -46,7 +63,9 @@ class KeyValueTable<N extends KeyValueNotifier> extends ConsumerWidget {
               // Toggle Active
               GestureDetector(
                 onTap: () {
-                  // Toggle active logic here
+                  final newList = [...rows];
+                  newList[index] = item.copyWith(isActive: !item.isActive);
+                  _updateList(controller, newList);
                 },
                 child: Container(
                   width: 18,
@@ -77,7 +96,11 @@ class KeyValueTable<N extends KeyValueNotifier> extends ConsumerWidget {
                   context: context,
                   initialValue: item.key,
                   placeholder: keyPlaceholder,
-                  onChanged: (val) => notifier.updateKey(index, val),
+                  onChanged: (val) {
+                    final newList = [...rows];
+                    newList[index] = item.copyWith(key: val);
+                    _updateList(controller, newList);
+                  },
                   isKey: true,
                 ),
               ),
@@ -100,7 +123,11 @@ class KeyValueTable<N extends KeyValueNotifier> extends ConsumerWidget {
                   context: context,
                   initialValue: item.value,
                   placeholder: valuePlaceholder,
-                  onChanged: (val) => notifier.updateValue(index, val),
+                  onChanged: (val) {
+                    final newList = [...rows];
+                    newList[index] = item.copyWith(value: val);
+                    _updateList(controller, newList);
+                  },
                   isKey: false,
                 ),
               ),
@@ -118,7 +145,13 @@ class KeyValueTable<N extends KeyValueNotifier> extends ConsumerWidget {
                     minWidth: 32,
                     minHeight: 32,
                   ),
-                  onPressed: () => notifier.removeRow(index),
+                  onPressed: () {
+                    if (rows.length > 1) {
+                      final newList = [...rows];
+                      newList.removeAt(index);
+                      _updateList(controller, newList);
+                    }
+                  },
                 )
               else
                 const SizedBox(width: 32),
@@ -127,6 +160,17 @@ class KeyValueTable<N extends KeyValueNotifier> extends ConsumerWidget {
         );
       },
     );
+  }
+
+  void _updateList(
+    RequestSessionController controller,
+    List<KeyValuePair> newList,
+  ) {
+    if (type == TableType.headers) {
+      controller.updateHeaders(newList);
+    } else {
+      controller.updateParams(newList);
+    }
   }
 
   Widget _buildInput({
