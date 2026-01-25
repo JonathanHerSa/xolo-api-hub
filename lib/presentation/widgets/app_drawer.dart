@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens/saved_requests_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/environments_screen.dart';
+import 'import_collection_dialog.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -66,6 +67,17 @@ class AppDrawer extends StatelessWidget {
             },
           ),
 
+          ListTile(
+            leading: const Icon(Icons.cloud_download),
+            title: const Text('Importar Colección'),
+            onTap: () {
+              Navigator.pop(context);
+              showDialog(
+                context: context,
+                builder: (context) => const ImportCollectionDialog(),
+              );
+            },
+          ),
           const Spacer(),
           const Divider(),
           ListTile(

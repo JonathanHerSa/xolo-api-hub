@@ -215,7 +215,16 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
         // El problema es recibir updates externos mientras escribimos.
         // Dado que RequestSession es local por tab, solo "nosotros" escribimos o "cargamos".
       }
-    }, fireImmediately: true);
+    });
+
+    // Manual sync for initial load (simulating fireImmediately)
+    final currentUrl = session.url;
+    if (_urlController.text.isEmpty && currentUrl.isNotEmpty) {
+      _urlController.text = currentUrl;
+      _urlController.selection = TextSelection.fromPosition(
+        TextPosition(offset: currentUrl.length),
+      );
+    }
 
     final resolvedVars = ref.watch(resolvedVariablesProvider);
     final baseUrl = resolvedVars['baseUrl'] ?? '';
@@ -512,6 +521,8 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
           queryParams: paramsMap,
           headers: headersMap,
           body: rawBody.isNotEmpty ? rawBody : null,
+          authType: session.authType,
+          authData: session.authData,
         );
   }
 }

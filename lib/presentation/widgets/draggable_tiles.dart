@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/xolo_theme.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../data/services/sync_service.dart';
 import '../../data/local/database.dart';
 import '../providers/database_providers.dart';
 
@@ -48,7 +50,7 @@ class DraggableCollectionTile extends ConsumerWidget {
       ),
       childWhenDragging: Opacity(
         opacity: 0.5,
-        child: _buildTile(context, isActive, false),
+        child: _buildTile(context, ref, isActive, false),
       ),
       child: DragTarget<Object>(
         onWillAcceptWithDetails: (details) {
@@ -86,13 +88,18 @@ class DraggableCollectionTile extends ConsumerWidget {
         },
         builder: (context, candidateData, rejectedData) {
           final isHovering = candidateData.isNotEmpty;
-          return _buildTile(context, isActive, isHovering);
+          return _buildTile(context, ref, isActive, isHovering);
         },
       ),
     );
   }
 
-  Widget _buildTile(BuildContext context, bool isActive, bool isHovering) {
+  Widget _buildTile(
+    BuildContext context,
+    WidgetRef ref,
+    bool isActive,
+    bool isHovering,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -114,17 +121,45 @@ class DraggableCollectionTile extends ConsumerWidget {
           ),
         ),
         subtitle: Text(collection.description ?? ""),
-        trailing: _buildPopupMenu(isActive),
+        trailing: _buildPopupMenu(context, ref, isActive),
         onTap: onTap,
       ),
     );
   }
 
-  Widget _buildPopupMenu(bool isActive) {
+  Widget _buildPopupMenu(BuildContext context, WidgetRef ref, bool isActive) {
     return PopupMenuButton<String>(
-      onSelected: (val) {
+      onSelected: (val) async {
         if (val == 'delete') onDelete();
         if (val == 'activate') onActivate();
+        if (val == 'export') {
+          final dir = await FilePicker.platform.getDirectoryPath();
+          if (dir != null) {
+            try {
+              final db = ref.read(databaseProvider);
+              await ref
+                  .read(syncServiceProvider)
+                  .exportCollection(
+                    collection: collection,
+                    directoryPath: dir,
+                    db: db,
+                  );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Colección exportada correctamente'),
+                  ),
+                );
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Error exportando: $e')));
+              }
+            }
+          }
+        }
       },
       itemBuilder: (ctx) => [
         if (!isActive)
@@ -132,6 +167,16 @@ class DraggableCollectionTile extends ConsumerWidget {
             value: 'activate',
             child: Text('Activar Workspace'),
           ),
+        const PopupMenuItem(
+          value: 'export',
+          child: Row(
+            children: [
+              Icon(Icons.upload_file, size: 18, color: Colors.blueGrey),
+              SizedBox(width: 8),
+              Text('Sync / Export'),
+            ],
+          ),
+        ),
         const PopupMenuItem(
           value: 'delete',
           child: Text('Eliminar', style: TextStyle(color: Colors.red)),

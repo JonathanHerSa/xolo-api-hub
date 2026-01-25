@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -71,6 +72,8 @@ class RequestController {
     Map<String, dynamic>? queryParams,
     Map<String, dynamic>? headers,
     Object? body,
+    String? authType,
+    String? authData,
   }) async {
     // 1. Loading
     _update(_state.copyWith(isLoading: true, error: null, statusCode: null));
@@ -104,6 +107,66 @@ class RequestController {
         }
       }
 
+      // 2.1 INJECT AUTH HEADERS
+      if (authType != null && authData != null) {
+        try {
+          // Resolve variables in authData JSON first?
+          // No, authData is JSON string. We parse it, then resolve values.
+          final authMap = _parseAuthData(authData);
+
+          if (authType == 'bearer') {
+            final token = VariableParser.parse(
+              authMap['token'] ?? '',
+              resolvedVars,
+            );
+            if (token.isNotEmpty) {
+              parsedHeaders['Authorization'] = 'Bearer $token';
+            }
+          } else if (authType == 'basic') {
+            final user = VariableParser.parse(
+              authMap['username'] ?? '',
+              resolvedVars,
+            );
+            final pass = VariableParser.parse(
+              authMap['password'] ?? '',
+              resolvedVars,
+            );
+            if (user.isNotEmpty || pass.isNotEmpty) {
+              final bytes = utf8.encode('$user:$pass');
+              final base64Str = base64.encode(bytes);
+              parsedHeaders['Authorization'] = 'Basic $base64Str';
+            }
+          } else if (authType == 'api_key') {
+            final key = VariableParser.parse(
+              authMap['key'] ?? '',
+              resolvedVars,
+            );
+            final val = VariableParser.parse(
+              authMap['value'] ?? '',
+              resolvedVars,
+            );
+            final addTo = authMap['in'] ?? 'header';
+
+            if (key.isNotEmpty && val.isNotEmpty) {
+              if (addTo == 'header') {
+                parsedHeaders[key] = val;
+              } else if (addTo == 'query') {
+                // Query params logic is below, we need to inject into queryParams or parsedParams?
+                // parsedParams is derived from queryParams arg.
+                // We should inject into a consolidated params map.
+                // But queryParams arg is final? No, we transform it.
+                // We need to inject into queryParams logic.
+                // To avoid complex logic duplication, we'll Handle this in generic params section.
+                // Or better: Inject into 'queryParams' argument before parsing? No, queryParams is map.
+                // We will add to our own localized params map if needed.
+              }
+            }
+          }
+        } catch (e) {
+          print('Error injecting auth: $e');
+        }
+      }
+
       // Parse Params
       final Map<String, dynamic> parsedParams = {};
       if (queryParams != null) {
@@ -115,6 +178,27 @@ class RequestController {
           );
           parsedParams[key] = val;
         }
+      }
+
+      // 2.2 INJECT AUTH PARAMS
+      if (authType == 'api_key' && authData != null) {
+        try {
+          final authMap = _parseAuthData(authData);
+          final addTo = authMap['in'] ?? 'header';
+          if (addTo == 'query') {
+            final key = VariableParser.parse(
+              authMap['key'] ?? '',
+              resolvedVars,
+            );
+            final val = VariableParser.parse(
+              authMap['value'] ?? '',
+              resolvedVars,
+            );
+            if (key.isNotEmpty && val.isNotEmpty) {
+              parsedParams[key] = val;
+            }
+          }
+        } catch (_) {}
       }
 
       // Parse Body (si es String)
@@ -211,6 +295,14 @@ class RequestController {
         error: null,
       ),
     );
+  }
+
+  Map<String, dynamic> _parseAuthData(String jsonStr) {
+    try {
+      return jsonDecode(jsonStr) as Map<String, dynamic>;
+    } catch (_) {
+      return {};
+    }
   }
 }
 

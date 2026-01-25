@@ -11,6 +11,9 @@ class RequestSession {
   final List<KeyValuePair> params;
   final String body;
   final String name;
+  final String? authType;
+  final String? authData;
+  final String? schemaJson;
 
   RequestSession({
     required this.id,
@@ -20,6 +23,9 @@ class RequestSession {
     required this.params,
     this.body = '',
     this.name = 'New Request',
+    this.authType,
+    this.authData,
+    this.schemaJson,
   });
 
   RequestSession copyWith({
@@ -30,6 +36,9 @@ class RequestSession {
     List<KeyValuePair>? params,
     String? body,
     String? name,
+    String? authType,
+    String? authData,
+    String? schemaJson,
   }) {
     return RequestSession(
       id: id ?? this.id,
@@ -39,6 +48,9 @@ class RequestSession {
       params: params ?? this.params,
       body: body ?? this.body,
       name: name ?? this.name,
+      authType: authType ?? this.authType,
+      authData: authData ?? this.authData,
+      schemaJson: schemaJson ?? this.schemaJson,
     );
   }
 }
@@ -95,6 +107,18 @@ class RequestSessionController {
 
   void setName(String value) {
     _update(_state.copyWith(name: value));
+  }
+
+  void setAuthType(String? value) {
+    _update(_state.copyWith(authType: value));
+  }
+
+  void setAuthData(String? value) {
+    _update(_state.copyWith(authData: value));
+  }
+
+  void setSchemaJson(String? value) {
+    _update(_state.copyWith(schemaJson: value));
   }
 
   void updateHeaders(List<KeyValuePair> newHeaders) {

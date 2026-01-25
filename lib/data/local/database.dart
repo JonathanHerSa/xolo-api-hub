@@ -29,6 +29,17 @@ class SavedRequests extends Table {
   TextColumn get headersJson => text().nullable()();
   TextColumn get paramsJson => text().nullable()();
   TextColumn get body => text().nullable()();
+
+  // Auth Columns (Phase 6)
+  TextColumn get authType => text().nullable()(); // 'bearer', 'basic', etc.
+  TextColumn get authData =>
+      text().nullable()(); // JSON string with token, user/pass, etc.
+
+  // Body Schema (Phase Maintenance)
+  // Stores the RESOLVED (dereferenced) OpenAPI schema for the body,
+  // allowing smart re-generation later.
+  TextColumn get schemaJson => text().nullable()();
+
   IntColumn get collectionId =>
       integer().nullable().references(Collections, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -50,6 +61,11 @@ class HistoryEntries extends Table {
   TextColumn get headersJson => text().nullable()();
   TextColumn get paramsJson => text().nullable()();
   TextColumn get body => text().nullable()();
+
+  // Auth Snapshot (Optional, for history reproducibility)
+  TextColumn get authType => text().nullable()();
+  TextColumn get authData => text().nullable()();
+
   IntColumn get statusCode => integer().nullable()();
   TextColumn get responseBody => text().nullable()();
   IntColumn get durationMs => integer().nullable()();
@@ -118,7 +134,29 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1; // V2 file = New fresh start
+  int get schemaVersion => 3; // Bump version for schemaJson
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 2) {
+          // Add Auth columns (v2)
+          await m.addColumn(savedRequests, savedRequests.authType);
+          await m.addColumn(savedRequests, savedRequests.authData);
+          await m.addColumn(historyEntries, historyEntries.authType);
+          await m.addColumn(historyEntries, historyEntries.authData);
+        }
+        if (from < 3) {
+          // Add schemaJson (v3)
+          await m.addColumn(savedRequests, savedRequests.schemaJson);
+        }
+      },
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // APP SETTINGS (KV STORE)
@@ -384,6 +422,7 @@ class AppDatabase extends _$AppDatabase {
     String? paramsJson,
     String? body,
     int? collectionId,
+    String? schemaJson,
   }) {
     return into(savedRequests).insert(
       SavedRequestsCompanion.insert(
@@ -394,6 +433,7 @@ class AppDatabase extends _$AppDatabase {
         paramsJson: Value(paramsJson),
         body: Value(body),
         collectionId: Value(collectionId),
+        schemaJson: Value(schemaJson),
       ),
     );
   }
@@ -418,6 +458,56 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
     return count > 0;
+  }
+
+  // ---------------------------------------------------------------------------
+  // IMPORT HELPERS (Merge Logic)
+  // ---------------------------------------------------------------------------
+
+  Future<Collection?> findCollectionByName(String name, int? parentId) {
+    return (select(collections)..where(
+          (t) =>
+              t.name.equals(name) &
+              (parentId == null
+                  ? t.parentId.isNull()
+                  : t.parentId.equals(parentId)),
+        ))
+        .getSingleOrNull();
+  }
+
+  Future<SavedRequest?> findRequestInCollection({
+    required int collectionId,
+    required String method,
+    required String url,
+  }) {
+    return (select(savedRequests)..where(
+          (t) =>
+              t.collectionId.equals(collectionId) &
+              t.method.equals(method) &
+              t.url.equals(url) &
+              t.isDeleted.equals(false),
+        ))
+        .getSingleOrNull();
+  }
+
+  Future<int> updateRequestContent({
+    required int id,
+    required String name,
+    String? headersJson,
+    String? paramsJson,
+    String? body,
+    String? schemaJson,
+  }) {
+    return (update(savedRequests)..where((t) => t.id.equals(id))).write(
+      SavedRequestsCompanion(
+        name: Value(name),
+        headersJson: Value(headersJson),
+        paramsJson: Value(paramsJson),
+        body: Value(body),
+        schemaJson: Value(schemaJson),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   // ---------------------------------------------------------------------------

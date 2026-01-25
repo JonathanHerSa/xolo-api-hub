@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/workspace_provider.dart';
+import '../import_collection_dialog.dart';
 
 class PremiumSidebar extends ConsumerWidget {
   final int selectedIndex;
@@ -111,6 +112,18 @@ class PremiumSidebar extends ConsumerWidget {
               label: 'Environments',
               isSelected: selectedIndex == 3,
               onTap: () => onIndexChanged(3),
+            ),
+
+            _SidebarItem(
+              icon: Icons.cloud_download_outlined,
+              label: 'Import',
+              isSelected: false,
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => const ImportCollectionDialog(),
+                );
+              },
             ),
 
             const Spacer(),

@@ -450,6 +450,39 @@ class $SavedRequestsTable extends SavedRequests
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _authTypeMeta = const VerificationMeta(
+    'authType',
+  );
+  @override
+  late final GeneratedColumn<String> authType = GeneratedColumn<String>(
+    'auth_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _authDataMeta = const VerificationMeta(
+    'authData',
+  );
+  @override
+  late final GeneratedColumn<String> authData = GeneratedColumn<String>(
+    'auth_data',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _schemaJsonMeta = const VerificationMeta(
+    'schemaJson',
+  );
+  @override
+  late final GeneratedColumn<String> schemaJson = GeneratedColumn<String>(
+    'schema_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _collectionIdMeta = const VerificationMeta(
     'collectionId',
   );
@@ -512,6 +545,9 @@ class $SavedRequestsTable extends SavedRequests
     headersJson,
     paramsJson,
     body,
+    authType,
+    authData,
+    schemaJson,
     collectionId,
     createdAt,
     updatedAt,
@@ -575,6 +611,24 @@ class $SavedRequestsTable extends SavedRequests
       context.handle(
         _bodyMeta,
         body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    }
+    if (data.containsKey('auth_type')) {
+      context.handle(
+        _authTypeMeta,
+        authType.isAcceptableOrUnknown(data['auth_type']!, _authTypeMeta),
+      );
+    }
+    if (data.containsKey('auth_data')) {
+      context.handle(
+        _authDataMeta,
+        authData.isAcceptableOrUnknown(data['auth_data']!, _authDataMeta),
+      );
+    }
+    if (data.containsKey('schema_json')) {
+      context.handle(
+        _schemaJsonMeta,
+        schemaJson.isAcceptableOrUnknown(data['schema_json']!, _schemaJsonMeta),
       );
     }
     if (data.containsKey('collection_id')) {
@@ -641,6 +695,18 @@ class $SavedRequestsTable extends SavedRequests
         DriftSqlType.string,
         data['${effectivePrefix}body'],
       ),
+      authType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_type'],
+      ),
+      authData: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_data'],
+      ),
+      schemaJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}schema_json'],
+      ),
       collectionId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}collection_id'],
@@ -674,6 +740,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
   final String? headersJson;
   final String? paramsJson;
   final String? body;
+  final String? authType;
+  final String? authData;
+  final String? schemaJson;
   final int? collectionId;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -686,6 +755,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     this.headersJson,
     this.paramsJson,
     this.body,
+    this.authType,
+    this.authData,
+    this.schemaJson,
     this.collectionId,
     required this.createdAt,
     required this.updatedAt,
@@ -706,6 +778,15 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     }
     if (!nullToAbsent || body != null) {
       map['body'] = Variable<String>(body);
+    }
+    if (!nullToAbsent || authType != null) {
+      map['auth_type'] = Variable<String>(authType);
+    }
+    if (!nullToAbsent || authData != null) {
+      map['auth_data'] = Variable<String>(authData);
+    }
+    if (!nullToAbsent || schemaJson != null) {
+      map['schema_json'] = Variable<String>(schemaJson);
     }
     if (!nullToAbsent || collectionId != null) {
       map['collection_id'] = Variable<int>(collectionId);
@@ -729,6 +810,15 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
           ? const Value.absent()
           : Value(paramsJson),
       body: body == null && nullToAbsent ? const Value.absent() : Value(body),
+      authType: authType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authType),
+      authData: authData == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authData),
+      schemaJson: schemaJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(schemaJson),
       collectionId: collectionId == null && nullToAbsent
           ? const Value.absent()
           : Value(collectionId),
@@ -751,6 +841,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
       headersJson: serializer.fromJson<String?>(json['headersJson']),
       paramsJson: serializer.fromJson<String?>(json['paramsJson']),
       body: serializer.fromJson<String?>(json['body']),
+      authType: serializer.fromJson<String?>(json['authType']),
+      authData: serializer.fromJson<String?>(json['authData']),
+      schemaJson: serializer.fromJson<String?>(json['schemaJson']),
       collectionId: serializer.fromJson<int?>(json['collectionId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -768,6 +861,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
       'headersJson': serializer.toJson<String?>(headersJson),
       'paramsJson': serializer.toJson<String?>(paramsJson),
       'body': serializer.toJson<String?>(body),
+      'authType': serializer.toJson<String?>(authType),
+      'authData': serializer.toJson<String?>(authData),
+      'schemaJson': serializer.toJson<String?>(schemaJson),
       'collectionId': serializer.toJson<int?>(collectionId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -783,6 +879,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     Value<String?> headersJson = const Value.absent(),
     Value<String?> paramsJson = const Value.absent(),
     Value<String?> body = const Value.absent(),
+    Value<String?> authType = const Value.absent(),
+    Value<String?> authData = const Value.absent(),
+    Value<String?> schemaJson = const Value.absent(),
     Value<int?> collectionId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -795,6 +894,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     headersJson: headersJson.present ? headersJson.value : this.headersJson,
     paramsJson: paramsJson.present ? paramsJson.value : this.paramsJson,
     body: body.present ? body.value : this.body,
+    authType: authType.present ? authType.value : this.authType,
+    authData: authData.present ? authData.value : this.authData,
+    schemaJson: schemaJson.present ? schemaJson.value : this.schemaJson,
     collectionId: collectionId.present ? collectionId.value : this.collectionId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -813,6 +915,11 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
           ? data.paramsJson.value
           : this.paramsJson,
       body: data.body.present ? data.body.value : this.body,
+      authType: data.authType.present ? data.authType.value : this.authType,
+      authData: data.authData.present ? data.authData.value : this.authData,
+      schemaJson: data.schemaJson.present
+          ? data.schemaJson.value
+          : this.schemaJson,
       collectionId: data.collectionId.present
           ? data.collectionId.value
           : this.collectionId,
@@ -832,6 +939,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
           ..write('headersJson: $headersJson, ')
           ..write('paramsJson: $paramsJson, ')
           ..write('body: $body, ')
+          ..write('authType: $authType, ')
+          ..write('authData: $authData, ')
+          ..write('schemaJson: $schemaJson, ')
           ..write('collectionId: $collectionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -849,6 +959,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     headersJson,
     paramsJson,
     body,
+    authType,
+    authData,
+    schemaJson,
     collectionId,
     createdAt,
     updatedAt,
@@ -865,6 +978,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
           other.headersJson == this.headersJson &&
           other.paramsJson == this.paramsJson &&
           other.body == this.body &&
+          other.authType == this.authType &&
+          other.authData == this.authData &&
+          other.schemaJson == this.schemaJson &&
           other.collectionId == this.collectionId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -879,6 +995,9 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
   final Value<String?> headersJson;
   final Value<String?> paramsJson;
   final Value<String?> body;
+  final Value<String?> authType;
+  final Value<String?> authData;
+  final Value<String?> schemaJson;
   final Value<int?> collectionId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -891,6 +1010,9 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     this.headersJson = const Value.absent(),
     this.paramsJson = const Value.absent(),
     this.body = const Value.absent(),
+    this.authType = const Value.absent(),
+    this.authData = const Value.absent(),
+    this.schemaJson = const Value.absent(),
     this.collectionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -904,6 +1026,9 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     this.headersJson = const Value.absent(),
     this.paramsJson = const Value.absent(),
     this.body = const Value.absent(),
+    this.authType = const Value.absent(),
+    this.authData = const Value.absent(),
+    this.schemaJson = const Value.absent(),
     this.collectionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -919,6 +1044,9 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     Expression<String>? headersJson,
     Expression<String>? paramsJson,
     Expression<String>? body,
+    Expression<String>? authType,
+    Expression<String>? authData,
+    Expression<String>? schemaJson,
     Expression<int>? collectionId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -932,6 +1060,9 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
       if (headersJson != null) 'headers_json': headersJson,
       if (paramsJson != null) 'params_json': paramsJson,
       if (body != null) 'body': body,
+      if (authType != null) 'auth_type': authType,
+      if (authData != null) 'auth_data': authData,
+      if (schemaJson != null) 'schema_json': schemaJson,
       if (collectionId != null) 'collection_id': collectionId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -947,6 +1078,9 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     Value<String?>? headersJson,
     Value<String?>? paramsJson,
     Value<String?>? body,
+    Value<String?>? authType,
+    Value<String?>? authData,
+    Value<String?>? schemaJson,
     Value<int?>? collectionId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -960,6 +1094,9 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
       headersJson: headersJson ?? this.headersJson,
       paramsJson: paramsJson ?? this.paramsJson,
       body: body ?? this.body,
+      authType: authType ?? this.authType,
+      authData: authData ?? this.authData,
+      schemaJson: schemaJson ?? this.schemaJson,
       collectionId: collectionId ?? this.collectionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -991,6 +1128,15 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     if (body.present) {
       map['body'] = Variable<String>(body.value);
     }
+    if (authType.present) {
+      map['auth_type'] = Variable<String>(authType.value);
+    }
+    if (authData.present) {
+      map['auth_data'] = Variable<String>(authData.value);
+    }
+    if (schemaJson.present) {
+      map['schema_json'] = Variable<String>(schemaJson.value);
+    }
     if (collectionId.present) {
       map['collection_id'] = Variable<int>(collectionId.value);
     }
@@ -1016,6 +1162,9 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
           ..write('headersJson: $headersJson, ')
           ..write('paramsJson: $paramsJson, ')
           ..write('body: $body, ')
+          ..write('authType: $authType, ')
+          ..write('authData: $authData, ')
+          ..write('schemaJson: $schemaJson, ')
           ..write('collectionId: $collectionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1121,6 +1270,28 @@ class $HistoryEntriesTable extends HistoryEntries
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _authTypeMeta = const VerificationMeta(
+    'authType',
+  );
+  @override
+  late final GeneratedColumn<String> authType = GeneratedColumn<String>(
+    'auth_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _authDataMeta = const VerificationMeta(
+    'authData',
+  );
+  @override
+  late final GeneratedColumn<String> authData = GeneratedColumn<String>(
+    'auth_data',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _statusCodeMeta = const VerificationMeta(
     'statusCode',
   );
@@ -1176,6 +1347,8 @@ class $HistoryEntriesTable extends HistoryEntries
     headersJson,
     paramsJson,
     body,
+    authType,
+    authData,
     statusCode,
     responseBody,
     durationMs,
@@ -1251,6 +1424,18 @@ class $HistoryEntriesTable extends HistoryEntries
         body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
       );
     }
+    if (data.containsKey('auth_type')) {
+      context.handle(
+        _authTypeMeta,
+        authType.isAcceptableOrUnknown(data['auth_type']!, _authTypeMeta),
+      );
+    }
+    if (data.containsKey('auth_data')) {
+      context.handle(
+        _authDataMeta,
+        authData.isAcceptableOrUnknown(data['auth_data']!, _authDataMeta),
+      );
+    }
     if (data.containsKey('status_code')) {
       context.handle(
         _statusCodeMeta,
@@ -1319,6 +1504,14 @@ class $HistoryEntriesTable extends HistoryEntries
         DriftSqlType.string,
         data['${effectivePrefix}body'],
       ),
+      authType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_type'],
+      ),
+      authData: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_data'],
+      ),
       statusCode: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}status_code'],
@@ -1353,6 +1546,8 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
   final String? headersJson;
   final String? paramsJson;
   final String? body;
+  final String? authType;
+  final String? authData;
   final int? statusCode;
   final String? responseBody;
   final int? durationMs;
@@ -1366,6 +1561,8 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     this.headersJson,
     this.paramsJson,
     this.body,
+    this.authType,
+    this.authData,
     this.statusCode,
     this.responseBody,
     this.durationMs,
@@ -1391,6 +1588,12 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     }
     if (!nullToAbsent || body != null) {
       map['body'] = Variable<String>(body);
+    }
+    if (!nullToAbsent || authType != null) {
+      map['auth_type'] = Variable<String>(authType);
+    }
+    if (!nullToAbsent || authData != null) {
+      map['auth_data'] = Variable<String>(authData);
     }
     if (!nullToAbsent || statusCode != null) {
       map['status_code'] = Variable<int>(statusCode);
@@ -1423,6 +1626,12 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           ? const Value.absent()
           : Value(paramsJson),
       body: body == null && nullToAbsent ? const Value.absent() : Value(body),
+      authType: authType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authType),
+      authData: authData == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authData),
       statusCode: statusCode == null && nullToAbsent
           ? const Value.absent()
           : Value(statusCode),
@@ -1450,6 +1659,8 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       headersJson: serializer.fromJson<String?>(json['headersJson']),
       paramsJson: serializer.fromJson<String?>(json['paramsJson']),
       body: serializer.fromJson<String?>(json['body']),
+      authType: serializer.fromJson<String?>(json['authType']),
+      authData: serializer.fromJson<String?>(json['authData']),
       statusCode: serializer.fromJson<int?>(json['statusCode']),
       responseBody: serializer.fromJson<String?>(json['responseBody']),
       durationMs: serializer.fromJson<int?>(json['durationMs']),
@@ -1468,6 +1679,8 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       'headersJson': serializer.toJson<String?>(headersJson),
       'paramsJson': serializer.toJson<String?>(paramsJson),
       'body': serializer.toJson<String?>(body),
+      'authType': serializer.toJson<String?>(authType),
+      'authData': serializer.toJson<String?>(authData),
       'statusCode': serializer.toJson<int?>(statusCode),
       'responseBody': serializer.toJson<String?>(responseBody),
       'durationMs': serializer.toJson<int?>(durationMs),
@@ -1484,6 +1697,8 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     Value<String?> headersJson = const Value.absent(),
     Value<String?> paramsJson = const Value.absent(),
     Value<String?> body = const Value.absent(),
+    Value<String?> authType = const Value.absent(),
+    Value<String?> authData = const Value.absent(),
     Value<int?> statusCode = const Value.absent(),
     Value<String?> responseBody = const Value.absent(),
     Value<int?> durationMs = const Value.absent(),
@@ -1499,6 +1714,8 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     headersJson: headersJson.present ? headersJson.value : this.headersJson,
     paramsJson: paramsJson.present ? paramsJson.value : this.paramsJson,
     body: body.present ? body.value : this.body,
+    authType: authType.present ? authType.value : this.authType,
+    authData: authData.present ? authData.value : this.authData,
     statusCode: statusCode.present ? statusCode.value : this.statusCode,
     responseBody: responseBody.present ? responseBody.value : this.responseBody,
     durationMs: durationMs.present ? durationMs.value : this.durationMs,
@@ -1522,6 +1739,8 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           ? data.paramsJson.value
           : this.paramsJson,
       body: data.body.present ? data.body.value : this.body,
+      authType: data.authType.present ? data.authType.value : this.authType,
+      authData: data.authData.present ? data.authData.value : this.authData,
       statusCode: data.statusCode.present
           ? data.statusCode.value
           : this.statusCode,
@@ -1548,6 +1767,8 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           ..write('headersJson: $headersJson, ')
           ..write('paramsJson: $paramsJson, ')
           ..write('body: $body, ')
+          ..write('authType: $authType, ')
+          ..write('authData: $authData, ')
           ..write('statusCode: $statusCode, ')
           ..write('responseBody: $responseBody, ')
           ..write('durationMs: $durationMs, ')
@@ -1566,6 +1787,8 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     headersJson,
     paramsJson,
     body,
+    authType,
+    authData,
     statusCode,
     responseBody,
     durationMs,
@@ -1583,6 +1806,8 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           other.headersJson == this.headersJson &&
           other.paramsJson == this.paramsJson &&
           other.body == this.body &&
+          other.authType == this.authType &&
+          other.authData == this.authData &&
           other.statusCode == this.statusCode &&
           other.responseBody == this.responseBody &&
           other.durationMs == this.durationMs &&
@@ -1598,6 +1823,8 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
   final Value<String?> headersJson;
   final Value<String?> paramsJson;
   final Value<String?> body;
+  final Value<String?> authType;
+  final Value<String?> authData;
   final Value<int?> statusCode;
   final Value<String?> responseBody;
   final Value<int?> durationMs;
@@ -1611,6 +1838,8 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     this.headersJson = const Value.absent(),
     this.paramsJson = const Value.absent(),
     this.body = const Value.absent(),
+    this.authType = const Value.absent(),
+    this.authData = const Value.absent(),
     this.statusCode = const Value.absent(),
     this.responseBody = const Value.absent(),
     this.durationMs = const Value.absent(),
@@ -1625,6 +1854,8 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     this.headersJson = const Value.absent(),
     this.paramsJson = const Value.absent(),
     this.body = const Value.absent(),
+    this.authType = const Value.absent(),
+    this.authData = const Value.absent(),
     this.statusCode = const Value.absent(),
     this.responseBody = const Value.absent(),
     this.durationMs = const Value.absent(),
@@ -1640,6 +1871,8 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     Expression<String>? headersJson,
     Expression<String>? paramsJson,
     Expression<String>? body,
+    Expression<String>? authType,
+    Expression<String>? authData,
     Expression<int>? statusCode,
     Expression<String>? responseBody,
     Expression<int>? durationMs,
@@ -1654,6 +1887,8 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
       if (headersJson != null) 'headers_json': headersJson,
       if (paramsJson != null) 'params_json': paramsJson,
       if (body != null) 'body': body,
+      if (authType != null) 'auth_type': authType,
+      if (authData != null) 'auth_data': authData,
       if (statusCode != null) 'status_code': statusCode,
       if (responseBody != null) 'response_body': responseBody,
       if (durationMs != null) 'duration_ms': durationMs,
@@ -1670,6 +1905,8 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     Value<String?>? headersJson,
     Value<String?>? paramsJson,
     Value<String?>? body,
+    Value<String?>? authType,
+    Value<String?>? authData,
     Value<int?>? statusCode,
     Value<String?>? responseBody,
     Value<int?>? durationMs,
@@ -1684,6 +1921,8 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
       headersJson: headersJson ?? this.headersJson,
       paramsJson: paramsJson ?? this.paramsJson,
       body: body ?? this.body,
+      authType: authType ?? this.authType,
+      authData: authData ?? this.authData,
       statusCode: statusCode ?? this.statusCode,
       responseBody: responseBody ?? this.responseBody,
       durationMs: durationMs ?? this.durationMs,
@@ -1718,6 +1957,12 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     if (body.present) {
       map['body'] = Variable<String>(body.value);
     }
+    if (authType.present) {
+      map['auth_type'] = Variable<String>(authType.value);
+    }
+    if (authData.present) {
+      map['auth_data'] = Variable<String>(authData.value);
+    }
     if (statusCode.present) {
       map['status_code'] = Variable<int>(statusCode.value);
     }
@@ -1744,6 +1989,8 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
           ..write('headersJson: $headersJson, ')
           ..write('paramsJson: $paramsJson, ')
           ..write('body: $body, ')
+          ..write('authType: $authType, ')
+          ..write('authData: $authData, ')
           ..write('statusCode: $statusCode, ')
           ..write('responseBody: $responseBody, ')
           ..write('durationMs: $durationMs, ')
@@ -3537,6 +3784,9 @@ typedef $$SavedRequestsTableCreateCompanionBuilder =
       Value<String?> headersJson,
       Value<String?> paramsJson,
       Value<String?> body,
+      Value<String?> authType,
+      Value<String?> authData,
+      Value<String?> schemaJson,
       Value<int?> collectionId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -3551,6 +3801,9 @@ typedef $$SavedRequestsTableUpdateCompanionBuilder =
       Value<String?> headersJson,
       Value<String?> paramsJson,
       Value<String?> body,
+      Value<String?> authType,
+      Value<String?> authData,
+      Value<String?> schemaJson,
       Value<int?> collectionId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -3647,6 +3900,21 @@ class $$SavedRequestsTableFilterComposer
 
   ColumnFilters<String> get body => $composableBuilder(
     column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authType => $composableBuilder(
+    column: $table.authType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authData => $composableBuilder(
+    column: $table.authData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get schemaJson => $composableBuilder(
+    column: $table.schemaJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3758,6 +4026,21 @@ class $$SavedRequestsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get authType => $composableBuilder(
+    column: $table.authType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authData => $composableBuilder(
+    column: $table.authData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get schemaJson => $composableBuilder(
+    column: $table.schemaJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3830,6 +4113,17 @@ class $$SavedRequestsTableAnnotationComposer
 
   GeneratedColumn<String> get body =>
       $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get authType =>
+      $composableBuilder(column: $table.authType, builder: (column) => column);
+
+  GeneratedColumn<String> get authData =>
+      $composableBuilder(column: $table.authData, builder: (column) => column);
+
+  GeneratedColumn<String> get schemaJson => $composableBuilder(
+    column: $table.schemaJson,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -3924,6 +4218,9 @@ class $$SavedRequestsTableTableManager
                 Value<String?> headersJson = const Value.absent(),
                 Value<String?> paramsJson = const Value.absent(),
                 Value<String?> body = const Value.absent(),
+                Value<String?> authType = const Value.absent(),
+                Value<String?> authData = const Value.absent(),
+                Value<String?> schemaJson = const Value.absent(),
                 Value<int?> collectionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -3936,6 +4233,9 @@ class $$SavedRequestsTableTableManager
                 headersJson: headersJson,
                 paramsJson: paramsJson,
                 body: body,
+                authType: authType,
+                authData: authData,
+                schemaJson: schemaJson,
                 collectionId: collectionId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -3950,6 +4250,9 @@ class $$SavedRequestsTableTableManager
                 Value<String?> headersJson = const Value.absent(),
                 Value<String?> paramsJson = const Value.absent(),
                 Value<String?> body = const Value.absent(),
+                Value<String?> authType = const Value.absent(),
+                Value<String?> authData = const Value.absent(),
+                Value<String?> schemaJson = const Value.absent(),
                 Value<int?> collectionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -3962,6 +4265,9 @@ class $$SavedRequestsTableTableManager
                 headersJson: headersJson,
                 paramsJson: paramsJson,
                 body: body,
+                authType: authType,
+                authData: authData,
+                schemaJson: schemaJson,
                 collectionId: collectionId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -4071,6 +4377,8 @@ typedef $$HistoryEntriesTableCreateCompanionBuilder =
       Value<String?> headersJson,
       Value<String?> paramsJson,
       Value<String?> body,
+      Value<String?> authType,
+      Value<String?> authData,
       Value<int?> statusCode,
       Value<String?> responseBody,
       Value<int?> durationMs,
@@ -4086,6 +4394,8 @@ typedef $$HistoryEntriesTableUpdateCompanionBuilder =
       Value<String?> headersJson,
       Value<String?> paramsJson,
       Value<String?> body,
+      Value<String?> authType,
+      Value<String?> authData,
       Value<int?> statusCode,
       Value<String?> responseBody,
       Value<int?> durationMs,
@@ -4178,6 +4488,16 @@ class $$HistoryEntriesTableFilterComposer
 
   ColumnFilters<String> get body => $composableBuilder(
     column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authType => $composableBuilder(
+    column: $table.authType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authData => $composableBuilder(
+    column: $table.authData,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4287,6 +4607,16 @@ class $$HistoryEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get authType => $composableBuilder(
+    column: $table.authType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authData => $composableBuilder(
+    column: $table.authData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get statusCode => $composableBuilder(
     column: $table.statusCode,
     builder: (column) => ColumnOrderings(column),
@@ -4384,6 +4714,12 @@ class $$HistoryEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get body =>
       $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get authType =>
+      $composableBuilder(column: $table.authType, builder: (column) => column);
+
+  GeneratedColumn<String> get authData =>
+      $composableBuilder(column: $table.authData, builder: (column) => column);
 
   GeneratedColumn<int> get statusCode => $composableBuilder(
     column: $table.statusCode,
@@ -4490,6 +4826,8 @@ class $$HistoryEntriesTableTableManager
                 Value<String?> headersJson = const Value.absent(),
                 Value<String?> paramsJson = const Value.absent(),
                 Value<String?> body = const Value.absent(),
+                Value<String?> authType = const Value.absent(),
+                Value<String?> authData = const Value.absent(),
                 Value<int?> statusCode = const Value.absent(),
                 Value<String?> responseBody = const Value.absent(),
                 Value<int?> durationMs = const Value.absent(),
@@ -4503,6 +4841,8 @@ class $$HistoryEntriesTableTableManager
                 headersJson: headersJson,
                 paramsJson: paramsJson,
                 body: body,
+                authType: authType,
+                authData: authData,
                 statusCode: statusCode,
                 responseBody: responseBody,
                 durationMs: durationMs,
@@ -4518,6 +4858,8 @@ class $$HistoryEntriesTableTableManager
                 Value<String?> headersJson = const Value.absent(),
                 Value<String?> paramsJson = const Value.absent(),
                 Value<String?> body = const Value.absent(),
+                Value<String?> authType = const Value.absent(),
+                Value<String?> authData = const Value.absent(),
                 Value<int?> statusCode = const Value.absent(),
                 Value<String?> responseBody = const Value.absent(),
                 Value<int?> durationMs = const Value.absent(),
@@ -4531,6 +4873,8 @@ class $$HistoryEntriesTableTableManager
                 headersJson: headersJson,
                 paramsJson: paramsJson,
                 body: body,
+                authType: authType,
+                authData: authData,
                 statusCode: statusCode,
                 responseBody: responseBody,
                 durationMs: durationMs,
