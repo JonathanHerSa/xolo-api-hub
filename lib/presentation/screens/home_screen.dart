@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../widgets/navigation/premium_sidebar.dart';
-import '../widgets/settings_dialog.dart';
+
+import '../widgets/neo_nav_bar.dart';
+import '../widgets/app_drawer.dart';
+import '../providers/home_tab_provider.dart';
 import 'composer_screen.dart';
-import 'saved_requests_screen.dart';
 import 'history_screen.dart';
 import 'environments_screen.dart';
+import 'active_workspace_explorer.dart';
+import 'settings_screen.dart';
+import 'sync_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -24,75 +29,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width > 900;
 
+    // Watch provider
+    final mobileIndex = ref.watch(homeTabProvider);
+
     if (isDesktop) {
       return Scaffold(
         body: Row(
           children: [
-            PremiumSidebar(
-              selectedIndex: _desktopIndex,
-              onIndexChanged: (index) => _handleDesktopNav(context, index),
+            // REUSE EXISTING SIDEBAR BUT MAP NEW SCREENS
+            Expanded(
+              flex: 0,
+              child: PremiumSidebar(
+                selectedIndex: _desktopIndex,
+                onIndexChanged: (index) {
+                  // Map Sidebar events
+                  setState(() => _desktopIndex = index);
+                },
+              ),
             ),
-            Expanded(child: _getIndexContent(_desktopIndex)),
+            Expanded(child: _getDesktopContent(_desktopIndex)),
           ],
         ),
       );
-    } else {
-      // Mobile: Entry point is Composer with Drawer
-      return ComposerScreen(
-        drawer: Drawer(
-          child: PremiumSidebar(
-            selectedIndex: 0, // Always 0 in home context mobile
-            onIndexChanged: (index) => _handleMobileNav(context, index),
-          ),
-        ),
-      );
     }
+
+    // PREMIUM MOBILE LAYOUT
+    return Scaffold(
+      extendBody: true,
+      drawer: const AppDrawer(),
+      body: IndexedStack(
+        index: mobileIndex,
+        children: [
+          ActiveWorkspaceExplorer(), // 0: Explorer (Active Project)
+          HistoryScreen(), // 1
+          ComposerScreen(), // 2 (Center)
+          // 3: Sync
+          SyncScreen(),
+          SettingsScreen(), // 4
+          // Container(
+          //   color: Colors.red,
+          //   child: Center(
+          //     child: Text(
+          //       "INDEX 4 REACHED",
+          //       style: TextStyle(color: Colors.white, fontSize: 30),
+          //     ),
+          //   ),
+          // ),
+        ],
+      ),
+      bottomNavigationBar: NeoNavBar(
+        currentIndex: mobileIndex,
+        onTap: (index) {
+          ref.read(homeTabProvider.notifier).setIndex(index);
+        },
+      ),
+    );
   }
 
-  Widget _getIndexContent(int index) {
+  Widget _getDesktopContent(int index) {
     switch (index) {
       case 0:
-        return const ComposerScreen(); // No drawer param needed in desktop
+        return const ComposerScreen();
       case 1:
-        return const SavedRequestsScreen();
+        // Desktop Sidebar "Saved" now maps to ActiveWorkspaceExplorer
+        return const ActiveWorkspaceExplorer();
+      // Or keep SavedRequestsScreen if CollectionsBrowser is Mobile optimized?
+      // CollectionsBrowser is better structure.
       case 2:
         return const HistoryScreen();
       case 3:
         return const EnvironmentsScreen();
+      case 4:
+        return const SettingsScreen(); // Show as full screen
       default:
-        // Index 4 (Settings) returns a dummy view if reached via state,
-        // but it should be intercepted by onIndexChanged.
-        // We return Composer just in case.
         return const ComposerScreen();
-    }
-  }
-
-  void _handleDesktopNav(BuildContext context, int index) {
-    if (index == 4) {
-      // Open Settings
-      showDialog(context: context, builder: (_) => const SettingsDialog());
-      return;
-    }
-    setState(() => _desktopIndex = index);
-  }
-
-  void _handleMobileNav(BuildContext context, int index) {
-    Navigator.pop(context); // Close drawer
-
-    if (index == 0) return; // Already on Home (Composer)
-
-    if (index == 4) {
-      showDialog(context: context, builder: (_) => const SettingsDialog());
-      return;
-    }
-
-    Widget? page;
-    if (index == 1) page = const SavedRequestsScreen();
-    if (index == 2) page = const HistoryScreen();
-    if (index == 3) page = const EnvironmentsScreen();
-
-    if (page != null) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => page!));
     }
   }
 }

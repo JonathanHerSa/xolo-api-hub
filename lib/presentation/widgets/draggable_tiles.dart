@@ -4,7 +4,11 @@ import '../../core/theme/xolo_theme.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../data/services/sync_service.dart';
 import '../../data/local/database.dart';
+import '../providers/collections_provider.dart';
+import '../providers/request_session_provider.dart';
+import '../providers/tabs_provider.dart';
 import '../providers/database_providers.dart';
+import '../providers/workspace_provider.dart';
 
 class DraggableCollectionTile extends ConsumerWidget {
   final Collection collection;
@@ -28,6 +32,12 @@ class DraggableCollectionTile extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
     final isActive = activeWorkspaceId == collection.id;
 
+    // Fetch Children
+    final subCollectionsAsync = ref.watch(
+      subCollectionsProvider(collection.id),
+    );
+    final requestsAsync = ref.watch(collectionRequestsProvider(collection.id));
+
     return LongPressDraggable<Collection>(
       data: collection,
       feedback: Material(
@@ -50,7 +60,7 @@ class DraggableCollectionTile extends ConsumerWidget {
       ),
       childWhenDragging: Opacity(
         opacity: 0.5,
-        child: _buildTile(context, ref, isActive, false),
+        child: _buildTile(context, ref, isActive, false, [], []),
       ),
       child: DragTarget<Object>(
         onWillAcceptWithDetails: (details) {
@@ -88,7 +98,21 @@ class DraggableCollectionTile extends ConsumerWidget {
         },
         builder: (context, candidateData, rejectedData) {
           final isHovering = candidateData.isNotEmpty;
-          return _buildTile(context, ref, isActive, isHovering);
+
+          return subCollectionsAsync.when(
+            data: (subs) => requestsAsync.when(
+              data: (reqs) =>
+                  _buildTile(context, ref, isActive, isHovering, subs, reqs),
+              loading: () =>
+                  _buildTile(context, ref, isActive, isHovering, subs, []),
+              error: (_, __) =>
+                  _buildTile(context, ref, isActive, isHovering, subs, []),
+            ),
+            loading: () =>
+                _buildTile(context, ref, isActive, isHovering, [], []),
+            error: (_, __) =>
+                _buildTile(context, ref, isActive, isHovering, [], []),
+          );
         },
       ),
     );
@@ -99,9 +123,12 @@ class DraggableCollectionTile extends ConsumerWidget {
     WidgetRef ref,
     bool isActive,
     bool isHovering,
+    List<Collection> subCollections,
+    List<SavedRequest> requests,
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final hasChildren = subCollections.isNotEmpty || requests.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -109,7 +136,10 @@ class DraggableCollectionTile extends ConsumerWidget {
         border: isHovering ? Border.all(color: colorScheme.primary) : null,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: ListTile(
+      child: ExpansionTile(
+        key: PageStorageKey(
+          'collection-${collection.id}',
+        ), // Keep expansion state
         leading: Icon(
           isActive ? Icons.folder_special : Icons.folder,
           color: isActive ? colorScheme.primary : colorScheme.secondary,
@@ -118,11 +148,87 @@ class DraggableCollectionTile extends ConsumerWidget {
           collection.name,
           style: TextStyle(
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            color: isActive ? colorScheme.primary : null,
           ),
         ),
-        subtitle: Text(collection.description ?? ""),
-        trailing: _buildPopupMenu(context, ref, isActive),
-        onTap: onTap,
+        subtitle: collection.description != null
+            ? Text(collection.description!)
+            : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildPopupMenu(context, ref, isActive),
+            if (hasChildren)
+              Icon(
+                Icons.keyboard_arrow_down,
+                color: colorScheme.onSurfaceVariant,
+              ),
+          ],
+        ),
+        childrenPadding: const EdgeInsets.only(left: 16),
+        shape: const Border(), // Remove borders when expanded
+        collapsedShape: const Border(),
+        children: [
+          // 1. Sub-Collections (Recursive)
+          ...subCollections.map(
+            (sub) => DraggableCollectionTile(
+              collection: sub,
+              activeWorkspaceId: activeWorkspaceId,
+              onTap: () {}, // No-op, expansion handles it
+              onActivate: () {
+                ref
+                    .read(activeWorkspaceIdProvider.notifier)
+                    .setWorkspace(sub.id);
+              },
+              onDelete: () async {
+                final db = ref.read(databaseProvider);
+                await db.deleteCollection(sub.id);
+              },
+            ),
+          ),
+
+          // 2. Requests
+          ...requests.map(
+            (req) => DraggableRequestTile(
+              req: req,
+              onTap: () => _loadRequest(context, ref, req),
+              onDelete: () async {
+                final db = ref.read(databaseProvider);
+                await db.softDeleteRequest(req.id);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _loadRequest(BuildContext context, WidgetRef ref, SavedRequest req) {
+    // Shared Logic: Open Tab
+    final newTabId = ref.read(tabsProvider.notifier).addTab();
+
+    final sessionController = ref.read(
+      requestSessionControllerProvider(newTabId),
+    );
+    sessionController.setMethod(req.method);
+    sessionController.setUrl(req.url);
+    sessionController.setName(req.name);
+
+    if (req.body != null) {
+      sessionController.setBody(req.body!);
+    }
+
+    ref.read(tabsProvider.notifier).setActiveTab(newTabId);
+
+    // If we are in a Dialog or Drawer, close it?
+    // Usually tree view is on main screen, so no pop needed unless mobile drawer.
+    // But since this is recursive, we might be deep.
+    // For now, simple Snackbar feedback.
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Cargado: ${req.name}'),
+        duration: const Duration(milliseconds: 800),
       ),
     );
   }

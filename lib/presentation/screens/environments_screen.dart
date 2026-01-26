@@ -304,8 +304,9 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              if (_selectedEnv?.id == env.id)
+              if (_selectedEnv?.id == env.id) {
                 setState(() => _selectedEnv = null);
+              }
               await ref.read(databaseProvider).deleteEnvironment(env.id);
               if (ctx.mounted) Navigator.pop(ctx);
             },
@@ -336,8 +337,9 @@ class _VariablesListState extends ConsumerState<_VariablesList> {
     return StreamBuilder<List<EnvVariable>>(
       stream: db.watchVariables(workspaceId, widget.envId),
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
 
         final variables = snapshot.data!;
         final colorScheme = Theme.of(context).colorScheme;

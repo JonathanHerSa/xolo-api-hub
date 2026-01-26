@@ -38,9 +38,30 @@ class SyncService {
   ) async {
     final items = await _buildChildren(root.id, db);
 
+    // Fetch Environments for this Collection
+    final envs = await (db.select(
+      db.environments,
+    )..where((t) => t.collectionId.equals(root.id))).get();
+
+    final syncEnvs = <SyncEnvironment>[];
+    for (final env in envs) {
+      final vars = await (db.select(
+        db.envVariables,
+      )..where((t) => t.environmentId.equals(env.id))).get();
+      syncEnvs.add(
+        SyncEnvironment(
+          name: env.name,
+          variables: vars
+              .map((v) => SyncVariable(key: v.key, value: v.value))
+              .toList(),
+        ),
+      );
+    }
+
     return SyncCollection(
       info: SyncInfo(name: root.name, description: root.description),
       items: items,
+      environments: syncEnvs.isNotEmpty ? syncEnvs : null,
     );
   }
 
@@ -223,6 +244,164 @@ class SyncService {
       );
     }
   }
+
+  Future<File> exportFullBackup({
+    required String directoryPath,
+    required AppDatabase db,
+  }) async {
+    // 1. Fetch All Root Collections (Workspaces)
+    final roots = await (db.select(
+      db.collections,
+    )..where((t) => t.parentId.isNull())).get();
+
+    final workspaces = <SyncCollection>[];
+    for (final root in roots) {
+      workspaces.add(await _buildSyncCollection(root, db));
+    }
+
+    // 2. Fetch Global Environments & Variables
+    // Environments without collectionId are global (or "Unclassified") - though usually Envs belong to a workspace.
+    // If we have global envs, fetch them.
+    final globalEnvs = await (db.select(
+      db.environments,
+    )..where((t) => t.collectionId.isNull())).get();
+
+    final syncGlobalEnvs = <SyncEnvironment>[];
+    for (final env in globalEnvs) {
+      final vars = await (db.select(
+        db.envVariables,
+      )..where((t) => t.environmentId.equals(env.id))).get();
+
+      syncGlobalEnvs.add(
+        SyncEnvironment(
+          name: env.name,
+          variables: vars
+              .map((v) => SyncVariable(key: v.key, value: v.value))
+              .toList(),
+        ),
+      );
+    }
+
+    // 3. Construct Backup Object
+    final backup = SyncBackup(
+      version: 1,
+      createdAt: DateTime.now().toIso8601String(),
+      workspaces: workspaces,
+      globalEnvironments: syncGlobalEnvs,
+    );
+
+    // 4. Write
+    final jsonString = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(backup.toJson());
+    final filename =
+        'xolo_backup_${DateTime.now().millisecondsSinceEpoch}.json';
+    final filePath = p.join(directoryPath, filename);
+    final file = File(filePath);
+    await file.writeAsString(jsonString);
+
+    return file;
+  }
+
+  Future<void> importFullBackup({
+    required File file,
+    required AppDatabase db,
+  }) async {
+    try {
+      final jsonString = await file.readAsString();
+      final jsonMap = jsonDecode(jsonString);
+      final backup = SyncBackup.fromJson(jsonMap);
+
+      // Import Workspaces
+      for (final ws in backup.workspaces) {
+        // Create/Find Root
+        final rootId = await _upsertCollection(
+          name: ws.info.name,
+          description: ws.info.description,
+          parentId: null,
+          db: db,
+        );
+        // Recursively import children
+        await _importItems(ws.items, rootId, db);
+
+        // Import Workspace Enviroments?
+        // SyncCollection currently doesn't hold environments.
+        // IF we want to sync envs per workspace, we need to update SyncCollection.
+        // For now, let's assume Envs are important.
+        if (ws.environments != null) {
+          for (final env in ws.environments!) {
+            final envId = await _upsertEnvironment(env.name, rootId, db);
+            await _upsertVariables(env.variables, envId, null, db);
+          }
+        }
+      }
+
+      // Import Global Envs
+      if (backup.globalEnvironments != null) {
+        for (final env in backup.globalEnvironments!) {
+          final envId = await _upsertEnvironment(env.name, null, db);
+          await _upsertVariables(env.variables, envId, null, db);
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to import backup: $e');
+    }
+  }
+
+  Future<int> _upsertEnvironment(
+    String name,
+    int? collectionId,
+    AppDatabase db,
+  ) async {
+    final existing =
+        await (db.select(db.environments)..where(
+              (t) =>
+                  t.name.equals(name) &
+                  (collectionId == null
+                      ? t.collectionId.isNull()
+                      : t.collectionId.equals(collectionId)),
+            ))
+            .getSingleOrNull();
+
+    if (existing != null) return existing.id;
+    return db.createEnvironment(name, collectionId);
+  }
+
+  Future<void> _upsertVariables(
+    List<SyncVariable> vars,
+    int? envId,
+    int? collectionId,
+    AppDatabase db,
+  ) async {
+    for (final v in vars) {
+      // Check existing variable
+      final existing =
+          await (db.select(db.envVariables)..where(
+                (t) =>
+                    t.key.equals(v.key) &
+                    (envId == null
+                        ? t.environmentId.isNull()
+                        : t.environmentId.equals(envId)) &
+                    (collectionId == null
+                        ? t.collectionId.isNull()
+                        : t.collectionId.equals(collectionId)),
+              ))
+              .getSingleOrNull();
+
+      if (existing != null) {
+        await (db.update(db.envVariables)
+              ..where((t) => t.id.equals(existing.id)))
+            .write(EnvVariablesCompanion(value: Value(v.value)));
+      } else {
+        await db.upsertVariable(
+          key: v.key,
+          value: v.value,
+          environmentId: envId,
+          workspaceId: collectionId,
+        );
+      }
+    }
+  }
 }
 
 // =============================================================================
@@ -232,20 +411,101 @@ class SyncService {
 class SyncCollection {
   final SyncInfo info;
   final List<SyncItem> items;
+  final List<SyncEnvironment>? environments;
 
-  SyncCollection({required this.info, required this.items});
+  SyncCollection({required this.info, required this.items, this.environments});
 
   factory SyncCollection.fromJson(Map<String, dynamic> json) {
     return SyncCollection(
       info: SyncInfo.fromJson(json['info']),
       items: (json['items'] as List).map((i) => SyncItem.fromJson(i)).toList(),
+      environments: json['environments'] != null
+          ? (json['environments'] as List)
+                .map((e) => SyncEnvironment.fromJson(e))
+                .toList()
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'info': info.toJson(),
     'items': items.map((i) => i.toJson()).toList(),
+    if (environments != null)
+      'environments': environments!.map((e) => e.toJson()).toList(),
   };
+}
+
+class SyncBackup {
+  final int version;
+  final String createdAt;
+  final List<SyncCollection> workspaces;
+  final List<SyncEnvironment>? globalEnvironments;
+
+  SyncBackup({
+    required this.version,
+    required this.createdAt,
+    required this.workspaces,
+    this.globalEnvironments,
+  });
+
+  factory SyncBackup.fromJson(Map<String, dynamic> json) {
+    return SyncBackup(
+      version: json['version'] ?? 1,
+      createdAt: json['createdAt'] ?? '',
+      workspaces: (json['workspaces'] as List)
+          .map((e) => SyncCollection.fromJson(e))
+          .toList(),
+      globalEnvironments: json['globalEnvironments'] != null
+          ? (json['globalEnvironments'] as List)
+                .map((e) => SyncEnvironment.fromJson(e))
+                .toList()
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'version': version,
+    'createdAt': createdAt,
+    'workspaces': workspaces.map((e) => e.toJson()).toList(),
+    if (globalEnvironments != null)
+      'globalEnvironments': globalEnvironments!.map((e) => e.toJson()).toList(),
+  };
+}
+
+class SyncEnvironment {
+  final String name;
+  final List<SyncVariable> variables;
+
+  SyncEnvironment({required this.name, required this.variables});
+
+  factory SyncEnvironment.fromJson(Map<String, dynamic> json) {
+    return SyncEnvironment(
+      name: json['name'],
+      variables:
+          (json['variables'] as List?)
+              ?.map((v) => SyncVariable.fromJson(v))
+              .toList() ??
+          [],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'variables': variables.map((v) => v.toJson()).toList(),
+  };
+}
+
+class SyncVariable {
+  final String key;
+  final String value;
+
+  SyncVariable({required this.key, required this.value});
+
+  factory SyncVariable.fromJson(Map<String, dynamic> json) {
+    return SyncVariable(key: json['key'], value: json['value']);
+  }
+
+  Map<String, dynamic> toJson() => {'key': key, 'value': value};
 }
 
 class SyncInfo {

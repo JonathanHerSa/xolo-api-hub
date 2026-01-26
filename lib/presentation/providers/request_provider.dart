@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/local/database.dart';
 import '../../core/utils/variable_parser.dart';
 import '../providers/environment_provider.dart';
 import '../providers/database_providers.dart';
 import '../providers/workspace_provider.dart';
+import '../providers/incognito_provider.dart';
 
 // --- State ---
 class RequestState {
@@ -260,8 +260,14 @@ class RequestController {
       print('Error en request ($tabId): $e\n$stack');
     }
 
-    // Save History
+    // Save History (if not Incognito)
     try {
+      final isIncognito = ref.read(isIncognitoProvider);
+      if (isIncognito) {
+        // Skip history
+        return;
+      }
+
       final db = ref.read(databaseProvider);
       final activeWorkspaceId = ref.read(activeWorkspaceIdProvider);
 

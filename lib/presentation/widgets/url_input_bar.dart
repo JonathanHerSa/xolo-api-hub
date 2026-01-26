@@ -19,6 +19,7 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
   final FocusNode _focusNode = FocusNode();
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
+  bool _isBaseUrlExpanded = false;
 
   @override
   void initState() {
@@ -248,53 +249,73 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
             child: Row(
               children: [
                 if (showPrefix)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: Tooltip(
-                      message: 'Base URL (Enforced)',
-                      child: Container(
-                        constraints: const BoxConstraints(
-                          maxWidth: 200,
-                        ), // Limit width
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: colorScheme.primary.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.lock_outline,
-                              size: 12,
-                              color: colorScheme.primary,
+                  Flexible(
+                    flex: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Tooltip(
+                        message: 'Base URL (Tap to expand/collapse)',
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isBaseUrlExpanded = !_isBaseUrlExpanded;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
+                            constraints: BoxConstraints(
+                              maxWidth: _isBaseUrlExpanded
+                                  ? 200
+                                  : 70, // Reduced sizes
                             ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                baseUrl, // SHOW ACTUAL VALUE
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: colorScheme.primary.withValues(
+                                  alpha: 0.2,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            Text(
-                              ' / ',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.lock_outline,
+                                  size: 12,
+                                  color: colorScheme.primary,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    baseUrl, // SHOW ACTUAL VALUE
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                                if (_isBaseUrlExpanded) ...[
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.chevron_left,
+                                    size: 12,
+                                    color: colorScheme.primary.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),

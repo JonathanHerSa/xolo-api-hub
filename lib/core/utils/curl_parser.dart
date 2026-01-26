@@ -1,12 +1,12 @@
 class CurlParser {
   static final RegExp _headerRegex = RegExp(
     r"(-H|--header)\s+['"
-            '"'
-            r"]?([^'"
-            '"'
-            r"]+)['" +
-        '"' +
-        r"]?",
+    '"'
+    r"]?([^'"
+    '"'
+    r"]+)['"
+    '"'
+    r"]?",
   );
   static final RegExp _methodRegex = RegExp(r"(-X|--request)\s+([A-Z]+)");
   static final RegExp _dataRegex = RegExp(
@@ -20,12 +20,12 @@ class CurlParser {
   );
   static final RegExp _urlRegex = RegExp(
     r"['"
-            '"'
-            r"]?(https?://[^'"
-            '"'
-            r"\s]+)['" +
-        '"' +
-        r"]?",
+    '"'
+    r"]?(https?://[^'"
+    '"'
+    r"\s]+)['"
+    '"'
+    r"]?",
   );
 
   static ParsedCurl? parse(String curlCommand) {

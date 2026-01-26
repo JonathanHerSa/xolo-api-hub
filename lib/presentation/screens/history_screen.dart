@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -7,11 +8,10 @@ import '../../core/theme/xolo_theme.dart';
 import '../../data/local/database.dart';
 import '../providers/database_providers.dart';
 import '../providers/history_provider.dart';
-import '../providers/request_provider.dart';
-import '../providers/form_providers.dart';
 import '../providers/workspace_provider.dart';
 import '../providers/tabs_provider.dart';
 import '../providers/request_session_provider.dart';
+import '../providers/home_tab_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -64,7 +64,38 @@ class HistoryScreen extends ConsumerWidget {
             itemCount: history.length,
             itemBuilder: (context, index) {
               final entry = history[index];
-              return _HistoryItem(entry: entry);
+              return Dismissible(
+                key: Key('history_${entry.id}'),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  color: colorScheme.errorContainer,
+                  child: Icon(Icons.delete_outline, color: colorScheme.error),
+                ),
+                onDismissed: (direction) {
+                  HapticFeedback.mediumImpact();
+                  // Optimistic UI updates automatically via Stream, but we must delete from DB
+                  final db = ref.read(databaseProvider);
+                  db.delete(db.historyEntries).delete(entry);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Entry deleted'),
+                      action: SnackBarAction(
+                        label: 'Undo',
+                        onPressed: () {
+                          // Undo logic: re-insert.
+                          // Requires converting Entry to Companion or Insertable.
+                          // For now, simple delete.
+                          db.into(db.historyEntries).insert(entry);
+                        },
+                      ),
+                    ),
+                  );
+                },
+                child: _HistoryItem(entry: entry),
+              );
             },
           );
         },
@@ -246,7 +277,7 @@ class _HistoryItem extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Request cargado en nueva pestaña')),
     );
-    // Volver atrás
-    Navigator.pop(context);
+    // Switch to Composer Tab (Index 2)
+    ref.read(homeTabProvider.notifier).setIndex(2);
   }
 }

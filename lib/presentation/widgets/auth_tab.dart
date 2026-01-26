@@ -46,8 +46,9 @@ class _AuthTabState extends ConsumerState<AuthTab> {
     final sessionAsync = ref.watch(requestSessionProvider(widget.tabId));
     final session = sessionAsync.asData?.value;
 
-    if (session == null)
+    if (session == null) {
       return const Center(child: CircularProgressIndicator());
+    }
 
     final currentType = session.authType ?? 'none';
     Map<String, dynamic> authData = {};

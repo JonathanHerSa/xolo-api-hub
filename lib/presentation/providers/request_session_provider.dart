@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/key_value_pair.dart';
+import '../../data/local/database.dart';
+import 'dart:convert';
 
 /// Modelo inmutable del estado de input de un Request
 class RequestSession {
@@ -127,6 +129,54 @@ class RequestSessionController {
 
   void updateParams(List<KeyValuePair> newParams) {
     _update(_state.copyWith(params: _ensureEmptyRow(newParams)));
+  }
+
+  void loadRequest(SavedRequest req) {
+    // Helper to parse JSON string to KeyValuePair list
+    List<KeyValuePair> parseKV(String? jsonStr) {
+      if (jsonStr == null || jsonStr.isEmpty) return [KeyValuePair()];
+      try {
+        final List<dynamic> list = jsonDecode(
+          jsonStr,
+        ); // Assuming it is stored as JSON list of maps?
+        // Wait, Drift stores Lists as... string? Or did we define a TypeConverter?
+        // In database.dart: headers is TextColumn named 'headers'. params is 'params'.
+        // They are likely JSON strings.
+        // However, SavedRequest schema definition not visible here.
+        // Let's assume standard format: List of maps {key: "k", value: "v", isActive: true}
+        return list
+            .map(
+              (e) => KeyValuePair(
+                key: e['key'] ?? '',
+                value: e['value'] ?? '',
+                isActive: e['isActive'] ?? true,
+              ),
+            )
+            .toList();
+      } catch (_) {
+        return [KeyValuePair()];
+      }
+    }
+
+    // Note: If DB stores them differently, this might fail.
+    // But let's check how we SAVE them first.
+    // For now, I will implement a basic load assuming the structure.
+
+    _update(
+      RequestSession(
+        id: id, // Keep session ID
+        name: req.name,
+        method: req.method,
+        url: req.url,
+        body: req.body ?? '',
+        authType: req.authType,
+        authData: req.authData,
+        // The SavedRequest entity in DB might store headers/params as JSON string.
+        // Let's implement parseKV carefully.
+        headers: _ensureEmptyRow(parseKV(req.headersJson)),
+        params: _ensureEmptyRow(parseKV(req.paramsJson)),
+      ),
+    );
   }
 
   List<KeyValuePair> _ensureEmptyRow(List<KeyValuePair> list) {

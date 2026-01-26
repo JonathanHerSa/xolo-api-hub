@@ -258,8 +258,9 @@ class _EnvironmentSwitcher extends ConsumerWidget {
     return envsAsync.when(
       data: (envs) {
         final activeEnv = envs.where((e) => e.id == activeId).firstOrNull;
-        if (activeEnv == null)
+        if (activeEnv == null) {
           return const SizedBox.shrink(); // Hide if no active env found
+        }
 
         return PopupMenuButton<int>(
           tooltip: 'Cambiar Entorno',
