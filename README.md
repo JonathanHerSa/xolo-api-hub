@@ -1,58 +1,88 @@
-# Xolo API Hub 🚀
+# 💠 Xolo API Hub
 
-**Xolo** es un cliente API móvil de alto rendimiento diseñado para desarrolladores que necesitan potencia y movilidad. Gestiona, prueba y automatiza tus peticiones HTTP desde cualquier lugar con una interfaz premium y herramientas avanzadas.
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
+[![Release](https://img.shields.io/github/v/release/JonathanHerSa/xolo-api-hub?style=for-the-badge&color=blueviolet)](https://github.com/JonathanHerSa/xolo-api-hub/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-![Xolo Mockup](https://raw.githubusercontent.com/JonathanHerSa/xolo-api-hub/main/.github/assets/mockup.png)
-_(Nota: Asegúrate de subir la imagen generada a esta ruta en tu repo)_
-
----
-
-## ✨ Características Principales
-
-### 🎨 Highlighting & UX Pro
-
-- **Resaltado Dinámico**: Detección visual de `{{variables}}` y `:parametros` en tiempo real.
-- **Editor Pro**: Resaltado de sintaxis en JSON, Headers y Query Params.
-- **Modo Oscuro**: Interfaz diseñada para reducir la fatiga visual.
-
-### 🧪 Scripts & Chaining (Novedad)
-
-- **Pre-request Scripts**: Genera variables dinámicas como `{{$timestamp}}` o `{{$guid}}` antes de enviar la petición.
-- **Post-request Extraction**: Extrae datos de la respuesta usando **JSONPath** y guárdalos automáticamente para la siguiente petición.
-
-### 🔐 Seguridad y Autenticación
-
-- **OAuth 2.0 Nativo**: Soporte para Authorization Code Flow con servidor local dinámico.
-- **Biometría**: Protege tus colecciones sensibles con FaceID o huella dactilar.
-- **Herencia de Auth**: Configura la autenticación a nivel de proyecto y deja que tus endpoints la hereden automáticamente.
+**Xolo** is a premium, open-source API client for mobile devices. Built for power users and developers, Xolo bridges the gap between desktop tools like Postman and the need for high-mobility testing and automation.
 
 ---
 
-## 📥 Instalación (Android)
+## 🚀 Key Features
 
-Xolo se distribuye de forma gratuita a través de **GitHub Releases**:
+### 🎨 State-of-the-Art UX
 
-1. Ve a la pestaña de [Releases](https://github.com/JonathanHerSa/xolo-api-hub/releases).
-2. Descarga el último archivo `.apk`.
-3. Abre el archivo en tu dispositivo Android e instálalo.
+- **Real-Time Highlighting**: Instant visual feedback for `{{variables}}` and `:parameters` across all input fields.
+- **Advanced Code Editor**: Dedicated support for JSON bodies, custom headers, and query parameters with full syntax coloring.
+- **Dynamic Path Parameters**: Automatically detects and extracts `:param` segments from your URLs.
 
----
+### 🧪 Advanced Scripting & Test Chaining
 
-## 🛠 Arquitectura Tecnológica
+- **Pre-Request Scripts**: Automate your workflow by generating dynamic values (e.g., `{{$timestamp}}`, `{{$guid}}`, `{{$randomInt}}`) before every request.
+- **Response Extraction**: Use **JSONPath** to extract specific values from responses and store them in environment variables for subsequent requests.
+- **Real-Time Validation**: Test your extraction rules instantly without re-sending requests.
 
-El proyecto está construido con **Flutter** siguiendo principios de **Clean Architecture** para garantizar robustez y escalabilidad:
+### 🔐 Enterprise-Grade Security
 
-- **State Management**: Flutter Riverpod.
-- **Database**: Drift (SQLite) con migraciones automatizadas.
-- **Networking**: Dio con interceptores avanzados.
-- **CI/CD**: GitHub Actions para builds automatizados de APK.
-
----
-
-## 🤝 Contribuciones
-
-¡Xolo es un proyecto abierto! Si quieres mejorar alguna funcionalidad o reportar un bug, siéntete libre de abrir un **Issue** o enviar un **Pull Request**.
+- **OAuth 2.0 Native Support**: Seamlessly handle Authorization Code flows with an embedded ephemeral local server for secure token exchange.
+- **Biometric Protection**: Secure your workspace and sensitive API keys using device-native Biometrics (FaceID/Fingerprint).
+- **Intelligent Auth Inheritance**: Centralize authentication at the project or folder level—endpoints inherit security settings automatically.
 
 ---
 
-Desarrollado con ❤️ para la comunidad de desarrolladores.
+## 📸 Screenshots
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/JonathanHerSa/xolo-api-hub/main/.github/assets/mockup.png" width="400" alt="Xolo Interface Mockup">
+</p>
+
+---
+
+## 🛠 Tech Stack & Architecture
+
+Xolo is built with a focus on stability, performance, and clean code principles.
+
+| Layer                 | Technology                                               |
+| :-------------------- | :------------------------------------------------------- |
+| **Framework**         | [Flutter 3.x](https://flutter.dev)                       |
+| **State Management**  | [Riverpod](https://riverpod.dev)                         |
+| **Local Persistence** | [Drift](https://drift.simonbinder.eu/) (Reactive SQLite) |
+| **Networking**        | [Dio](https://pub.dev/packages/dio)                      |
+| **CI/CD**             | [GitHub Actions](https://github.com/features/actions)    |
+
+### Clean Architecture
+
+The project follows a strict layered architecture:
+
+- **Core**: Shared utilities, themes, and global constants.
+- **Data**: Repository implementations, DTOs, and local/remote data sources.
+- **Domain**: Pure business logic, entities, and repository interfaces.
+- **Presentation**: UI components, screens, and Riverpod providers.
+
+---
+
+## 📥 Getting Started (Android)
+
+Xolo is currently in **Release Candidate (RC1)**. You can install it for free today:
+
+1. Navigate to the **[Releases](https://github.com/JonathanHerSa/xolo-api-hub/releases)** page.
+2. Download the latest `app-release.apk`.
+3. Open the file on your Android device and follow the installation prompts.
+
+---
+
+## 💻 Contributing
+
+We welcome contributions from the community!
+
+- Found a bug? [Open an issue](https://github.com/JonathanHerSa/xolo-api-hub/issues).
+- Want a new feature? [Start a discussion](https://github.com/JonathanHerSa/xolo-api-hub/discussions) or submit a PR.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Developed with ❤️ by **JonathanHerSa**
