@@ -1,52 +1,58 @@
-# Xolo API Hub
+# Xolo API Hub 🚀
 
-Bienvenido a **Xolo API Hub**, una herramienta esencial para desarrolladores. Funciona como un cliente API móvil similar a Postman o ApiDog, permitiendo realizar peticiones HTTP, inspeccionar respuestas y gestionar colecciones directamente desde tu dispositivo móvil.
+**Xolo** es un cliente API móvil de alto rendimiento diseñado para desarrolladores que necesitan potencia y movilidad. Gestiona, prueba y automatiza tus peticiones HTTP desde cualquier lugar con una interfaz premium y herramientas avanzadas.
 
-## Estructura del Proyecto
+![Xolo Mockup](https://raw.githubusercontent.com/JonathanHerSa/xolo-api-hub/main/.github/assets/mockup.png)
+_(Nota: Asegúrate de subir la imagen generada a esta ruta en tu repo)_
 
-El proyecto sigue una arquitectura limpia (Clean Architecture) dividida en capas para asegurar la escalabilidad y mantenibilidad.
+---
 
-```text
-lib/
-├── core/                   # El núcleo compartido (Config, Utils, Constantes)
-│   ├── config/             # Temas, Rutas, Env Vars
-│   ├── constants/          # Strings, Assets, Enums globales
-│   ├── errors/             # Excepciones personalizadas (Failure classes)
-│   └── utils/              # Helpers (Formatters, Validadores)
-│
-├── data/                   # "Infrastructure Layer" (Cómo se obtienen los datos)
-│   ├── datasources/        # Fuentes de datos crudas
-│   │   ├── local/          # Drift (SQLite), SharedPrefs
-│   │   └── remote/         # Dio (aunque Xolo actúa como cliente, aquí va la lógica de red)
-│   ├── models/             # DTOs (Data Transfer Objects). Extienden de Entities.
-│   └── repositories/       # Implementación concreta de los repositorios del dominio.
-│
-├── domain/                 # "Business Logic Layer" (QUÉ hace la app - Puro Dart)
-│   ├── entities/           # Objetos puros (XoloRequest, Collection). Sin JSON parsing aquí.
-│   └── repositories/       # Interfaces (contratos abstractos). NestJS: "Services Interfaces".
-│
-├── presentation/           # "UI Layer" (Lo que ve el usuario)
-│   ├── providers/          # Riverpod Notifiers (State Management).
-│   ├── screens/            # Pantallas completas (Scaffolds).
-│   └── widgets/            # Componentes reutilizables (Botones, Inputs custom).
-│
-└── main.dart               # Punto de entrada.
-```
+## ✨ Características Principales
 
-## Capas
+### 🎨 Highlighting & UX Pro
 
-### Core
+- **Resaltado Dinámico**: Detección visual de `{{variables}}` y `:parametros` en tiempo real.
+- **Editor Pro**: Resaltado de sintaxis en JSON, Headers y Query Params.
+- **Modo Oscuro**: Interfaz diseñada para reducir la fatiga visual.
 
-Contiene código común y utilidades que pueden ser usadas por cualquier capa.
+### 🧪 Scripts & Chaining (Novedad)
 
-### Data
+- **Pre-request Scripts**: Genera variables dinámicas como `{{$timestamp}}` o `{{$guid}}` antes de enviar la petición.
+- **Post-request Extraction**: Extrae datos de la respuesta usando **JSONPath** y guárdalos automáticamente para la siguiente petición.
 
-Responsable de la obtención y persistencia de datos. Aquí se decide si los datos vienen de una API remota o de una base de datos local.
+### 🔐 Seguridad y Autenticación
 
-### Domain
+- **OAuth 2.0 Nativo**: Soporte para Authorization Code Flow con servidor local dinámico.
+- **Biometría**: Protege tus colecciones sensibles con FaceID o huella dactilar.
+- **Herencia de Auth**: Configura la autenticación a nivel de proyecto y deja que tus endpoints la hereden automáticamente.
 
-El corazón de la aplicación. Contiene las reglas de negocio y definiciones de entidades. Esta capa no debe depender de ninguna librería externa (como Flutter o paquetes de bases de datos) en la medida de lo posible.
+---
 
-### Presentation
+## 📥 Instalación (Android)
 
-Contiene todo lo relacionado con la UI y el manejo de estado visual (usando Riverpod).
+Xolo se distribuye de forma gratuita a través de **GitHub Releases**:
+
+1. Ve a la pestaña de [Releases](https://github.com/JonathanHerSa/xolo-api-hub/releases).
+2. Descarga el último archivo `.apk`.
+3. Abre el archivo en tu dispositivo Android e instálalo.
+
+---
+
+## 🛠 Arquitectura Tecnológica
+
+El proyecto está construido con **Flutter** siguiendo principios de **Clean Architecture** para garantizar robustez y escalabilidad:
+
+- **State Management**: Flutter Riverpod.
+- **Database**: Drift (SQLite) con migraciones automatizadas.
+- **Networking**: Dio con interceptores avanzados.
+- **CI/CD**: GitHub Actions para builds automatizados de APK.
+
+---
+
+## 🤝 Contribuciones
+
+¡Xolo es un proyecto abierto! Si quieres mejorar alguna funcionalidad o reportar un bug, siéntete libre de abrir un **Issue** o enviar un **Pull Request**.
+
+---
+
+Desarrollado con ❤️ para la comunidad de desarrolladores.
