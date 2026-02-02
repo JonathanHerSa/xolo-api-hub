@@ -1,0 +1,37 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - "v*" # Se activa cuando subes un tag que empiece con 'v', ej: v1.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
