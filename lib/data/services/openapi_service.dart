@@ -13,9 +13,10 @@ class OpenApiService {
 
   Future<void> importFromUrl(
     String url,
-    String? workspaceId,
-    AppDatabase db,
-  ) async {
+    int? parentId,
+    AppDatabase db, {
+    int? targetCollectionId,
+  }) async {
     try {
       final response = await _dio.get(url);
       final json = response.data;
@@ -24,21 +25,31 @@ class OpenApiService {
         throw Exception('Invalid JSON format');
       }
 
-      int? parentId;
-      if (workspaceId != null && workspaceId.isNotEmpty) {
-        parentId = int.tryParse(workspaceId);
-      }
-
-      await _parseAndSave(json, parentId, db);
+      await importFromJson(
+        json,
+        parentId,
+        db,
+        targetCollectionId: targetCollectionId,
+      );
     } catch (e) {
       throw Exception('Failed to import OpenAPI: $e');
     }
+  }
+
+  Future<void> importFromJson(
+    Map<String, dynamic> json,
+    int? parentId,
+    AppDatabase db, {
+    int? targetCollectionId,
+  }) async {
+    await _parseAndSave(json, parentId, db, targetCollectionId);
   }
 
   Future<void> _parseAndSave(
     Map<String, dynamic> json,
     int? parentId,
     AppDatabase db,
+    int? targetCollectionId,
   ) async {
     final info = json['info'] as Map<String, dynamic>?;
     final title = info?['title'] as String? ?? 'Imported Collection';
@@ -46,16 +57,20 @@ class OpenApiService {
 
     // 1. Resolve Root Collection (Find or Create)
     int rootId;
-    final existingRoot = await db.findCollectionByName(title, parentId);
-    if (existingRoot != null) {
-      rootId = existingRoot.id;
-      // Optional: Update description?
+    if (targetCollectionId != null) {
+      rootId = targetCollectionId;
+      // Optionally update name/description if it's the root of the import
     } else {
-      rootId = await db.createCollection(
-        name: title,
-        description: description,
-        parentId: parentId,
-      );
+      final existingRoot = await db.findCollectionByName(title, parentId);
+      if (existingRoot != null) {
+        rootId = existingRoot.id;
+      } else {
+        rootId = await db.createCollection(
+          name: title,
+          description: description,
+          parentId: parentId,
+        );
+      }
     }
 
     // Base URL resolution

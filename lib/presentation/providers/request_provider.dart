@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:json_path/json_path.dart';
 
 import '../../core/utils/variable_parser.dart';
+import '../../core/services/auth_resolver_service.dart';
 import '../providers/environment_provider.dart';
+import '../providers/request_session_provider.dart';
 import '../providers/database_providers.dart';
 import '../providers/workspace_provider.dart';
 import '../providers/incognito_provider.dart';
@@ -74,6 +77,7 @@ class RequestController {
     Object? body,
     String? authType,
     String? authData,
+    int? collectionId,
   }) async {
     // 1. Loading
     _update(_state.copyWith(isLoading: true, error: null, statusCode: null));
@@ -88,7 +92,12 @@ class RequestController {
 
     try {
       // 2. Variable Parsing (Global + Env + Chains)
-      final resolvedVars = ref.read(resolvedVariablesProvider);
+      final baseVars = ref.read(resolvedVariablesProvider);
+      final session = ref.read(requestSessionProvider(tabId)).asData?.value;
+
+      // Execute Pre-Request Scripts
+      final preVars = _executePreScripts(session?.preScriptsJson, baseVars);
+      final resolvedVars = {...baseVars, ...preVars};
 
       // Parse URL
       final parsedUrl = VariableParser.parse(url, resolvedVars);
@@ -107,14 +116,23 @@ class RequestController {
         }
       }
 
-      // 2.1 INJECT AUTH HEADERS
-      if (authType != null && authData != null) {
-        try {
-          // Resolve variables in authData JSON first?
-          // No, authData is JSON string. We parse it, then resolve values.
-          final authMap = _parseAuthData(authData);
+      // 2.1 INJECT AUTH HEADERS (With Inheritance)
+      // Resolve Auth
+      final authResolver = ref.read(authResolverServiceProvider);
+      final resolvedAuth = await authResolver.resolveAuth(
+        requestAuthType: authType,
+        requestAuthData: authData,
+        collectionId: collectionId,
+      );
 
-          if (authType == 'bearer') {
+      final effectiveAuthType = resolvedAuth.type;
+      final effectiveAuthData = resolvedAuth.data;
+
+      if (effectiveAuthType != null && effectiveAuthData != null) {
+        try {
+          final authMap = _parseAuthData(effectiveAuthData);
+
+          if (effectiveAuthType == 'bearer') {
             final token = VariableParser.parse(
               authMap['token'] ?? '',
               resolvedVars,
@@ -122,7 +140,15 @@ class RequestController {
             if (token.isNotEmpty) {
               parsedHeaders['Authorization'] = 'Bearer $token';
             }
-          } else if (authType == 'basic') {
+          } else if (effectiveAuthType == 'oauth2') {
+            final token = VariableParser.parse(
+              authMap['accessToken'] ?? '',
+              resolvedVars,
+            );
+            if (token.isNotEmpty) {
+              parsedHeaders['Authorization'] = 'Bearer $token';
+            }
+          } else if (effectiveAuthType == 'basic') {
             final user = VariableParser.parse(
               authMap['username'] ?? '',
               resolvedVars,
@@ -136,7 +162,7 @@ class RequestController {
               final base64Str = base64.encode(bytes);
               parsedHeaders['Authorization'] = 'Basic $base64Str';
             }
-          } else if (authType == 'api_key') {
+          } else if (effectiveAuthType == 'api_key') {
             final key = VariableParser.parse(
               authMap['key'] ?? '',
               resolvedVars,
@@ -151,14 +177,7 @@ class RequestController {
               if (addTo == 'header') {
                 parsedHeaders[key] = val;
               } else if (addTo == 'query') {
-                // Query params logic is below, we need to inject into queryParams or parsedParams?
-                // parsedParams is derived from queryParams arg.
-                // We should inject into a consolidated params map.
-                // But queryParams arg is final? No, we transform it.
-                // We need to inject into queryParams logic.
-                // To avoid complex logic duplication, we'll Handle this in generic params section.
-                // Or better: Inject into 'queryParams' argument before parsing? No, queryParams is map.
-                // We will add to our own localized params map if needed.
+                // Should inject into params
               }
             }
           }
@@ -180,10 +199,10 @@ class RequestController {
         }
       }
 
-      // 2.2 INJECT AUTH PARAMS
-      if (authType == 'api_key' && authData != null) {
+      // 2.2 INJECT AUTH PARAMS (API Key Query)
+      if (effectiveAuthType == 'api_key' && effectiveAuthData != null) {
         try {
-          final authMap = _parseAuthData(authData);
+          final authMap = _parseAuthData(effectiveAuthData);
           final addTo = authMap['in'] ?? 'header';
           if (addTo == 'query') {
             final key = VariableParser.parse(
@@ -232,6 +251,9 @@ class RequestController {
           durationMs: stopwatch.elapsedMilliseconds,
         ),
       );
+
+      // 5. Execute Scripts (Request Chaining)
+      await _executeScripts(response.data);
     } on DioException catch (e) {
       stopwatch.stop();
       statusCode = e.response?.statusCode;
@@ -278,7 +300,8 @@ class RequestController {
 
       await db.addHistoryItem(
         method: method,
-        url: attemptUrl,
+        url: attemptUrl, // Parsed/Resolved URL
+        originalUrl: url, // Template URL
         statusCode: statusCode ?? 0,
         durationMs: stopwatch.elapsedMilliseconds,
         workspaceId: activeWorkspaceId,
@@ -309,6 +332,106 @@ class RequestController {
     } catch (_) {
       return {};
     }
+  }
+
+  Future<void> _executeScripts(dynamic responseData) async {
+    final session = ref.read(requestSessionProvider(tabId)).asData?.value;
+    final scriptsJson = session?.scriptsJson;
+    if (scriptsJson == null || scriptsJson.isEmpty) return;
+
+    try {
+      final List<dynamic> rules = jsonDecode(scriptsJson);
+      final db = ref.read(databaseProvider);
+      final activeEnvId = ref.read(activeEnvironmentIdProvider).asData?.value;
+      final workspaceId = ref.read(activeWorkspaceIdProvider);
+
+      for (final rule in rules) {
+        final varName = rule['key'];
+        final pathStr = rule['path'];
+        if (varName == null || pathStr == null || pathStr.isEmpty) continue;
+
+        try {
+          final jsonPath = JsonPath(pathStr);
+          final matches = jsonPath.read(responseData);
+
+          if (matches.isNotEmpty) {
+            final firstValue = matches.first.value;
+            if (firstValue != null) {
+              await db.upsertVariable(
+                key: varName,
+                value: firstValue.toString(),
+                environmentId: activeEnvId,
+                workspaceId: workspaceId,
+              );
+            }
+          }
+        } catch (e) {
+          print('Error parsing JSON Path "$pathStr": $e');
+        }
+      }
+    } catch (e) {
+      print('Error executing scripts: $e');
+    }
+  }
+
+  Map<String, String> _executePreScripts(
+    String? preScriptsJson,
+    Map<String, String> baseVars,
+  ) {
+    if (preScriptsJson == null || preScriptsJson.isEmpty) return {};
+    final results = <String, String>{};
+
+    try {
+      final List<dynamic> rules = jsonDecode(preScriptsJson);
+      for (final rule in rules) {
+        final varName = rule['key'];
+        final template = rule['value']; // E.g. "order_{{$timestamp}}"
+        if (varName == null || template == null || template.isEmpty) continue;
+
+        try {
+          // Evaluar el template usando las variables base
+          final evaluated = VariableParser.parse(template, baseVars);
+          results[varName] = evaluated;
+        } catch (e) {
+          print('Error evaluating pre-script rule "$varName": $e');
+        }
+      }
+    } catch (e) {
+      print('Error parsing pre-scripts JSON: $e');
+    }
+    return results;
+  }
+
+  /// Tests scripts against a specific response data without saving to DB
+  Map<String, String> testScripts(dynamic responseData, String scriptsJson) {
+    if (scriptsJson.isEmpty) return {};
+    final results = <String, String>{};
+
+    try {
+      final List<dynamic> rules = jsonDecode(scriptsJson);
+      for (final rule in rules) {
+        final varName = rule['key'];
+        final pathStr = rule['path'];
+        if (varName == null || pathStr == null || pathStr.isEmpty) continue;
+
+        try {
+          final jsonPath = JsonPath(pathStr);
+          final matches = jsonPath.read(responseData);
+
+          if (matches.isNotEmpty) {
+            final firstValue = matches.first.value;
+            results[varName] = firstValue?.toString() ?? 'null';
+          } else {
+            results[varName] = '[No Match]';
+          }
+        } catch (e) {
+          results[varName] = '[Error: $e]';
+        }
+      }
+    } catch (e) {
+      print('Error testing scripts: $e');
+    }
+    return results;
   }
 }
 

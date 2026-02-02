@@ -11,6 +11,8 @@ import 'package:xolo/presentation/providers/tabs_provider.dart';
 import 'package:xolo/presentation/providers/request_session_provider.dart';
 import 'composer_screen.dart';
 
+import '../widgets/import_collection_dialog.dart';
+
 class ActiveWorkspaceExplorer extends ConsumerWidget {
   const ActiveWorkspaceExplorer({super.key});
 
@@ -104,7 +106,28 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
         ),
         centerTitle: true,
         actions: [
-          if (activeId != null)
+          if (activeId != null) ...[
+            projectsAsync.when(
+              data: (projects) {
+                final activeProj = projects
+                    .where((p) => p.id == activeId)
+                    .firstOrNull;
+                if (activeProj == null) return const SizedBox();
+                return IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Edit Project Settings',
+                  onPressed: () => showCreateCollectionDialog(
+                    context,
+                    ref,
+                    null,
+                    isWorkspace: true,
+                    collectionToEdit: activeProj,
+                  ),
+                );
+              },
+              loading: () => const SizedBox(),
+              error: (_, __) => const SizedBox(),
+            ),
             IconButton(
               icon: const Icon(Icons.layers_outlined),
               tooltip: 'Environments',
@@ -115,6 +138,7 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
                 );
               },
             ),
+          ],
 
           IconButton(
             icon: const Icon(Icons.add),
@@ -177,7 +201,68 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text('ID: ${p.id}'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, size: 18),
+                      onSelected: (val) {
+                        if (val == 'edit') {
+                          showCreateCollectionDialog(
+                            context,
+                            ref,
+                            null,
+                            isWorkspace: true,
+                            collectionToEdit: p,
+                          );
+                        } else if (val == 'import') {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => ImportCollectionDialog(
+                              targetCollectionId: p.id,
+                            ),
+                          );
+                        } else if (val == 'delete') {
+                          _confirmDeleteProject(context, ref, p);
+                        }
+                      },
+                      itemBuilder: (ctx) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: ListTile(
+                            leading: Icon(Icons.edit, size: 18),
+                            title: Text('Edit Project'),
+                            dense: true,
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'import',
+                          child: ListTile(
+                            leading: Icon(Icons.input, size: 18),
+                            title: Text('Import'),
+                            dense: true,
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.delete,
+                              size: 18,
+                              color: Colors.red,
+                            ),
+                            title: Text(
+                              'Delete',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                            dense: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 14),
+                  ],
+                ),
                 onTap: () {
                   ref
                       .read(activeWorkspaceIdProvider.notifier)
@@ -266,6 +351,54 @@ class ExplorableFolderTile extends ConsumerWidget {
         leading: const Icon(Icons.folder, color: Colors.amber, size: 20),
         title: Text(collection.name, style: const TextStyle(fontSize: 14)),
         minTileHeight: 40,
+        trailing: PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, size: 18),
+          onSelected: (val) {
+            if (val == 'edit') {
+              showCreateCollectionDialog(
+                context,
+                ref,
+                collection.parentId,
+                isWorkspace: collection.parentId == null,
+                collectionToEdit: collection,
+              );
+            } else if (val == 'import') {
+              showDialog(
+                context: context,
+                builder: (ctx) =>
+                    ImportCollectionDialog(targetCollectionId: collection.id),
+              );
+            } else if (val == 'delete') {
+              _confirmDeleteFolder(context, ref, collection);
+            }
+          },
+          itemBuilder: (ctx) => [
+            const PopupMenuItem(
+              value: 'edit',
+              child: ListTile(
+                leading: Icon(Icons.edit, size: 18),
+                title: Text('Edit Folder'),
+                dense: true,
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'import',
+              child: ListTile(
+                leading: Icon(Icons.input, size: 18),
+                title: Text('Import'),
+                dense: true,
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'delete',
+              child: ListTile(
+                leading: Icon(Icons.delete, size: 18, color: Colors.red),
+                title: Text('Delete', style: TextStyle(color: Colors.red)),
+                dense: true,
+              ),
+            ),
+          ],
+        ),
         childrenPadding: const EdgeInsets.only(left: 16), // Indent
         children: [_buildChildren(foldersAsync, requestsAsync)],
       ),
@@ -366,4 +499,60 @@ class RequestTile extends ConsumerWidget {
       ),
     );
   }
+}
+
+// -----------------------------------------------------------------------------
+// HELPERS
+// -----------------------------------------------------------------------------
+
+void _confirmDeleteProject(BuildContext context, WidgetRef ref, Collection p) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text('Delete "${p.name}"?'),
+      content: const Text('This will delete all folders and requests inside.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () {
+            ref
+                .read(collectionsControllerProvider.notifier)
+                .deleteCollection(p.id);
+            Navigator.pop(ctx);
+          },
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+}
+
+void _confirmDeleteFolder(BuildContext context, WidgetRef ref, Collection f) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text('Delete "${f.name}"?'),
+      content: const Text('This will delete all items inside.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () {
+            ref
+                .read(collectionsControllerProvider.notifier)
+                .deleteCollection(f.id);
+            Navigator.pop(ctx);
+          },
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
 }

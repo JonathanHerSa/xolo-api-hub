@@ -264,7 +264,7 @@ class _HistoryItem extends ConsumerWidget {
       requestSessionControllerProvider(newTabId),
     );
     sessionController.setMethod(entry.method);
-    sessionController.setUrl(entry.url);
+    sessionController.setUrl(entry.originalUrl ?? entry.url);
     // Note: History currently doesn't store body or headers in a structured way to restore perfectly,
     // but we restore what we have. Future improvement: Store full request snapshot.
 

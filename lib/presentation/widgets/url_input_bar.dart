@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/entities/key_value_pair.dart';
 import '../../core/theme/xolo_theme.dart';
 import '../providers/environment_provider.dart';
 import '../providers/request_provider.dart';
 import '../providers/request_session_provider.dart';
+import '../../core/utils/variable_text_controller.dart';
 
 class UrlInputBar extends ConsumerStatefulWidget {
   final String tabId;
@@ -15,7 +17,7 @@ class UrlInputBar extends ConsumerStatefulWidget {
 }
 
 class _UrlInputBarState extends ConsumerState<UrlInputBar> {
-  late TextEditingController _urlController;
+  late VariableTextController _urlController;
   final FocusNode _focusNode = FocusNode();
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
@@ -27,7 +29,7 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
     // Use .asData?.value instead of valueOrNull
     final initialUrl =
         ref.read(requestSessionProvider(widget.tabId)).asData?.value.url ?? '';
-    _urlController = TextEditingController(text: initialUrl);
+    _urlController = VariableTextController(text: initialUrl);
 
     _focusNode.addListener(() {
       if (!_focusNode.hasFocus) {
@@ -45,7 +47,37 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
   }
 
   void _onTextChanged(String text) {
-    ref.read(requestSessionControllerProvider(widget.tabId)).setUrl(text);
+    final controller = ref.read(requestSessionControllerProvider(widget.tabId));
+    controller.setUrl(text);
+
+    // Path Param Extraction logic {:paramName}
+    final pathParamRegex = RegExp(r'\{:([a-zA-Z0-9_]+)\}');
+    final matches = pathParamRegex.allMatches(text);
+
+    if (matches.isNotEmpty) {
+      final newParams = matches.map((m) => m.group(1)!).toSet();
+      final currentParams = controller.state.params;
+      final existingKeys = currentParams.map((e) => e.key).toSet();
+      final paramsToAdd = newParams.difference(existingKeys);
+
+      if (paramsToAdd.isNotEmpty) {
+        // We need to import KeyValuePair but it's not exported from anywhere visible here?
+        // It is imported at top: import '../../domain/entities/key_value_pair.dart'; if we didn't remove it.
+        // Wait, see original file content.
+        // It imports: import '../providers/request_session_provider.dart';
+        // RequestSessionProvider imports 'key_value_pair.dart'. Does it export it?
+        // Let's check imports in UrlInputBar.
+
+        final updatedParams = List<KeyValuePair>.from(currentParams);
+        // Remove empty rows to clean up before adding
+        updatedParams.removeWhere((e) => e.key.isEmpty && e.value.isEmpty);
+
+        for (final key in paramsToAdd) {
+          updatedParams.add(KeyValuePair(key: key, value: '', isActive: true));
+        }
+        controller.updateParams(updatedParams);
+      }
+    }
 
     final selection = _urlController.selection;
     if (!selection.isValid || selection.start < 2) {
@@ -544,6 +576,7 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
           body: rawBody.isNotEmpty ? rawBody : null,
           authType: session.authType,
           authData: session.authData,
+          collectionId: session.collectionId,
         );
   }
 }

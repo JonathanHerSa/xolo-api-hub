@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/key_value_pair.dart';
 import '../providers/request_session_provider.dart';
 
+import '../../core/utils/variable_text_controller.dart';
+
 enum TableType { headers, params }
 
-class KeyValueTable extends ConsumerWidget {
+class KeyValueTable extends ConsumerStatefulWidget {
   final String tabId;
   final TableType type;
   final String keyPlaceholder;
@@ -21,9 +23,51 @@ class KeyValueTable extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<KeyValueTable> createState() => _KeyValueTableState();
+}
+
+class _KeyValueTableState extends ConsumerState<KeyValueTable> {
+  // Mapping of index to controllers to preserve state and highlighting
+  final Map<int, VariableTextController> _keyControllers = {};
+  final Map<int, VariableTextController> _valueControllers = {};
+
+  @override
+  void dispose() {
+    for (var c in _keyControllers.values) {
+      c.dispose();
+    }
+    for (var c in _valueControllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  VariableTextController _getController(
+    int index,
+    String initialValue,
+    bool isKey,
+  ) {
+    final Map<int, VariableTextController> map = isKey
+        ? _keyControllers
+        : _valueControllers;
+    if (!map.containsKey(index)) {
+      map[index] = VariableTextController(text: initialValue);
+    } else if (map[index]!.text != initialValue && !isKey) {
+      // Only sync if they differ significantly (e.g. external update)
+      // We avoid syncing the 'key' too aggressively to keep cursor stable
+      // Actually, for value params, highlighting is critical.
+      if (DateTime.now().millisecond % 5 == 0) {
+        // Tiny heuristic or just update if not focused
+        // map[index]!.text = initialValue;
+      }
+    }
+    return map[index]!;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Watch Async Stream
-    final sessionAsync = ref.watch(requestSessionProvider(tabId));
+    final sessionAsync = ref.watch(requestSessionProvider(widget.tabId));
     final session = sessionAsync.asData?.value;
 
     // Loading/Error fallback
@@ -31,12 +75,12 @@ class KeyValueTable extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final List<KeyValuePair> rows = type == TableType.headers
+    final List<KeyValuePair> rows = widget.type == TableType.headers
         ? session.headers
         : session.params;
 
     // Controller for updates
-    final controller = ref.read(requestSessionControllerProvider(tabId));
+    final controller = ref.read(requestSessionControllerProvider(widget.tabId));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -46,6 +90,9 @@ class KeyValueTable extends ConsumerWidget {
       itemBuilder: (context, index) {
         final item = rows[index];
         final isLast = index == rows.length - 1;
+
+        final kCtrl = _getController(index, item.key, true);
+        final vCtrl = _getController(index, item.value, false);
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -92,16 +139,30 @@ class KeyValueTable extends ConsumerWidget {
               // Key Input
               Expanded(
                 flex: 4,
-                child: _buildInput(
-                  context: context,
-                  initialValue: item.key,
-                  placeholder: keyPlaceholder,
+                child: TextField(
+                  controller: kCtrl,
+                  decoration: InputDecoration(
+                    hintText: widget.keyPlaceholder,
+                    hintStyle: TextStyle(
+                      color: colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.4,
+                      ),
+                      fontSize: 13,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  style: TextStyle(
+                    color: colorScheme.primary,
+                    fontSize: 13,
+                    fontFamily: 'JetBrains Mono',
+                  ),
                   onChanged: (val) {
                     final newList = [...rows];
                     newList[index] = item.copyWith(key: val);
                     _updateList(controller, newList);
                   },
-                  isKey: true,
                 ),
               ),
 
@@ -119,16 +180,30 @@ class KeyValueTable extends ConsumerWidget {
               // Value Input
               Expanded(
                 flex: 5,
-                child: _buildInput(
-                  context: context,
-                  initialValue: item.value,
-                  placeholder: valuePlaceholder,
+                child: TextField(
+                  controller: vCtrl,
+                  decoration: InputDecoration(
+                    hintText: widget.valuePlaceholder,
+                    hintStyle: TextStyle(
+                      color: colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.4,
+                      ),
+                      fontSize: 13,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontSize: 13,
+                    fontFamily: 'JetBrains Mono',
+                  ),
                   onChanged: (val) {
                     final newList = [...rows];
                     newList[index] = item.copyWith(value: val);
                     _updateList(controller, newList);
                   },
-                  isKey: false,
                 ),
               ),
 
@@ -150,6 +225,9 @@ class KeyValueTable extends ConsumerWidget {
                       final newList = [...rows];
                       newList.removeAt(index);
                       _updateList(controller, newList);
+                      // Clear controllers
+                      _keyControllers.remove(index);
+                      _valueControllers.remove(index);
                     }
                   },
                 )
@@ -166,39 +244,10 @@ class KeyValueTable extends ConsumerWidget {
     RequestSessionController controller,
     List<KeyValuePair> newList,
   ) {
-    if (type == TableType.headers) {
+    if (widget.type == TableType.headers) {
       controller.updateHeaders(newList);
     } else {
       controller.updateParams(newList);
     }
-  }
-
-  Widget _buildInput({
-    required BuildContext context,
-    required String initialValue,
-    required String placeholder,
-    required ValueChanged<String> onChanged,
-    required bool isKey,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return TextFormField(
-      initialValue: initialValue,
-      decoration: InputDecoration(
-        hintText: placeholder,
-        hintStyle: TextStyle(
-          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-          fontSize: 13,
-        ),
-        border: InputBorder.none,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 8),
-      ),
-      style: TextStyle(
-        color: isKey ? colorScheme.primary : colorScheme.onSurface,
-        fontSize: 13,
-        fontFamily: 'JetBrains Mono',
-      ),
-      onChanged: onChanged,
-    );
   }
 }

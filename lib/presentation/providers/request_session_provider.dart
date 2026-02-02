@@ -16,6 +16,9 @@ class RequestSession {
   final String? authType;
   final String? authData;
   final String? schemaJson;
+  final String? scriptsJson;
+  final String? preScriptsJson;
+  final int? collectionId;
 
   RequestSession({
     required this.id,
@@ -25,9 +28,12 @@ class RequestSession {
     required this.params,
     this.body = '',
     this.name = 'New Request',
-    this.authType,
+    this.authType = 'inherit',
     this.authData,
     this.schemaJson,
+    this.scriptsJson,
+    this.preScriptsJson,
+    this.collectionId,
   });
 
   RequestSession copyWith({
@@ -41,6 +47,9 @@ class RequestSession {
     String? authType,
     String? authData,
     String? schemaJson,
+    String? scriptsJson,
+    String? preScriptsJson,
+    int? collectionId,
   }) {
     return RequestSession(
       id: id ?? this.id,
@@ -53,6 +62,9 @@ class RequestSession {
       authType: authType ?? this.authType,
       authData: authData ?? this.authData,
       schemaJson: schemaJson ?? this.schemaJson,
+      scriptsJson: scriptsJson ?? this.scriptsJson,
+      preScriptsJson: preScriptsJson ?? this.preScriptsJson,
+      collectionId: collectionId ?? this.collectionId,
     );
   }
 }
@@ -123,6 +135,14 @@ class RequestSessionController {
     _update(_state.copyWith(schemaJson: value));
   }
 
+  void setScriptsJson(String? value) {
+    _update(_state.copyWith(scriptsJson: value));
+  }
+
+  void setPreScriptsJson(String? value) {
+    _update(_state.copyWith(preScriptsJson: value));
+  }
+
   void updateHeaders(List<KeyValuePair> newHeaders) {
     _update(_state.copyWith(headers: _ensureEmptyRow(newHeaders)));
   }
@@ -171,10 +191,13 @@ class RequestSessionController {
         body: req.body ?? '',
         authType: req.authType,
         authData: req.authData,
+        collectionId: req.collectionId,
         // The SavedRequest entity in DB might store headers/params as JSON string.
         // Let's implement parseKV carefully.
         headers: _ensureEmptyRow(parseKV(req.headersJson)),
         params: _ensureEmptyRow(parseKV(req.paramsJson)),
+        scriptsJson: req.scriptsJson,
+        preScriptsJson: req.preScriptsJson,
       ),
     );
   }

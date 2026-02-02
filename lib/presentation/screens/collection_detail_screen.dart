@@ -8,6 +8,7 @@ import '../providers/workspace_provider.dart';
 import '../providers/tabs_provider.dart';
 import '../providers/request_session_provider.dart';
 import '../widgets/draggable_tiles.dart';
+import '../widgets/create_collection_dialog.dart';
 
 class CollectionDetailScreen extends ConsumerStatefulWidget {
   final Collection collection;
@@ -83,13 +84,22 @@ class _CollectionDetailScreenState
           IconButton(
             icon: const Icon(Icons.create_new_folder_outlined),
             tooltip: 'Nueva Subcarpeta',
-            onPressed: () => _showCreateSubCollectionDialog(context, ref),
+            onPressed: () => showCreateCollectionDialog(
+              context,
+              ref,
+              widget.collection.id,
+              isWorkspace: false,
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () {
-              _showEditCollectionDialog(context, ref);
-            },
+            onPressed: () => showCreateCollectionDialog(
+              context,
+              ref,
+              widget.collection.parentId,
+              isWorkspace: widget.collection.parentId == null,
+              collectionToEdit: widget.collection,
+            ),
           ),
         ],
       ),
@@ -266,44 +276,6 @@ class _CollectionDetailScreenState
     Navigator.popUntil(context, (route) => route.isFirst);
   }
 
-  Future<void> _showCreateSubCollectionDialog(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final controller = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nueva Subcarpeta'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: 'Nombre'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                await ref
-                    .read(collectionsControllerProvider.notifier)
-                    .createCollection(
-                      name: controller.text,
-                      parentId: widget.collection.id, // Current collection ID
-                    );
-                if (ctx.mounted) Navigator.pop(ctx);
-              }
-            },
-            child: const Text('Crear Folder'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _showCreateRequestDialog(
     BuildContext context,
     WidgetRef ref,
@@ -368,48 +340,6 @@ class _CollectionDetailScreenState
             ],
           );
         },
-      ),
-    );
-  }
-
-  Future<void> _showEditCollectionDialog(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final controller = TextEditingController(text: widget.collection.name);
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Renombrar Carpeta'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: 'Nuevo Nombre'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                await ref
-                    .read(collectionsControllerProvider.notifier)
-                    .renameCollection(
-                      widget.collection.id,
-                      controller.text,
-                      widget.collection.description,
-                    );
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                  Navigator.pop(context); // Force refresh by going back
-                }
-              }
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
       ),
     );
   }

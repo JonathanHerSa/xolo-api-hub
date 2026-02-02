@@ -9,6 +9,7 @@ import '../providers/request_session_provider.dart';
 import 'key_value_table.dart';
 import 'json_viewer.dart';
 import 'auth_tab.dart';
+import '../../core/utils/variable_text_controller.dart';
 
 class RequestTabs extends ConsumerStatefulWidget {
   final String tabId;
@@ -25,7 +26,7 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -64,7 +65,7 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
       if (prevLoading &&
           !nextLoading &&
           (nextData != null || nextError != null)) {
-        _tabController.animateTo(4); // Index 4 = Response
+        _tabController.animateTo(5); // Index 5 = Response
       }
     });
 
@@ -90,15 +91,18 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
               Expanded(
                 child: TabBar(
                   controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
                   labelColor: colorScheme.primary,
                   unselectedLabelColor: colorScheme.onSurfaceVariant,
                   indicatorColor: colorScheme.primary,
-                  labelPadding: EdgeInsets.zero, // Compact tabs
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 16),
                   tabs: [
                     const Tab(text: 'Params'),
                     const Tab(text: 'Auth'),
                     const Tab(text: 'Headers'),
                     const Tab(text: 'Body'),
+                    const Tab(text: 'Scripts'),
                     Tab(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -149,10 +153,13 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
                 keyPlaceholder: 'Header',
               ),
 
-              // 3. BODY
+              // 4. BODY
               _BodyTab(tabId: widget.tabId),
 
-              // 4. RESPONSE
+              // 5. SCRIPTS
+              _ScriptsTab(tabId: widget.tabId),
+
+              // 6. RESPONSE
               _ResponseTab(isLoading: isLoading, data: data, error: error),
             ],
           ),
@@ -199,14 +206,14 @@ class _BodyTab extends ConsumerStatefulWidget {
 }
 
 class _BodyTabState extends ConsumerState<_BodyTab> {
-  late TextEditingController _controller;
+  late VariableTextController _controller;
 
   @override
   void initState() {
     super.initState();
     final initialBody =
         ref.read(requestSessionProvider(widget.tabId)).asData?.value.body ?? '';
-    _controller = TextEditingController(text: initialBody);
+    _controller = VariableTextController(text: initialBody);
   }
 
   @override
@@ -420,5 +427,374 @@ class _ResponseTab extends StatelessWidget {
 
     // JSON Viewer correcto
     return JsonViewer(data: data);
+  }
+}
+
+class _ScriptsTab extends ConsumerStatefulWidget {
+  final String tabId;
+  const _ScriptsTab({super.key, required this.tabId});
+
+  @override
+  ConsumerState<_ScriptsTab> createState() => _ScriptsTabState();
+}
+
+class _ScriptsTabState extends ConsumerState<_ScriptsTab>
+    with TickerProviderStateMixin {
+  List<ScriptRule> _preRules = [];
+  List<ScriptRule> _postRules = [];
+  Map<String, String> _testResults = {};
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _loadRules();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _loadRules() {
+    final session = ref
+        .read(requestSessionProvider(widget.tabId))
+        .asData
+        ?.value;
+
+    // Load Post-Request (Extractions)
+    final postJson = session?.scriptsJson;
+    if (postJson != null && postJson.isNotEmpty) {
+      try {
+        final List<dynamic> list = jsonDecode(postJson);
+        _postRules = list.map((e) => ScriptRule.fromJson(e)).toList();
+      } catch (_) {
+        _postRules = [];
+      }
+    } else {
+      _postRules = [];
+    }
+    if (_postRules.isEmpty || _postRules.last.variableName.isNotEmpty) {
+      _postRules.add(ScriptRule());
+    }
+
+    // Load Pre-Request
+    final preJson = session?.preScriptsJson;
+    if (preJson != null && preJson.isNotEmpty) {
+      try {
+        final List<dynamic> list = jsonDecode(preJson);
+        _preRules = list.map((e) => ScriptRule.fromJson(e)).toList();
+      } catch (_) {
+        _preRules = [];
+      }
+    } else {
+      _preRules = [];
+    }
+    if (_preRules.isEmpty || _preRules.last.variableName.isNotEmpty) {
+      _preRules.add(ScriptRule());
+    }
+
+    setState(() {});
+  }
+
+  void _saveRules() {
+    // Save Post
+    final filteredPost = _postRules
+        .where((r) => r.variableName.isNotEmpty)
+        .map((r) => r.toJson())
+        .toList();
+    final postJson = filteredPost.isEmpty ? null : jsonEncode(filteredPost);
+    ref
+        .read(requestSessionControllerProvider(widget.tabId))
+        .setScriptsJson(postJson);
+
+    // Save Pre
+    final filteredPre = _preRules
+        .where((r) => r.variableName.isNotEmpty)
+        .map((r) => r.toJson())
+        .toList();
+    final preJson = filteredPre.isEmpty ? null : jsonEncode(filteredPre);
+    ref
+        .read(requestSessionControllerProvider(widget.tabId))
+        .setPreScriptsJson(preJson);
+  }
+
+  void _addRule(bool isPre) {
+    setState(() {
+      if (isPre) {
+        _preRules.add(ScriptRule());
+      } else {
+        _postRules.add(ScriptRule());
+      }
+    });
+  }
+
+  void _removeRule(int index, bool isPre) {
+    setState(() {
+      if (isPre) {
+        _preRules.removeAt(index);
+        if (_preRules.isEmpty) _preRules.add(ScriptRule());
+      } else {
+        _postRules.removeAt(index);
+        if (_postRules.isEmpty) _postRules.add(ScriptRule());
+      }
+      _saveRules();
+    });
+  }
+
+  void _runTest() {
+    final state = ref.read(requestProvider(widget.tabId)).asData?.value;
+    final responseData = state?.data;
+
+    if (responseData == null) {
+      _showError('No hay respuesta disponible para probar.');
+      return;
+    }
+
+    final filtered = _postRules
+        .where((r) => r.variableName.isNotEmpty)
+        .map((r) => r.toJson())
+        .toList();
+    final scriptsJson = jsonEncode(filtered);
+
+    final results = ref
+        .read(requestControllerProvider(widget.tabId))
+        .testScripts(responseData, scriptsJson);
+
+    setState(() {
+      _testResults = results;
+    });
+    _showSuccess('Prueba completada');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        TabBar(
+          controller: _tabController,
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+          tabs: const [
+            Tab(text: 'Pre-request'),
+            Tab(text: 'Post-request (Extraer)'),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildRulesList(isPre: true),
+              _buildRulesList(isPre: false),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRulesList({required bool isPre}) {
+    final rules = isPre ? _preRules : _postRules;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Icon(
+                isPre ? Icons.bolt : Icons.auto_fix_high,
+                size: 16,
+                color: colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isPre
+                    ? 'Generar/Sustituir variables antes de la petición'
+                    : 'Extraer variables de la respuesta',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+              const Spacer(),
+              if (!isPre) ...[
+                TextButton.icon(
+                  onPressed: _runTest,
+                  icon: const Icon(Icons.play_arrow, size: 16),
+                  label: const Text('Probar'),
+                  style: TextButton.styleFrom(foregroundColor: Colors.orange),
+                ),
+                const SizedBox(width: 8),
+              ],
+              TextButton.icon(
+                onPressed: () => _addRule(isPre),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Añadir'),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: ListView.builder(
+            itemCount: rules.length,
+            itemBuilder: (context, index) {
+              final rule = rules[index];
+              final testValue = isPre ? null : _testResults[rule.variableName];
+
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller:
+                                TextEditingController(text: rule.variableName)
+                                  ..selection = TextSelection.fromPosition(
+                                    TextPosition(
+                                      offset: rule.variableName.length,
+                                    ),
+                                  ),
+                            decoration: const InputDecoration(
+                              hintText: 'Nombre Variable',
+                              border: InputBorder.none,
+                              hintStyle: TextStyle(fontSize: 13),
+                            ),
+                            style: const TextStyle(fontSize: 13),
+                            onChanged: (val) {
+                              rule.variableName = val;
+                              _saveRules();
+                            },
+                          ),
+                        ),
+                        const VerticalDivider(),
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller:
+                                TextEditingController(
+                                    text: isPre ? rule.value : rule.jsonPath,
+                                  )
+                                  ..selection = TextSelection.fromPosition(
+                                    TextPosition(
+                                      offset: isPre
+                                          ? rule.value.length
+                                          : rule.jsonPath.length,
+                                    ),
+                                  ),
+                            decoration: InputDecoration(
+                              hintText: isPre
+                                  ? 'Valor (ej: order_{{\$timestamp}})'
+                                  : r'JSON Path (ej: $.token)',
+                              border: InputBorder.none,
+                              hintStyle: const TextStyle(fontSize: 13),
+                            ),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontFamily: 'monospace',
+                            ),
+                            onChanged: (val) {
+                              if (isPre) {
+                                rule.value = val;
+                              } else {
+                                rule.jsonPath = val;
+                              }
+                              _saveRules();
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 16),
+                          onPressed: () => _removeRule(index, isPre),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!isPre && testValue != null)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 2,
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: testValue.startsWith('[Error')
+                            ? Colors.red.withOpacity(0.05)
+                            : Colors.orange.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Resultado: $testValue',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                          color: testValue.startsWith('[Error')
+                              ? Colors.red
+                              : Colors.orange,
+                        ),
+                      ),
+                    ),
+                  const Divider(height: 1),
+                ],
+              );
+            },
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.all(12),
+          color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          child: Text(
+            isPre
+                ? 'Las variables definidas aquí se evaluarán justo antes de enviar la petición.'
+                : 'Las variables se guardarán automáticamente en el entorno activo después de ejecutar la petición.',
+            style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+    );
+  }
+
+  void _showSuccess(String msg) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.green));
+  }
+}
+
+class ScriptRule {
+  String variableName;
+  String jsonPath;
+  String value;
+
+  ScriptRule({this.variableName = '', this.jsonPath = '', this.value = ''});
+
+  Map<String, dynamic> toJson() {
+    return {'key': variableName, 'path': jsonPath, 'value': value};
+  }
+
+  factory ScriptRule.fromJson(Map<String, dynamic> json) {
+    return ScriptRule(
+      variableName: json['key'] ?? '',
+      jsonPath: json['path'] ?? '',
+      value: json['value'] ?? '',
+    );
   }
 }

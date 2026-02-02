@@ -40,6 +40,15 @@ class _CodeSnippetDialogState extends ConsumerState<CodeSnippetDialog> {
         case 'Python (Requests)':
           _code = CodeGenerator.generatePythonRequests(session);
           break;
+        case 'Python (Httpx Async)':
+          _code = CodeGenerator.generatePythonHttpx(session);
+          break;
+        case 'Rust (Reqwest)':
+          _code = CodeGenerator.generateRustReqwest(session);
+          break;
+        case 'Go (Native)':
+          _code = CodeGenerator.generateGoNative(session);
+          break;
       }
     });
   }
@@ -75,11 +84,22 @@ class _CodeSnippetDialogState extends ConsumerState<CodeSnippetDialog> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: _selectedLang,
-                        items: ['cURL', 'Dart (Dio)', 'Python (Requests)']
-                            .map(
-                              (l) => DropdownMenuItem(value: l, child: Text(l)),
-                            )
-                            .toList(),
+                        items:
+                            [
+                                  'cURL',
+                                  'Dart (Dio)',
+                                  'Python (Requests)',
+                                  'Python (Httpx Async)',
+                                  'Rust (Reqwest)',
+                                  'Go (Native)',
+                                ]
+                                .map(
+                                  (l) => DropdownMenuItem(
+                                    value: l,
+                                    child: Text(l),
+                                  ),
+                                )
+                                .toList(),
                         onChanged: (val) {
                           if (val != null) {
                             setState(() {

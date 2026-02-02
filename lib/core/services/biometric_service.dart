@@ -17,14 +17,21 @@ class BiometricService {
     }
   }
 
+  bool _isAuthenticating = false;
+  bool get isAuthenticating => _isAuthenticating;
+
   Future<bool> authenticate({required String reason}) async {
     try {
-      return await _auth.authenticate(
+      _isAuthenticating = true;
+      final result = await _auth.authenticate(
         localizedReason: reason,
-        // options parameter seems to cause issues or requires specific version match.
-        // Using defaults for now.
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
       );
+      _isAuthenticating = false;
+      return result;
     } on PlatformException catch (e) {
+      _isAuthenticating = false;
       // Handle error or return false
       print('Biometric error: $e');
       return false;
@@ -33,6 +40,7 @@ class BiometricService {
 
   Future<void> cancelAuthentication() async {
     await _auth.stopAuthentication();
+    _isAuthenticating = false;
   }
 
   final _storage = const FlutterSecureStorage(
@@ -74,7 +82,9 @@ class BiometricService {
     final delaySeconds =
         int.tryParse(delaySecondsStr ?? '30') ?? 30; // Default 30s
 
-    return diff.inSeconds >= delaySeconds;
+    final result = diff.inSeconds >= delaySeconds;
+    _backgroundedTime = null; // Always clear on evaluation during resume
+    return result;
   }
 
   Future<void> setLockDelay(int seconds) async {

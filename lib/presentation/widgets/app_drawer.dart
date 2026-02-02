@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/local/database.dart';
 import '../providers/collections_provider.dart';
 import '../providers/workspace_provider.dart';
 import '../screens/history_screen.dart';
 import '../screens/environments_screen.dart';
 import '../screens/collection_detail_screen.dart';
 import 'import_collection_dialog.dart';
+import 'create_collection_dialog.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -160,9 +162,62 @@ class AppDrawer extends ConsumerWidget {
                                   color: isActive ? colorScheme.primary : null,
                                 ),
                               ),
-                              trailing: isActive
-                                  ? const Icon(Icons.circle, size: 8)
-                                  : null,
+                              trailing: PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_vert, size: 18),
+                                onSelected: (val) {
+                                  if (val == 'edit') {
+                                    showCreateCollectionDialog(
+                                      context,
+                                      ref,
+                                      col.parentId,
+                                      isWorkspace: col.parentId == null,
+                                      collectionToEdit: col,
+                                    );
+                                  } else if (val == 'import') {
+                                    showDialog(
+                                      context: context,
+                                      builder: (ctx) => ImportCollectionDialog(
+                                        targetCollectionId: col.id,
+                                      ),
+                                    );
+                                  } else if (val == 'delete') {
+                                    _confirmDeleteCollection(context, ref, col);
+                                  }
+                                },
+                                itemBuilder: (ctx) => [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: ListTile(
+                                      leading: Icon(Icons.edit, size: 18),
+                                      title: Text('Editar'),
+                                      dense: true,
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'import',
+                                    child: ListTile(
+                                      leading: Icon(Icons.input, size: 18),
+                                      title: Text('Importar'),
+                                      dense: true,
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: ListTile(
+                                      leading: Icon(
+                                        Icons.delete,
+                                        size: 18,
+                                        color: Colors.red,
+                                      ),
+                                      title: Text(
+                                        'Eliminar',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                      dense: true,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
@@ -183,19 +238,36 @@ class AppDrawer extends ConsumerWidget {
           ),
 
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Configuración'),
-            onTap: () {
-              // Open Settings Dialog logic?
-              // Or navigate? We have SettingsScreen too.
-              // Let's use showAbout currently or settings
-              showAboutDialog(
-                context: context,
-                applicationName: 'Xolo',
-                applicationVersion: '0.3.5-alpha',
-              );
+          // ... (Configuración)
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteCollection(
+    BuildContext context,
+    WidgetRef ref,
+    Collection col,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('¿Eliminar "${col.name}"?'),
+        content: const Text('Se eliminarán todos los requests contenidos.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              ref
+                  .read(collectionsControllerProvider.notifier)
+                  .deleteCollection(col.id);
+              if (ctx.mounted) Navigator.pop(ctx);
             },
+            child: const Text('Eliminar'),
           ),
         ],
       ),

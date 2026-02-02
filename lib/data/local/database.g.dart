@@ -72,6 +72,28 @@ class $CollectionsTable extends Collections
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _authTypeMeta = const VerificationMeta(
+    'authType',
+  );
+  @override
+  late final GeneratedColumn<String> authType = GeneratedColumn<String>(
+    'auth_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _authDataMeta = const VerificationMeta(
+    'authData',
+  );
+  @override
+  late final GeneratedColumn<String> authData = GeneratedColumn<String>(
+    'auth_data',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -79,6 +101,8 @@ class $CollectionsTable extends Collections
     description,
     parentId,
     createdAt,
+    authType,
+    authData,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -124,6 +148,18 @@ class $CollectionsTable extends Collections
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('auth_type')) {
+      context.handle(
+        _authTypeMeta,
+        authType.isAcceptableOrUnknown(data['auth_type']!, _authTypeMeta),
+      );
+    }
+    if (data.containsKey('auth_data')) {
+      context.handle(
+        _authDataMeta,
+        authData.isAcceptableOrUnknown(data['auth_data']!, _authDataMeta),
+      );
+    }
     return context;
   }
 
@@ -153,6 +189,14 @@ class $CollectionsTable extends Collections
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      authType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_type'],
+      ),
+      authData: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_data'],
+      ),
     );
   }
 
@@ -168,12 +212,16 @@ class Collection extends DataClass implements Insertable<Collection> {
   final String? description;
   final int? parentId;
   final DateTime createdAt;
+  final String? authType;
+  final String? authData;
   const Collection({
     required this.id,
     required this.name,
     this.description,
     this.parentId,
     required this.createdAt,
+    this.authType,
+    this.authData,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -187,6 +235,12 @@ class Collection extends DataClass implements Insertable<Collection> {
       map['parent_id'] = Variable<int>(parentId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || authType != null) {
+      map['auth_type'] = Variable<String>(authType);
+    }
+    if (!nullToAbsent || authData != null) {
+      map['auth_data'] = Variable<String>(authData);
+    }
     return map;
   }
 
@@ -201,6 +255,12 @@ class Collection extends DataClass implements Insertable<Collection> {
           ? const Value.absent()
           : Value(parentId),
       createdAt: Value(createdAt),
+      authType: authType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authType),
+      authData: authData == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authData),
     );
   }
 
@@ -215,6 +275,8 @@ class Collection extends DataClass implements Insertable<Collection> {
       description: serializer.fromJson<String?>(json['description']),
       parentId: serializer.fromJson<int?>(json['parentId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      authType: serializer.fromJson<String?>(json['authType']),
+      authData: serializer.fromJson<String?>(json['authData']),
     );
   }
   @override
@@ -226,6 +288,8 @@ class Collection extends DataClass implements Insertable<Collection> {
       'description': serializer.toJson<String?>(description),
       'parentId': serializer.toJson<int?>(parentId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'authType': serializer.toJson<String?>(authType),
+      'authData': serializer.toJson<String?>(authData),
     };
   }
 
@@ -235,12 +299,16 @@ class Collection extends DataClass implements Insertable<Collection> {
     Value<String?> description = const Value.absent(),
     Value<int?> parentId = const Value.absent(),
     DateTime? createdAt,
+    Value<String?> authType = const Value.absent(),
+    Value<String?> authData = const Value.absent(),
   }) => Collection(
     id: id ?? this.id,
     name: name ?? this.name,
     description: description.present ? description.value : this.description,
     parentId: parentId.present ? parentId.value : this.parentId,
     createdAt: createdAt ?? this.createdAt,
+    authType: authType.present ? authType.value : this.authType,
+    authData: authData.present ? authData.value : this.authData,
   );
   Collection copyWithCompanion(CollectionsCompanion data) {
     return Collection(
@@ -251,6 +319,8 @@ class Collection extends DataClass implements Insertable<Collection> {
           : this.description,
       parentId: data.parentId.present ? data.parentId.value : this.parentId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      authType: data.authType.present ? data.authType.value : this.authType,
+      authData: data.authData.present ? data.authData.value : this.authData,
     );
   }
 
@@ -261,13 +331,23 @@ class Collection extends DataClass implements Insertable<Collection> {
           ..write('name: $name, ')
           ..write('description: $description, ')
           ..write('parentId: $parentId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('authType: $authType, ')
+          ..write('authData: $authData')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, description, parentId, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    description,
+    parentId,
+    createdAt,
+    authType,
+    authData,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -276,7 +356,9 @@ class Collection extends DataClass implements Insertable<Collection> {
           other.name == this.name &&
           other.description == this.description &&
           other.parentId == this.parentId &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.authType == this.authType &&
+          other.authData == this.authData);
 }
 
 class CollectionsCompanion extends UpdateCompanion<Collection> {
@@ -285,12 +367,16 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
   final Value<String?> description;
   final Value<int?> parentId;
   final Value<DateTime> createdAt;
+  final Value<String?> authType;
+  final Value<String?> authData;
   const CollectionsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.description = const Value.absent(),
     this.parentId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.authType = const Value.absent(),
+    this.authData = const Value.absent(),
   });
   CollectionsCompanion.insert({
     this.id = const Value.absent(),
@@ -298,6 +384,8 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
     this.description = const Value.absent(),
     this.parentId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.authType = const Value.absent(),
+    this.authData = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Collection> custom({
     Expression<int>? id,
@@ -305,6 +393,8 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
     Expression<String>? description,
     Expression<int>? parentId,
     Expression<DateTime>? createdAt,
+    Expression<String>? authType,
+    Expression<String>? authData,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -312,6 +402,8 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
       if (description != null) 'description': description,
       if (parentId != null) 'parent_id': parentId,
       if (createdAt != null) 'created_at': createdAt,
+      if (authType != null) 'auth_type': authType,
+      if (authData != null) 'auth_data': authData,
     });
   }
 
@@ -321,6 +413,8 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
     Value<String?>? description,
     Value<int?>? parentId,
     Value<DateTime>? createdAt,
+    Value<String?>? authType,
+    Value<String?>? authData,
   }) {
     return CollectionsCompanion(
       id: id ?? this.id,
@@ -328,6 +422,8 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
       description: description ?? this.description,
       parentId: parentId ?? this.parentId,
       createdAt: createdAt ?? this.createdAt,
+      authType: authType ?? this.authType,
+      authData: authData ?? this.authData,
     );
   }
 
@@ -349,6 +445,12 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (authType.present) {
+      map['auth_type'] = Variable<String>(authType.value);
+    }
+    if (authData.present) {
+      map['auth_data'] = Variable<String>(authData.value);
+    }
     return map;
   }
 
@@ -359,7 +461,9 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
           ..write('name: $name, ')
           ..write('description: $description, ')
           ..write('parentId: $parentId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('authType: $authType, ')
+          ..write('authData: $authData')
           ..write(')'))
         .toString();
   }
@@ -483,6 +587,28 @@ class $SavedRequestsTable extends SavedRequests
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _preScriptsJsonMeta = const VerificationMeta(
+    'preScriptsJson',
+  );
+  @override
+  late final GeneratedColumn<String> preScriptsJson = GeneratedColumn<String>(
+    'pre_scripts_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _scriptsJsonMeta = const VerificationMeta(
+    'scriptsJson',
+  );
+  @override
+  late final GeneratedColumn<String> scriptsJson = GeneratedColumn<String>(
+    'scripts_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _collectionIdMeta = const VerificationMeta(
     'collectionId',
   );
@@ -548,6 +674,8 @@ class $SavedRequestsTable extends SavedRequests
     authType,
     authData,
     schemaJson,
+    preScriptsJson,
+    scriptsJson,
     collectionId,
     createdAt,
     updatedAt,
@@ -631,6 +759,24 @@ class $SavedRequestsTable extends SavedRequests
         schemaJson.isAcceptableOrUnknown(data['schema_json']!, _schemaJsonMeta),
       );
     }
+    if (data.containsKey('pre_scripts_json')) {
+      context.handle(
+        _preScriptsJsonMeta,
+        preScriptsJson.isAcceptableOrUnknown(
+          data['pre_scripts_json']!,
+          _preScriptsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('scripts_json')) {
+      context.handle(
+        _scriptsJsonMeta,
+        scriptsJson.isAcceptableOrUnknown(
+          data['scripts_json']!,
+          _scriptsJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('collection_id')) {
       context.handle(
         _collectionIdMeta,
@@ -707,6 +853,14 @@ class $SavedRequestsTable extends SavedRequests
         DriftSqlType.string,
         data['${effectivePrefix}schema_json'],
       ),
+      preScriptsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pre_scripts_json'],
+      ),
+      scriptsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scripts_json'],
+      ),
       collectionId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}collection_id'],
@@ -743,6 +897,8 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
   final String? authType;
   final String? authData;
   final String? schemaJson;
+  final String? preScriptsJson;
+  final String? scriptsJson;
   final int? collectionId;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -758,6 +914,8 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     this.authType,
     this.authData,
     this.schemaJson,
+    this.preScriptsJson,
+    this.scriptsJson,
     this.collectionId,
     required this.createdAt,
     required this.updatedAt,
@@ -787,6 +945,12 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     }
     if (!nullToAbsent || schemaJson != null) {
       map['schema_json'] = Variable<String>(schemaJson);
+    }
+    if (!nullToAbsent || preScriptsJson != null) {
+      map['pre_scripts_json'] = Variable<String>(preScriptsJson);
+    }
+    if (!nullToAbsent || scriptsJson != null) {
+      map['scripts_json'] = Variable<String>(scriptsJson);
     }
     if (!nullToAbsent || collectionId != null) {
       map['collection_id'] = Variable<int>(collectionId);
@@ -819,6 +983,12 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
       schemaJson: schemaJson == null && nullToAbsent
           ? const Value.absent()
           : Value(schemaJson),
+      preScriptsJson: preScriptsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(preScriptsJson),
+      scriptsJson: scriptsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scriptsJson),
       collectionId: collectionId == null && nullToAbsent
           ? const Value.absent()
           : Value(collectionId),
@@ -844,6 +1014,8 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
       authType: serializer.fromJson<String?>(json['authType']),
       authData: serializer.fromJson<String?>(json['authData']),
       schemaJson: serializer.fromJson<String?>(json['schemaJson']),
+      preScriptsJson: serializer.fromJson<String?>(json['preScriptsJson']),
+      scriptsJson: serializer.fromJson<String?>(json['scriptsJson']),
       collectionId: serializer.fromJson<int?>(json['collectionId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -864,6 +1036,8 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
       'authType': serializer.toJson<String?>(authType),
       'authData': serializer.toJson<String?>(authData),
       'schemaJson': serializer.toJson<String?>(schemaJson),
+      'preScriptsJson': serializer.toJson<String?>(preScriptsJson),
+      'scriptsJson': serializer.toJson<String?>(scriptsJson),
       'collectionId': serializer.toJson<int?>(collectionId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -882,6 +1056,8 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     Value<String?> authType = const Value.absent(),
     Value<String?> authData = const Value.absent(),
     Value<String?> schemaJson = const Value.absent(),
+    Value<String?> preScriptsJson = const Value.absent(),
+    Value<String?> scriptsJson = const Value.absent(),
     Value<int?> collectionId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -897,6 +1073,10 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     authType: authType.present ? authType.value : this.authType,
     authData: authData.present ? authData.value : this.authData,
     schemaJson: schemaJson.present ? schemaJson.value : this.schemaJson,
+    preScriptsJson: preScriptsJson.present
+        ? preScriptsJson.value
+        : this.preScriptsJson,
+    scriptsJson: scriptsJson.present ? scriptsJson.value : this.scriptsJson,
     collectionId: collectionId.present ? collectionId.value : this.collectionId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -920,6 +1100,12 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
       schemaJson: data.schemaJson.present
           ? data.schemaJson.value
           : this.schemaJson,
+      preScriptsJson: data.preScriptsJson.present
+          ? data.preScriptsJson.value
+          : this.preScriptsJson,
+      scriptsJson: data.scriptsJson.present
+          ? data.scriptsJson.value
+          : this.scriptsJson,
       collectionId: data.collectionId.present
           ? data.collectionId.value
           : this.collectionId,
@@ -942,6 +1128,8 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
           ..write('authType: $authType, ')
           ..write('authData: $authData, ')
           ..write('schemaJson: $schemaJson, ')
+          ..write('preScriptsJson: $preScriptsJson, ')
+          ..write('scriptsJson: $scriptsJson, ')
           ..write('collectionId: $collectionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -962,6 +1150,8 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     authType,
     authData,
     schemaJson,
+    preScriptsJson,
+    scriptsJson,
     collectionId,
     createdAt,
     updatedAt,
@@ -981,6 +1171,8 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
           other.authType == this.authType &&
           other.authData == this.authData &&
           other.schemaJson == this.schemaJson &&
+          other.preScriptsJson == this.preScriptsJson &&
+          other.scriptsJson == this.scriptsJson &&
           other.collectionId == this.collectionId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -998,6 +1190,8 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
   final Value<String?> authType;
   final Value<String?> authData;
   final Value<String?> schemaJson;
+  final Value<String?> preScriptsJson;
+  final Value<String?> scriptsJson;
   final Value<int?> collectionId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1013,6 +1207,8 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     this.authType = const Value.absent(),
     this.authData = const Value.absent(),
     this.schemaJson = const Value.absent(),
+    this.preScriptsJson = const Value.absent(),
+    this.scriptsJson = const Value.absent(),
     this.collectionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1029,6 +1225,8 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     this.authType = const Value.absent(),
     this.authData = const Value.absent(),
     this.schemaJson = const Value.absent(),
+    this.preScriptsJson = const Value.absent(),
+    this.scriptsJson = const Value.absent(),
     this.collectionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1047,6 +1245,8 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     Expression<String>? authType,
     Expression<String>? authData,
     Expression<String>? schemaJson,
+    Expression<String>? preScriptsJson,
+    Expression<String>? scriptsJson,
     Expression<int>? collectionId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -1063,6 +1263,8 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
       if (authType != null) 'auth_type': authType,
       if (authData != null) 'auth_data': authData,
       if (schemaJson != null) 'schema_json': schemaJson,
+      if (preScriptsJson != null) 'pre_scripts_json': preScriptsJson,
+      if (scriptsJson != null) 'scripts_json': scriptsJson,
       if (collectionId != null) 'collection_id': collectionId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1081,6 +1283,8 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     Value<String?>? authType,
     Value<String?>? authData,
     Value<String?>? schemaJson,
+    Value<String?>? preScriptsJson,
+    Value<String?>? scriptsJson,
     Value<int?>? collectionId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -1097,6 +1301,8 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
       authType: authType ?? this.authType,
       authData: authData ?? this.authData,
       schemaJson: schemaJson ?? this.schemaJson,
+      preScriptsJson: preScriptsJson ?? this.preScriptsJson,
+      scriptsJson: scriptsJson ?? this.scriptsJson,
       collectionId: collectionId ?? this.collectionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1137,6 +1343,12 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     if (schemaJson.present) {
       map['schema_json'] = Variable<String>(schemaJson.value);
     }
+    if (preScriptsJson.present) {
+      map['pre_scripts_json'] = Variable<String>(preScriptsJson.value);
+    }
+    if (scriptsJson.present) {
+      map['scripts_json'] = Variable<String>(scriptsJson.value);
+    }
     if (collectionId.present) {
       map['collection_id'] = Variable<int>(collectionId.value);
     }
@@ -1165,6 +1377,8 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
           ..write('authType: $authType, ')
           ..write('authData: $authData, ')
           ..write('schemaJson: $schemaJson, ')
+          ..write('preScriptsJson: $preScriptsJson, ')
+          ..write('scriptsJson: $scriptsJson, ')
           ..write('collectionId: $collectionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1238,6 +1452,17 @@ class $HistoryEntriesTable extends HistoryEntries
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _originalUrlMeta = const VerificationMeta(
+    'originalUrl',
+  );
+  @override
+  late final GeneratedColumn<String> originalUrl = GeneratedColumn<String>(
+    'original_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _headersJsonMeta = const VerificationMeta(
     'headersJson',
@@ -1344,6 +1569,7 @@ class $HistoryEntriesTable extends HistoryEntries
     workspaceId,
     method,
     url,
+    originalUrl,
     headersJson,
     paramsJson,
     body,
@@ -1402,6 +1628,15 @@ class $HistoryEntriesTable extends HistoryEntries
       );
     } else if (isInserting) {
       context.missing(_urlMeta);
+    }
+    if (data.containsKey('original_url')) {
+      context.handle(
+        _originalUrlMeta,
+        originalUrl.isAcceptableOrUnknown(
+          data['original_url']!,
+          _originalUrlMeta,
+        ),
+      );
     }
     if (data.containsKey('headers_json')) {
       context.handle(
@@ -1492,6 +1727,10 @@ class $HistoryEntriesTable extends HistoryEntries
         DriftSqlType.string,
         data['${effectivePrefix}url'],
       )!,
+      originalUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}original_url'],
+      ),
       headersJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}headers_json'],
@@ -1543,6 +1782,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
   final int? workspaceId;
   final String method;
   final String url;
+  final String? originalUrl;
   final String? headersJson;
   final String? paramsJson;
   final String? body;
@@ -1558,6 +1798,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     this.workspaceId,
     required this.method,
     required this.url,
+    this.originalUrl,
     this.headersJson,
     this.paramsJson,
     this.body,
@@ -1580,6 +1821,9 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     }
     map['method'] = Variable<String>(method);
     map['url'] = Variable<String>(url);
+    if (!nullToAbsent || originalUrl != null) {
+      map['original_url'] = Variable<String>(originalUrl);
+    }
     if (!nullToAbsent || headersJson != null) {
       map['headers_json'] = Variable<String>(headersJson);
     }
@@ -1619,6 +1863,9 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           : Value(workspaceId),
       method: Value(method),
       url: Value(url),
+      originalUrl: originalUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originalUrl),
       headersJson: headersJson == null && nullToAbsent
           ? const Value.absent()
           : Value(headersJson),
@@ -1656,6 +1903,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       workspaceId: serializer.fromJson<int?>(json['workspaceId']),
       method: serializer.fromJson<String>(json['method']),
       url: serializer.fromJson<String>(json['url']),
+      originalUrl: serializer.fromJson<String?>(json['originalUrl']),
       headersJson: serializer.fromJson<String?>(json['headersJson']),
       paramsJson: serializer.fromJson<String?>(json['paramsJson']),
       body: serializer.fromJson<String?>(json['body']),
@@ -1676,6 +1924,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       'workspaceId': serializer.toJson<int?>(workspaceId),
       'method': serializer.toJson<String>(method),
       'url': serializer.toJson<String>(url),
+      'originalUrl': serializer.toJson<String?>(originalUrl),
       'headersJson': serializer.toJson<String?>(headersJson),
       'paramsJson': serializer.toJson<String?>(paramsJson),
       'body': serializer.toJson<String?>(body),
@@ -1694,6 +1943,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     Value<int?> workspaceId = const Value.absent(),
     String? method,
     String? url,
+    Value<String?> originalUrl = const Value.absent(),
     Value<String?> headersJson = const Value.absent(),
     Value<String?> paramsJson = const Value.absent(),
     Value<String?> body = const Value.absent(),
@@ -1711,6 +1961,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     workspaceId: workspaceId.present ? workspaceId.value : this.workspaceId,
     method: method ?? this.method,
     url: url ?? this.url,
+    originalUrl: originalUrl.present ? originalUrl.value : this.originalUrl,
     headersJson: headersJson.present ? headersJson.value : this.headersJson,
     paramsJson: paramsJson.present ? paramsJson.value : this.paramsJson,
     body: body.present ? body.value : this.body,
@@ -1732,6 +1983,9 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           : this.workspaceId,
       method: data.method.present ? data.method.value : this.method,
       url: data.url.present ? data.url.value : this.url,
+      originalUrl: data.originalUrl.present
+          ? data.originalUrl.value
+          : this.originalUrl,
       headersJson: data.headersJson.present
           ? data.headersJson.value
           : this.headersJson,
@@ -1764,6 +2018,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           ..write('workspaceId: $workspaceId, ')
           ..write('method: $method, ')
           ..write('url: $url, ')
+          ..write('originalUrl: $originalUrl, ')
           ..write('headersJson: $headersJson, ')
           ..write('paramsJson: $paramsJson, ')
           ..write('body: $body, ')
@@ -1784,6 +2039,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     workspaceId,
     method,
     url,
+    originalUrl,
     headersJson,
     paramsJson,
     body,
@@ -1803,6 +2059,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           other.workspaceId == this.workspaceId &&
           other.method == this.method &&
           other.url == this.url &&
+          other.originalUrl == this.originalUrl &&
           other.headersJson == this.headersJson &&
           other.paramsJson == this.paramsJson &&
           other.body == this.body &&
@@ -1820,6 +2077,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
   final Value<int?> workspaceId;
   final Value<String> method;
   final Value<String> url;
+  final Value<String?> originalUrl;
   final Value<String?> headersJson;
   final Value<String?> paramsJson;
   final Value<String?> body;
@@ -1835,6 +2093,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     this.workspaceId = const Value.absent(),
     this.method = const Value.absent(),
     this.url = const Value.absent(),
+    this.originalUrl = const Value.absent(),
     this.headersJson = const Value.absent(),
     this.paramsJson = const Value.absent(),
     this.body = const Value.absent(),
@@ -1851,6 +2110,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     this.workspaceId = const Value.absent(),
     required String method,
     required String url,
+    this.originalUrl = const Value.absent(),
     this.headersJson = const Value.absent(),
     this.paramsJson = const Value.absent(),
     this.body = const Value.absent(),
@@ -1868,6 +2128,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     Expression<int>? workspaceId,
     Expression<String>? method,
     Expression<String>? url,
+    Expression<String>? originalUrl,
     Expression<String>? headersJson,
     Expression<String>? paramsJson,
     Expression<String>? body,
@@ -1884,6 +2145,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
       if (workspaceId != null) 'workspace_id': workspaceId,
       if (method != null) 'method': method,
       if (url != null) 'url': url,
+      if (originalUrl != null) 'original_url': originalUrl,
       if (headersJson != null) 'headers_json': headersJson,
       if (paramsJson != null) 'params_json': paramsJson,
       if (body != null) 'body': body,
@@ -1902,6 +2164,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     Value<int?>? workspaceId,
     Value<String>? method,
     Value<String>? url,
+    Value<String?>? originalUrl,
     Value<String?>? headersJson,
     Value<String?>? paramsJson,
     Value<String?>? body,
@@ -1918,6 +2181,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
       workspaceId: workspaceId ?? this.workspaceId,
       method: method ?? this.method,
       url: url ?? this.url,
+      originalUrl: originalUrl ?? this.originalUrl,
       headersJson: headersJson ?? this.headersJson,
       paramsJson: paramsJson ?? this.paramsJson,
       body: body ?? this.body,
@@ -1947,6 +2211,9 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     }
     if (url.present) {
       map['url'] = Variable<String>(url.value);
+    }
+    if (originalUrl.present) {
+      map['original_url'] = Variable<String>(originalUrl.value);
     }
     if (headersJson.present) {
       map['headers_json'] = Variable<String>(headersJson.value);
@@ -1986,6 +2253,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
           ..write('workspaceId: $workspaceId, ')
           ..write('method: $method, ')
           ..write('url: $url, ')
+          ..write('originalUrl: $originalUrl, ')
           ..write('headersJson: $headersJson, ')
           ..write('paramsJson: $paramsJson, ')
           ..write('body: $body, ')
@@ -3072,6 +3340,8 @@ typedef $$CollectionsTableCreateCompanionBuilder =
       Value<String?> description,
       Value<int?> parentId,
       Value<DateTime> createdAt,
+      Value<String?> authType,
+      Value<String?> authData,
     });
 typedef $$CollectionsTableUpdateCompanionBuilder =
     CollectionsCompanion Function({
@@ -3080,6 +3350,8 @@ typedef $$CollectionsTableUpdateCompanionBuilder =
       Value<String?> description,
       Value<int?> parentId,
       Value<DateTime> createdAt,
+      Value<String?> authType,
+      Value<String?> authData,
     });
 
 final class $$CollectionsTableReferences
@@ -3216,6 +3488,16 @@ class $$CollectionsTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authType => $composableBuilder(
+    column: $table.authType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authData => $composableBuilder(
+    column: $table.authData,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3372,6 +3654,16 @@ class $$CollectionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get authType => $composableBuilder(
+    column: $table.authType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authData => $composableBuilder(
+    column: $table.authData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CollectionsTableOrderingComposer get parentId {
     final $$CollectionsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3418,6 +3710,12 @@ class $$CollectionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get authType =>
+      $composableBuilder(column: $table.authType, builder: (column) => column);
+
+  GeneratedColumn<String> get authData =>
+      $composableBuilder(column: $table.authData, builder: (column) => column);
 
   $$CollectionsTableAnnotationComposer get parentId {
     final $$CollectionsTableAnnotationComposer composer = $composerBuilder(
@@ -3582,12 +3880,16 @@ class $$CollectionsTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<int?> parentId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> authType = const Value.absent(),
+                Value<String?> authData = const Value.absent(),
               }) => CollectionsCompanion(
                 id: id,
                 name: name,
                 description: description,
                 parentId: parentId,
                 createdAt: createdAt,
+                authType: authType,
+                authData: authData,
               ),
           createCompanionCallback:
               ({
@@ -3596,12 +3898,16 @@ class $$CollectionsTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<int?> parentId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> authType = const Value.absent(),
+                Value<String?> authData = const Value.absent(),
               }) => CollectionsCompanion.insert(
                 id: id,
                 name: name,
                 description: description,
                 parentId: parentId,
                 createdAt: createdAt,
+                authType: authType,
+                authData: authData,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -3787,6 +4093,8 @@ typedef $$SavedRequestsTableCreateCompanionBuilder =
       Value<String?> authType,
       Value<String?> authData,
       Value<String?> schemaJson,
+      Value<String?> preScriptsJson,
+      Value<String?> scriptsJson,
       Value<int?> collectionId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -3804,6 +4112,8 @@ typedef $$SavedRequestsTableUpdateCompanionBuilder =
       Value<String?> authType,
       Value<String?> authData,
       Value<String?> schemaJson,
+      Value<String?> preScriptsJson,
+      Value<String?> scriptsJson,
       Value<int?> collectionId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -3915,6 +4225,16 @@ class $$SavedRequestsTableFilterComposer
 
   ColumnFilters<String> get schemaJson => $composableBuilder(
     column: $table.schemaJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get preScriptsJson => $composableBuilder(
+    column: $table.preScriptsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scriptsJson => $composableBuilder(
+    column: $table.scriptsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4041,6 +4361,16 @@ class $$SavedRequestsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get preScriptsJson => $composableBuilder(
+    column: $table.preScriptsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scriptsJson => $composableBuilder(
+    column: $table.scriptsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4122,6 +4452,16 @@ class $$SavedRequestsTableAnnotationComposer
 
   GeneratedColumn<String> get schemaJson => $composableBuilder(
     column: $table.schemaJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get preScriptsJson => $composableBuilder(
+    column: $table.preScriptsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get scriptsJson => $composableBuilder(
+    column: $table.scriptsJson,
     builder: (column) => column,
   );
 
@@ -4221,6 +4561,8 @@ class $$SavedRequestsTableTableManager
                 Value<String?> authType = const Value.absent(),
                 Value<String?> authData = const Value.absent(),
                 Value<String?> schemaJson = const Value.absent(),
+                Value<String?> preScriptsJson = const Value.absent(),
+                Value<String?> scriptsJson = const Value.absent(),
                 Value<int?> collectionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -4236,6 +4578,8 @@ class $$SavedRequestsTableTableManager
                 authType: authType,
                 authData: authData,
                 schemaJson: schemaJson,
+                preScriptsJson: preScriptsJson,
+                scriptsJson: scriptsJson,
                 collectionId: collectionId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -4253,6 +4597,8 @@ class $$SavedRequestsTableTableManager
                 Value<String?> authType = const Value.absent(),
                 Value<String?> authData = const Value.absent(),
                 Value<String?> schemaJson = const Value.absent(),
+                Value<String?> preScriptsJson = const Value.absent(),
+                Value<String?> scriptsJson = const Value.absent(),
                 Value<int?> collectionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -4268,6 +4614,8 @@ class $$SavedRequestsTableTableManager
                 authType: authType,
                 authData: authData,
                 schemaJson: schemaJson,
+                preScriptsJson: preScriptsJson,
+                scriptsJson: scriptsJson,
                 collectionId: collectionId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -4374,6 +4722,7 @@ typedef $$HistoryEntriesTableCreateCompanionBuilder =
       Value<int?> workspaceId,
       required String method,
       required String url,
+      Value<String?> originalUrl,
       Value<String?> headersJson,
       Value<String?> paramsJson,
       Value<String?> body,
@@ -4391,6 +4740,7 @@ typedef $$HistoryEntriesTableUpdateCompanionBuilder =
       Value<int?> workspaceId,
       Value<String> method,
       Value<String> url,
+      Value<String?> originalUrl,
       Value<String?> headersJson,
       Value<String?> paramsJson,
       Value<String?> body,
@@ -4473,6 +4823,11 @@ class $$HistoryEntriesTableFilterComposer
 
   ColumnFilters<String> get url => $composableBuilder(
     column: $table.url,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originalUrl => $composableBuilder(
+    column: $table.originalUrl,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4592,6 +4947,11 @@ class $$HistoryEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get originalUrl => $composableBuilder(
+    column: $table.originalUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get headersJson => $composableBuilder(
     column: $table.headersJson,
     builder: (column) => ColumnOrderings(column),
@@ -4701,6 +5061,11 @@ class $$HistoryEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get url =>
       $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumn<String> get originalUrl => $composableBuilder(
+    column: $table.originalUrl,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get headersJson => $composableBuilder(
     column: $table.headersJson,
@@ -4823,6 +5188,7 @@ class $$HistoryEntriesTableTableManager
                 Value<int?> workspaceId = const Value.absent(),
                 Value<String> method = const Value.absent(),
                 Value<String> url = const Value.absent(),
+                Value<String?> originalUrl = const Value.absent(),
                 Value<String?> headersJson = const Value.absent(),
                 Value<String?> paramsJson = const Value.absent(),
                 Value<String?> body = const Value.absent(),
@@ -4838,6 +5204,7 @@ class $$HistoryEntriesTableTableManager
                 workspaceId: workspaceId,
                 method: method,
                 url: url,
+                originalUrl: originalUrl,
                 headersJson: headersJson,
                 paramsJson: paramsJson,
                 body: body,
@@ -4855,6 +5222,7 @@ class $$HistoryEntriesTableTableManager
                 Value<int?> workspaceId = const Value.absent(),
                 required String method,
                 required String url,
+                Value<String?> originalUrl = const Value.absent(),
                 Value<String?> headersJson = const Value.absent(),
                 Value<String?> paramsJson = const Value.absent(),
                 Value<String?> body = const Value.absent(),
@@ -4870,6 +5238,7 @@ class $$HistoryEntriesTableTableManager
                 workspaceId: workspaceId,
                 method: method,
                 url: url,
+                originalUrl: originalUrl,
                 headersJson: headersJson,
                 paramsJson: paramsJson,
                 body: body,

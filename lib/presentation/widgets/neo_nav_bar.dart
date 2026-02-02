@@ -82,17 +82,13 @@ class NeoNavBar extends StatelessWidget {
           return Stack(
             children: [
               // 1. Sliding Pill Background
-              // 1. Sliding Pill Background
               AnimatedPositioned(
-                duration: const Duration(
-                  milliseconds: 600,
-                ), // Slower, more fluid
+                duration: const Duration(milliseconds: 600),
                 curve: Curves.easeInOutCubicEmphasized,
                 left:
                     currentIndex * itemWidth +
-                    (itemWidth - (itemWidth * 0.8)) /
-                        2, // Center pill in the slot
-                top: pillTop, // Dynamic vertical centering
+                    (itemWidth - (itemWidth * 0.8)) / 2,
+                top: pillTop,
                 child: Container(
                   width: itemWidth * 0.8,
                   height: 44,
@@ -114,10 +110,14 @@ class NeoNavBar extends StatelessWidget {
               Row(
                 children: items.map((item) {
                   final isSelected = currentIndex == item.index;
+                  final isNewButton = item.index == 2;
 
                   // User requested White for selected state
                   final activeFg = Colors.white;
                   final inactiveFg = isDark ? Colors.white38 : Colors.black45;
+
+                  // Distinct style for New button
+                  final iconSize = isNewButton ? 32.0 : 28.0;
 
                   return SizedBox(
                     width: itemWidth,
@@ -131,15 +131,29 @@ class NeoNavBar extends StatelessWidget {
                       highlightColor: Colors.transparent,
                       child: Center(
                         child: AnimatedScale(
-                          scale: isSelected ? 1.0 : 0.9,
-                          duration: const Duration(
-                            milliseconds: 400,
-                          ), // Slower scale to match slide
+                          scale: isSelected ? 1.0 : (isNewButton ? 1.0 : 0.9),
+                          duration: const Duration(milliseconds: 400),
                           curve: Curves.easeOut,
-                          child: Icon(
-                            isSelected ? item.iconIn : item.iconOut,
-                            color: isSelected ? activeFg : inactiveFg,
-                            size: 28, // Slightly larger icons since no text
+                          child: Container(
+                            padding: isNewButton && !isSelected
+                                ? const EdgeInsets.all(8)
+                                : null,
+                            decoration: isNewButton && !isSelected
+                                ? BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: theme.colorScheme.primaryContainer
+                                        .withOpacity(0.3),
+                                  )
+                                : null,
+                            child: Icon(
+                              isSelected ? item.iconIn : item.iconOut,
+                              color: isSelected
+                                  ? activeFg
+                                  : (isNewButton
+                                        ? theme.colorScheme.primary
+                                        : inactiveFg),
+                              size: iconSize,
+                            ),
                           ),
                         ),
                       ),

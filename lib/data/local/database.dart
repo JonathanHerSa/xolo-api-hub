@@ -40,6 +40,12 @@ class SavedRequests extends Table {
   // allowing smart re-generation later.
   TextColumn get schemaJson => text().nullable()();
 
+  // Pre-Request Scripts
+  TextColumn get preScriptsJson => text().nullable()();
+
+  // Post-Request Scripts (Request Chaining)
+  TextColumn get scriptsJson => text().nullable()();
+
   IntColumn get collectionId =>
       integer().nullable().references(Collections, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -57,7 +63,9 @@ class HistoryEntries extends Table {
       integer().nullable().references(Collections, #id)();
 
   TextColumn get method => text()();
-  TextColumn get url => text()();
+  TextColumn get url => text()(); // Resolved URL (absolute)
+  TextColumn get originalUrl =>
+      text().nullable()(); // Template URL (with variables)
   TextColumn get headersJson => text().nullable()();
   TextColumn get paramsJson => text().nullable()();
   TextColumn get body => text().nullable()();
@@ -79,6 +87,12 @@ class Collections extends Table {
   TextColumn get description => text().nullable()();
   IntColumn get parentId => integer().nullable().references(Collections, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // Auth Inheritance (v4)
+  TextColumn get authType =>
+      text().nullable()(); // 'bearer', 'basic', 'inherit', etc.
+  TextColumn get authData =>
+      text().nullable()(); // JSON string with token, etc.
 }
 
 /// Entornos (Dev, Stage, Prod)
@@ -134,7 +148,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3; // Bump version for schemaJson
+  int get schemaVersion => 7; // Bump version for History originalUrl
 
   @override
   MigrationStrategy get migration {
@@ -153,6 +167,23 @@ class AppDatabase extends _$AppDatabase {
         if (from < 3) {
           // Add schemaJson (v3)
           await m.addColumn(savedRequests, savedRequests.schemaJson);
+        }
+        if (from < 4) {
+          // Add Auth columns to Collections (v4)
+          await m.addColumn(collections, collections.authType);
+          await m.addColumn(collections, collections.authData);
+        }
+        if (from < 5) {
+          // Add scriptsJson (v5)
+          await m.addColumn(savedRequests, savedRequests.scriptsJson);
+        }
+        if (from < 6) {
+          // Add preScriptsJson (v6)
+          await m.addColumn(savedRequests, savedRequests.preScriptsJson);
+        }
+        if (from < 7) {
+          // Add originalUrl to history (v7)
+          await m.addColumn(historyEntries, historyEntries.originalUrl);
         }
       },
     );
@@ -228,22 +259,34 @@ class AppDatabase extends _$AppDatabase {
     required String name,
     String? description,
     int? parentId,
+    String? authType,
+    String? authData,
   }) {
     return into(collections).insert(
       CollectionsCompanion.insert(
         name: name,
         description: Value(description),
         parentId: Value(parentId),
+        authType: Value(authType),
+        authData: Value(authData),
       ),
     );
   }
 
-  Future<bool> updateCollection(int id, String name, String? description) {
+  Future<bool> updateCollection(
+    int id,
+    String name,
+    String? description, {
+    String? authType,
+    String? authData,
+  }) {
     return (update(collections)..where((t) => t.id.equals(id)))
         .write(
           CollectionsCompanion(
             name: Value(name),
             description: Value(description),
+            authType: Value(authType),
+            authData: Value(authData),
           ),
         )
         .then((rows) => rows > 0);
@@ -333,6 +376,7 @@ class AppDatabase extends _$AppDatabase {
   Future<int> insertHistory({
     required String method,
     required String url,
+    String? originalUrl,
     String? headersJson,
     String? paramsJson,
     String? body,
@@ -346,6 +390,7 @@ class AppDatabase extends _$AppDatabase {
       HistoryEntriesCompanion.insert(
         method: method,
         url: url,
+        originalUrl: Value(originalUrl),
         headersJson: Value(headersJson),
         paramsJson: Value(paramsJson),
         body: Value(body),
@@ -362,23 +407,19 @@ class AppDatabase extends _$AppDatabase {
   Future<int> addHistoryItem({
     required String method,
     required String url,
+    String? originalUrl,
     int? statusCode,
     int? durationMs,
     int? responseSize, // Not stored in DB currently, ignored or mapped?
-    // DB has 'responseBody', provider passes 'responseSize'.
-    // Provider passed 'responseSize' but it wasn't in DB Schema?
-    // Let's check provider usage.
     int? workspaceId,
   }) {
-    // Provider calls: addHistoryItem(method, url, statusCode, durationMs, responseSize, workspaceId)
-    // We update params to match what we have.
     return insertHistory(
       method: method,
       url: url,
+      originalUrl: originalUrl,
       statusCode: statusCode,
       durationMs: durationMs,
       workspaceId: workspaceId,
-      // We don't store responseSize explicitly in DB yet, doing nothing with it.
     );
   }
 

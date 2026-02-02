@@ -60,9 +60,12 @@ class _XoloAppState extends ConsumerState<XoloApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused) {
       service.markAppBackgrounded();
     } else if (state == AppLifecycleState.resumed) {
-      final shouldLock = await service.shouldLockApp();
-      if (shouldLock && mounted) {
-        ref.read(isAppLockedProvider.notifier).set(true);
+      final isAppLocked = ref.read(isAppLockedProvider);
+      if (!isAppLocked) {
+        final shouldLock = await service.shouldLockApp();
+        if (shouldLock && mounted) {
+          ref.read(isAppLockedProvider.notifier).set(true);
+        }
       }
     }
   }

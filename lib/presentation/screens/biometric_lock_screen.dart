@@ -10,14 +10,30 @@ class BiometricLockScreen extends ConsumerStatefulWidget {
       _BiometricLockScreenState();
 }
 
-class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
+class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen>
+    with WidgetsBindingObserver {
   bool _isAuthenticating = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Auto-trigger auth when screen is shown
     _authenticate();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Re-trigger auth if we return to the foreground and it's not already in progress
+      _authenticate();
+    }
   }
 
   Future<void> _authenticate() async {
