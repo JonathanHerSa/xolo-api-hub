@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/tabs_provider.dart';
 import '../providers/request_session_provider.dart';
-import '../../core/theme/xolo_theme.dart';
+import '../../core/theme/premium_theme.dart';
 
 class BrowserTabBar extends ConsumerWidget {
   const BrowserTabBar({super.key});
@@ -63,7 +63,7 @@ class _TabItem extends ConsumerWidget {
       );
     }
 
-    final methodColor = XoloTheme.getMethodColor(session.method);
+    final methodColor = XoloPremiumTheme.getMethodColor(session.method);
 
     return InkWell(
       onTap: () {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme/xolo_theme.dart';
+import '../../core/theme/premium_theme.dart';
 import '../../data/local/database.dart';
 import '../providers/database_providers.dart';
 import '../providers/environment_provider.dart';
@@ -178,7 +178,7 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
                                     ? Icons.check_circle
                                     : Icons.layers_outlined,
                                 color: isActive
-                                    ? XoloTheme.statusSuccess
+                                    ? Colors.green
                                     : colorScheme.onSurfaceVariant,
                               ),
                               title: Text(

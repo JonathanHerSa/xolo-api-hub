@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme/xolo_theme.dart';
+import '../../core/theme/premium_theme.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../data/services/sync_service.dart';
 import '../../data/local/database.dart';
@@ -317,7 +317,10 @@ class DraggableRequestTile extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainer,
           child: Row(
             children: [
-              Icon(Icons.http, color: XoloTheme.getMethodColor(req.method)),
+              Icon(
+                Icons.http,
+                color: XoloPremiumTheme.getMethodColor(req.method),
+              ),
               const SizedBox(width: 8),
               Expanded(child: Text(req.name, overflow: TextOverflow.ellipsis)),
             ],
@@ -330,7 +333,7 @@ class DraggableRequestTile extends StatelessWidget {
   }
 
   Widget _buildTile(BuildContext context) {
-    final methodColor = XoloTheme.getMethodColor(req.method);
+    final methodColor = XoloPremiumTheme.getMethodColor(req.method);
     return ListTile(
       dense: true,
       leading: Text(

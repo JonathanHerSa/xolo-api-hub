@@ -183,17 +183,18 @@ class XoloPremiumTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+      scaffoldBackgroundColor: const Color(0xFFF3F6FB),
       colorScheme:
           ColorScheme.fromSeed(
             seedColor: primary,
             brightness: Brightness.light,
           ).copyWith(
             surface: Colors.white,
-            surfaceContainerHighest: const Color(0xFFF1F5F9),
+            primary: const Color(0xFF2563EB),
+            surfaceContainerHighest: const Color(0xFFEAF0F8),
           ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFFF3F6FB),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
@@ -202,12 +203,12 @@ class XoloPremiumTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: Color(0xFFE2E8F0)),
+          side: const BorderSide(color: Color(0xFFD7E1EF)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF8FAFC),
+        fillColor: const Color(0xFFF7FAFF),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
@@ -227,6 +228,8 @@ class XoloPremiumTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF2563EB),
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),

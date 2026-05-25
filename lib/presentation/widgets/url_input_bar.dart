@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/key_value_pair.dart';
-import '../../core/theme/xolo_theme.dart';
+import '../../core/theme/premium_theme.dart';
 import '../providers/environment_provider.dart';
 import '../providers/request_provider.dart';
 import '../providers/request_session_provider.dart';
@@ -447,7 +447,7 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
       'HEAD',
       'OPTIONS',
     ];
-    final methodColor = XoloTheme.getMethodColor(selectedMethod);
+    final methodColor = XoloPremiumTheme.getMethodColor(selectedMethod);
 
     return PopupMenuButton<String>(
       initialValue: selectedMethod,
@@ -491,7 +491,7 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
         ),
       ),
       itemBuilder: (context) => httpMethods.map((method) {
-        final color = XoloTheme.getMethodColor(method);
+        final color = XoloPremiumTheme.getMethodColor(method);
         return PopupMenuItem(
           value: method,
           child: Row(

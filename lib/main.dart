@@ -97,7 +97,6 @@ class _XoloAppState extends ConsumerState<XoloApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     // Escuchar el color seleccionado por el usuario
     final primaryColorValue = ref.watch(themeColorProvider);
-    final themeMode = ref.watch(themeModeProvider);
     final isLocked = ref.watch(isAppLockedProvider);
 
     return MaterialApp(
@@ -106,7 +105,7 @@ class _XoloAppState extends ConsumerState<XoloApp> with WidgetsBindingObserver {
       // Dynamic Theme based on persistence
       theme: XoloPremiumTheme.lightTheme(primaryColorValue),
       darkTheme: XoloPremiumTheme.darkTheme(primaryColorValue),
-      themeMode: themeMode,
+      themeMode: ThemeMode.light,
       home: const HomeScreen(),
       builder: (context, child) {
         return Stack(

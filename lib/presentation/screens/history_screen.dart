@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/theme/xolo_theme.dart';
+import '../../core/theme/premium_theme.dart';
 import '../../core/theme/xolo_design_tokens.dart';
 import '../../data/local/database.dart';
 import '../providers/database_providers.dart';
@@ -196,14 +196,14 @@ class _HistoryItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final methodColor = XoloTheme.getMethodColor(entry.method);
+    final methodColor = XoloPremiumTheme.getMethodColor(entry.method);
 
     // Status color logic (2xx success, else error)
     final isSuccess =
         entry.statusCode != null &&
         entry.statusCode! >= 200 &&
         entry.statusCode! < 300;
-    final statusColor = isSuccess ? XoloTheme.statusSuccess : colorScheme.error;
+    final statusColor = isSuccess ? Colors.green : colorScheme.error;
 
     return InkWell(
       onTap: () => _loadHistoryItem(context, ref),
