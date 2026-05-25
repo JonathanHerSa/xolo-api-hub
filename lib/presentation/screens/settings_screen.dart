@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/biometric_service.dart';
+import '../../core/services/security_profile_service.dart';
 import '../../core/services/security_service.dart';
+import '../../core/theme/xolo_design_tokens.dart';
 import '../providers/theme_provider.dart';
 import '../providers/incognito_provider.dart';
 import '../providers/database_providers.dart';
@@ -64,16 +66,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         surfaceTintColor: Colors.transparent,
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: XoloSpacing.lg,
+          vertical: XoloSpacing.sm,
+        ),
         children: [
           _buildAppearanceCard(context, ref),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: XoloSpacing.xl),
           _buildSectionTitle(context, 'SECURITY & PRIVACY'),
-          const SizedBox(height: 8),
+          const SizedBox(height: XoloSpacing.sm),
 
           // Security Group
           _buildSettingsGroup(context, [
+            _buildSecurityProfileTile(context, ref),
+            const Divider(height: 1, indent: 64),
+
             // Biometric
             biometricAsync.when(
               data: (enabled) => SwitchListTile.adaptive(
@@ -192,9 +200,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ]),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: XoloSpacing.xl),
+          _buildSectionTitle(context, 'DATA OWNERSHIP'),
+          const SizedBox(height: XoloSpacing.sm),
+          _buildDataOwnershipCard(context),
+
+          const SizedBox(height: XoloSpacing.xl),
           _buildSectionTitle(context, 'DATA & STORAGE'),
-          const SizedBox(height: 8),
+          const SizedBox(height: XoloSpacing.sm),
 
           _buildSettingsGroup(context, [
             ListTile(
@@ -222,9 +235,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 backgroundColor: colorScheme.error.withValues(alpha: 0.1),
                 foregroundColor: colorScheme.error,
                 padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: XoloRadius.md),
               ),
               onPressed: () => _showPanicDialog(context, ref),
               icon: const Icon(Icons.warning_amber_rounded),
@@ -242,6 +253,106 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 100), // Bottom padding
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecurityProfileTile(BuildContext context, WidgetRef ref) {
+    final profileAsync = ref.watch(securityProfileProvider);
+    return profileAsync.when(
+      data: (profile) {
+        return ListTile(
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          title: const Text(
+            'Security Profile',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            _profileDescription(profile),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.teal.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.verified_user_outlined, color: Colors.teal),
+          ),
+          trailing: DropdownButton<SecurityProfile>(
+            value: profile,
+            underline: const SizedBox.shrink(),
+            onChanged: (value) async {
+              if (value == null) return;
+              final profileService = ref.read(securityProfileServiceProvider);
+              await profileService.setProfile(value);
+              final policy = profileService.policyFor(value);
+              await _setDelay(policy.recommendedLockDelaySeconds);
+              ref.invalidate(securityProfileProvider);
+              ref.invalidate(securityPolicyProvider);
+            },
+            items: SecurityProfile.values
+                .map(
+                  (p) =>
+                      DropdownMenuItem(value: p, child: Text(_profileLabel(p))),
+                )
+                .toList(),
+          ),
+        );
+      },
+      loading: () => const LinearProgressIndicator(),
+      error: (e, s) => ListTile(
+        title: Text('Security profile error: $e'),
+        leading: const Icon(Icons.error, color: Colors.red),
+      ),
+    );
+  }
+
+  String _profileLabel(SecurityProfile profile) {
+    return switch (profile) {
+      SecurityProfile.standard => 'Standard',
+      SecurityProfile.hardened => 'Hardened',
+      SecurityProfile.paranoid => 'Paranoid',
+    };
+  }
+
+  String _profileDescription(SecurityProfile profile) {
+    return switch (profile) {
+      SecurityProfile.standard => 'Balanced security and usability',
+      SecurityProfile.hardened => 'Hide secrets and tighter lock policy',
+      SecurityProfile.paranoid => 'Maximum protection with immediate lock',
+    };
+  }
+
+  Widget _buildDataOwnershipCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
+        borderRadius: XoloRadius.lg,
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your data stays yours',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+          SizedBox(height: XoloSpacing.sm),
+          Text(
+            'Xolo stores your data locally on this device by default. Nothing is uploaded unless you explicitly export and share a backup file.',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          SizedBox(height: XoloSpacing.sm),
+          Text(
+            'Use encrypted backups and security profiles to control how strict the app behaves.',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
         ],
       ),
     );
@@ -269,7 +380,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         color: Theme.of(
           context,
         ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: XoloRadius.lg,
       ),
       child: Column(children: children),
     );
@@ -291,7 +402,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: XoloRadius.xl,
           border: Border.all(
             color: currentColor.withValues(alpha: 0.3),
             width: 1,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/auth_resolver_service.dart';
 import '../../core/services/oauth2_service.dart';
+import '../../core/services/security_profile_service.dart';
 import '../providers/request_session_provider.dart';
 
 class AuthTab extends ConsumerStatefulWidget {
@@ -47,6 +48,7 @@ class _AuthTabState extends ConsumerState<AuthTab> {
   @override
   Widget build(BuildContext context) {
     final sessionAsync = ref.watch(requestSessionProvider(widget.tabId));
+    final policyAsync = ref.watch(securityPolicyProvider);
     final session = sessionAsync.asData?.value;
 
     if (session == null) {
@@ -60,6 +62,9 @@ class _AuthTabState extends ConsumerState<AuthTab> {
         authData = jsonDecode(session.authData!) as Map<String, dynamic>;
       } catch (_) {}
     }
+
+    final hideSensitiveValues =
+        policyAsync.asData?.value.hideSensitiveValues ?? false;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -92,6 +97,7 @@ class _AuthTabState extends ConsumerState<AuthTab> {
           _AuthForm(
             type: currentType,
             data: authData,
+            hideSensitiveValues: hideSensitiveValues,
             onChanged: _onDataChanged,
           ),
           const SizedBox(height: 32),
@@ -113,11 +119,13 @@ class _AuthTabState extends ConsumerState<AuthTab> {
 class _AuthForm extends StatelessWidget {
   final String type;
   final Map<String, dynamic> data;
+  final bool hideSensitiveValues;
   final ValueChanged<Map<String, dynamic>> onChanged;
 
   const _AuthForm({
     required this.type,
     required this.data,
+    required this.hideSensitiveValues,
     required this.onChanged,
   });
 
@@ -139,11 +147,23 @@ class _AuthForm extends StatelessWidget {
           ),
         );
       case 'bearer':
-        return _BearerForm(data: data, onChanged: onChanged);
+        return _BearerForm(
+          data: data,
+          hideSensitiveValues: hideSensitiveValues,
+          onChanged: onChanged,
+        );
       case 'basic':
-        return _BasicForm(data: data, onChanged: onChanged);
+        return _BasicForm(
+          data: data,
+          hideSensitiveValues: hideSensitiveValues,
+          onChanged: onChanged,
+        );
       case 'api_key':
-        return _ApiKeyForm(data: data, onChanged: onChanged);
+        return _ApiKeyForm(
+          data: data,
+          hideSensitiveValues: hideSensitiveValues,
+          onChanged: onChanged,
+        );
       // Placeholders for advanced types
       case 'digest':
       case 'oauth1':
@@ -161,9 +181,14 @@ class _AuthForm extends StatelessWidget {
 
 class _BearerForm extends StatelessWidget {
   final Map<String, dynamic> data;
+  final bool hideSensitiveValues;
   final ValueChanged<Map<String, dynamic>> onChanged;
 
-  const _BearerForm({required this.data, required this.onChanged});
+  const _BearerForm({
+    required this.data,
+    required this.hideSensitiveValues,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -176,6 +201,7 @@ class _BearerForm extends StatelessWidget {
             border: OutlineInputBorder(),
             hintText: 'e.g. eyJhbGciOiJIUzI1Ni...',
           ),
+          obscureText: hideSensitiveValues,
           onChanged: (val) => onChanged({...data, 'token': val}),
         ),
       ],
@@ -185,9 +211,14 @@ class _BearerForm extends StatelessWidget {
 
 class _BasicForm extends StatelessWidget {
   final Map<String, dynamic> data;
+  final bool hideSensitiveValues;
   final ValueChanged<Map<String, dynamic>> onChanged;
 
-  const _BasicForm({required this.data, required this.onChanged});
+  const _BasicForm({
+    required this.data,
+    required this.hideSensitiveValues,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +235,7 @@ class _BasicForm extends StatelessWidget {
         const SizedBox(height: 16),
         TextFormField(
           initialValue: data['password'] as String?,
-          obscureText: true,
+          obscureText: hideSensitiveValues,
           decoration: const InputDecoration(
             labelText: 'Password',
             border: OutlineInputBorder(),
@@ -218,9 +249,14 @@ class _BasicForm extends StatelessWidget {
 
 class _ApiKeyForm extends StatelessWidget {
   final Map<String, dynamic> data;
+  final bool hideSensitiveValues;
   final ValueChanged<Map<String, dynamic>> onChanged;
 
-  const _ApiKeyForm({required this.data, required this.onChanged});
+  const _ApiKeyForm({
+    required this.data,
+    required this.hideSensitiveValues,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -242,6 +278,7 @@ class _ApiKeyForm extends StatelessWidget {
             labelText: 'Value',
             border: OutlineInputBorder(),
           ),
+          obscureText: hideSensitiveValues,
           onChanged: (val) => onChanged({...data, 'value': val}),
         ),
         const SizedBox(height: 16),

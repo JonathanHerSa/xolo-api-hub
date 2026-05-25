@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/local/database.dart';
+import '../../core/services/auth_secret_service.dart';
 import '../providers/database_providers.dart';
 
 void showCreateCollectionDialog(
@@ -67,14 +68,19 @@ class _CreateCollectionDialogState
       text: widget.collectionToEdit?.description ?? '',
     );
 
-    // Initialize Auth State
+    _initAuthState();
+  }
+
+  Future<void> _initAuthState() async {
     if (widget.collectionToEdit != null) {
       _authType = widget.collectionToEdit!.authType ?? 'inherit';
-      if (widget.collectionToEdit!.authData != null) {
+      final secretService = ref.read(authSecretServiceProvider);
+      final resolvedAuth = await secretService.resolveAuthData(
+        widget.collectionToEdit!.authData,
+      );
+      if (resolvedAuth != null) {
         try {
-          _authData =
-              jsonDecode(widget.collectionToEdit!.authData!)
-                  as Map<String, dynamic>;
+          _authData = jsonDecode(resolvedAuth) as Map<String, dynamic>;
         } catch (_) {}
       }
     } else {
@@ -84,6 +90,9 @@ class _CreateCollectionDialogState
       } else {
         _authType = 'inherit';
       }
+    }
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -304,14 +313,18 @@ class _CreateCollectionDialogState
     }
 
     try {
+      final secretService = ref.read(authSecretServiceProvider);
+      final authSecretRef = await secretService.storeAuthData(authDataJson);
+
       if (widget.collectionToEdit != null) {
+        await secretService.deleteAuthData(widget.collectionToEdit!.authData);
         // Edit
         await db.updateCollection(
           widget.collectionToEdit!.id,
           name,
           desc,
           authType: _authType,
-          authData: authDataJson,
+          authData: authSecretRef,
         );
       } else {
         // Create
@@ -320,7 +333,7 @@ class _CreateCollectionDialogState
           description: desc,
           parentId: widget.parentId,
           authType: _authType,
-          authData: authDataJson,
+          authData: authSecretRef,
         );
       }
 

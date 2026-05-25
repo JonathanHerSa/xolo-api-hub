@@ -67,7 +67,7 @@ class BiometricService {
   }
 
   /// Called when app resumes. Returns true if we should lock.
-  Future<bool> shouldLockApp() async {
+  Future<bool> shouldLockApp({int? forceDelaySeconds}) async {
     final enabled = await getBiometricEnabled();
     if (!enabled) return false;
 
@@ -78,9 +78,7 @@ class BiometricService {
     if (_backgroundedTime == null) return false;
 
     final diff = DateTime.now().difference(_backgroundedTime!);
-    final delaySecondsStr = await _storage.read(key: _kLockDelayKey);
-    final delaySeconds =
-        int.tryParse(delaySecondsStr ?? '30') ?? 30; // Default 30s
+    final delaySeconds = forceDelaySeconds ?? await getLockDelay();
 
     final result = diff.inSeconds >= delaySeconds;
     _backgroundedTime = null; // Always clear on evaluation during resume

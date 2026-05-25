@@ -2,69 +2,111 @@ import 'package:encrypt/encrypt.dart' as enc;
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 
-class EncryptionService {
-  /// Generates a 32-byte key from the password using SHA-256.
-  /// In production, PBKDF2 with salt is better, but SHA-256 is decent for local mvp.
-  /// We will use a random Salt stored in the first 16 bytes of output for better security if possible,
-  /// but to keep it simple and stateless (password = key), we'll stick to a deterministic key for now,
-  /// OR prepend a random IV to the file.
+const _pbkdf2Rounds = 120000;
+const _keyLength = 32;
+const _saltLength = 16;
+const _ivLength = 16;
 
-  enc.Key _deriveKey(String password) {
-    final bytes = utf8.encode(password);
-    final digest = sha256.convert(bytes);
+class EncryptionService {
+  enc.Key _deriveKeyPbkdf2(String password, List<int> salt) {
+    var block = <int>[];
+    var output = <int>[];
+    var counter = 1;
+
+    while (output.length < _keyLength) {
+      final hmacSha256 = Hmac(sha256, utf8.encode(password));
+      final initial = <int>[...salt, 0, 0, 0, counter];
+      var u = hmacSha256.convert(initial).bytes;
+      block = List<int>.from(u);
+      for (var i = 1; i < _pbkdf2Rounds; i++) {
+        u = hmacSha256.convert(u).bytes;
+        for (var j = 0; j < block.length; j++) {
+          block[j] ^= u[j];
+        }
+      }
+      output.addAll(block);
+      counter++;
+    }
+
+    return enc.Key(Uint8List.fromList(output.sublist(0, _keyLength)));
+  }
+
+  enc.Key _legacyKey(String password) {
+    final digest = sha256.convert(utf8.encode(password));
     return enc.Key(Uint8List.fromList(digest.bytes));
   }
 
-  /// Encrypts a string
-  String encryptString(String plainText, String password) {
-    final key = _deriveKey(password);
-    final iv = enc.IV.fromLength(16); // Random IV
-    final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
-
-    final encrypted = encrypter.encrypt(plainText, iv: iv);
-
-    // Return IV + EncryptedData (Base64 combined)
-    // Format: iv_base64:ciphertext_base64
-    return '${iv.base64}:${encrypted.base64}';
+  List<int> _randomBytes(int length) {
+    final random = Random.secure();
+    return List.generate(length, (_) => random.nextInt(256));
   }
 
-  /// Decrypts a string
+  String encryptString(String plainText, String password) {
+    final salt = _randomBytes(_saltLength);
+    final key = _deriveKeyPbkdf2(password, salt);
+    final iv = enc.IV(Uint8List.fromList(_randomBytes(_ivLength)));
+    final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
+    final encrypted = encrypter.encrypt(plainText, iv: iv);
+    final payload = [...salt, ...iv.bytes, ...encrypted.bytes];
+    final mac = Hmac(sha256, key.bytes).convert(payload).bytes;
+    final finalPayload = [...payload, ...mac];
+    return 'v2:${base64Encode(finalPayload)}';
+  }
+
   String decryptString(String combined, String password) {
+    if (combined.startsWith('v2:')) {
+      final data = base64Decode(combined.substring(3));
+      return utf8.decode(decryptBytes(data, password));
+    }
+
+    // Legacy format compatibility.
     final parts = combined.split(':');
     if (parts.length != 2) throw Exception('Invalid encrypted format');
 
     final iv = enc.IV.fromBase64(parts[0]);
     final cipherText = enc.Encrypted.fromBase64(parts[1]);
 
-    final key = _deriveKey(password);
+    final key = _legacyKey(password);
     final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
 
     return encrypter.decrypt(cipherText, iv: iv);
   }
 
-  /// Encrypts bytes (for file operations)
   List<int> encryptBytes(List<int> plainBytes, String password) {
-    final key = _deriveKey(password);
-    final iv = enc.IV.fromLength(16);
+    final salt = _randomBytes(_saltLength);
+    final key = _deriveKeyPbkdf2(password, salt);
+    final iv = enc.IV(Uint8List.fromList(_randomBytes(_ivLength)));
     final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
-
     final encrypted = encrypter.encryptBytes(plainBytes, iv: iv);
-
-    // Initial 16 bytes = IV
-    return [...iv.bytes, ...encrypted.bytes];
+    final payload = [...salt, ...iv.bytes, ...encrypted.bytes];
+    final mac = Hmac(sha256, key.bytes).convert(payload).bytes;
+    return [...payload, ...mac];
   }
 
-  /// Decrypts bytes
   List<int> decryptBytes(List<int> cipherBytes, String password) {
-    if (cipherBytes.length < 16) throw Exception('Invalid data length');
+    if (cipherBytes.length <= _saltLength + _ivLength + 32) {
+      throw Exception('Invalid encrypted payload');
+    }
 
-    final ivBytes = cipherBytes.sublist(0, 16);
-    final contentBytes = cipherBytes.sublist(16);
+    final salt = cipherBytes.sublist(0, _saltLength);
+    final ivBytes = cipherBytes.sublist(_saltLength, _saltLength + _ivLength);
+    final contentBytes = cipherBytes.sublist(
+      _saltLength + _ivLength,
+      cipherBytes.length - 32,
+    );
+    final mac = cipherBytes.sublist(cipherBytes.length - 32);
 
-    final key = _deriveKey(password);
+    final key = _deriveKeyPbkdf2(password, salt);
+    final payload = cipherBytes.sublist(0, cipherBytes.length - 32);
+    final expectedMac = Hmac(sha256, key.bytes).convert(payload).bytes;
+    if (!_constantTimeEquals(mac, expectedMac)) {
+      throw Exception('Invalid MAC');
+    }
+
     final iv = enc.IV(Uint8List.fromList(ivBytes));
     final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
 
@@ -72,6 +114,15 @@ class EncryptionService {
       enc.Encrypted(Uint8List.fromList(contentBytes)),
       iv: iv,
     );
+  }
+
+  bool _constantTimeEquals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    var diff = 0;
+    for (var i = 0; i < a.length; i++) {
+      diff |= a[i] ^ b[i];
+    }
+    return diff == 0;
   }
 
   /// Helper to generate a random strong password if user wants one

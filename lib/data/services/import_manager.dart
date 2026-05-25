@@ -1,5 +1,9 @@
 import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/network/http_client_provider.dart';
 import '../local/database.dart';
 import 'openapi_service.dart';
 import 'postman_service.dart';
@@ -8,16 +12,18 @@ enum ImportFormat { openApi, postman, auto }
 
 final importManagerProvider = Provider((ref) {
   return ImportManager(
+    ref.watch(dioProvider),
     ref.watch(openApiServiceProvider),
     ref.watch(postmanServiceProvider),
   );
 });
 
 class ImportManager {
+  final Dio _dio;
   final OpenApiService _openApi;
   final PostmanService _postman;
 
-  ImportManager(this._openApi, this._postman);
+  ImportManager(this._dio, this._openApi, this._postman);
 
   Future<void> importFromUrl(
     String url,
@@ -26,10 +32,22 @@ class ImportManager {
     int? targetCollectionId,
     ImportFormat format = ImportFormat.auto,
   }) async {
-    // For now URL only supports OpenAPI as it's the common case for Swagger URLs
-    // Postman usually share via JSON files unless using their API
-    await _openApi.importFromUrl(
-      url,
+    final response = await _dio.get(url);
+    final payload = _normalizePayload(response.data);
+    final detectedFormat = _detectFormat(payload, format);
+
+    if (detectedFormat == ImportFormat.postman) {
+      await _postman.importFromJson(
+        payload,
+        parentId,
+        db,
+        targetCollectionId: targetCollectionId,
+      );
+      return;
+    }
+
+    await _openApi.importFromJson(
+      payload,
       parentId,
       db,
       targetCollectionId: targetCollectionId,
@@ -90,5 +108,20 @@ class ImportManager {
     if (json.containsKey('paths')) return ImportFormat.openApi;
 
     return ImportFormat.openApi; // Default
+  }
+
+  Map<String, dynamic> _normalizePayload(dynamic raw) {
+    if (raw is Map<String, dynamic>) {
+      return raw;
+    }
+
+    if (raw is String) {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    }
+
+    throw Exception('Unsupported import payload format. Expected JSON object.');
   }
 }

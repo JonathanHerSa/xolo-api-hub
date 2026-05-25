@@ -292,6 +292,27 @@ class AppDatabase extends _$AppDatabase {
         .then((rows) => rows > 0);
   }
 
+  Future<List<Collection>> getCollectionsWithPlainAuthData() {
+    return (select(collections)
+          ..where((t) => t.authData.isNotNull() & t.authData.isNotValue('')))
+        .get()
+        .then(
+          (rows) => rows
+              .where(
+                (row) =>
+                    row.authData != null &&
+                    !row.authData!.startsWith('secure_auth_ref:'),
+              )
+              .toList(),
+        );
+  }
+
+  Future<void> updateCollectionAuthDataById(int id, String? authData) async {
+    await (update(collections)..where((t) => t.id.equals(id))).write(
+      CollectionsCompanion(authData: Value(authData)),
+    );
+  }
+
   Future<void> deleteCollection(int id) async {
     await transaction(() async {
       final children = await (select(

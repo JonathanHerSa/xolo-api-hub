@@ -3,8 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../local/database.dart';
 import '../../core/utils/schema_helper.dart';
+import '../../core/network/http_client_provider.dart';
 
-final openApiServiceProvider = Provider((ref) => OpenApiService(Dio()));
+final openApiServiceProvider = Provider((ref) => OpenApiService(ref.read(dioProvider)));
 
 class OpenApiService {
   final Dio _dio;

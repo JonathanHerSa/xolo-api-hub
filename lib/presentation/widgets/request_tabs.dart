@@ -9,6 +9,7 @@ import '../providers/request_session_provider.dart';
 import 'key_value_table.dart';
 import 'json_viewer.dart';
 import 'auth_tab.dart';
+import '../../core/theme/xolo_design_tokens.dart';
 import '../../core/utils/variable_text_controller.dart';
 
 class RequestTabs extends ConsumerStatefulWidget {
@@ -76,16 +77,28 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
         if (error != null)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(8),
-            color: Colors.red.withOpacity(0.1),
+            margin: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+            padding: const EdgeInsets.all(XoloSpacing.sm),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.1),
+              borderRadius: XoloRadius.sm,
+            ),
             child: Text(
               'Error: $error',
               style: const TextStyle(color: Colors.red),
             ),
           ),
 
-        Padding(
+        Container(
+          margin: const EdgeInsets.fromLTRB(10, 8, 10, 0),
           padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.22),
+            borderRadius: XoloRadius.md,
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+            ),
+          ),
           child: Row(
             children: [
               Expanded(
@@ -96,6 +109,7 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
                   labelColor: colorScheme.primary,
                   unselectedLabelColor: colorScheme.onSurfaceVariant,
                   indicatorColor: colorScheme.primary,
+                  indicatorWeight: 2.5,
                   labelPadding: const EdgeInsets.symmetric(horizontal: 16),
                   tabs: [
                     const Tab(text: 'Params'),

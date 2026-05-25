@@ -65,6 +65,15 @@ class XoloPremiumTheme {
         error: methodDelete,
       ),
 
+      cardTheme: CardThemeData(
+        color: _bgSurface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: _border),
+        ),
+      ),
+
       // Inputs
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -74,15 +83,15 @@ class XoloPremiumTheme {
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: Colors.transparent),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: primary, width: 1.5),
         ),
         hintStyle: const TextStyle(color: _textDisabled, fontSize: 13),
@@ -96,8 +105,11 @@ class XoloPremiumTheme {
           foregroundColor: onPrimary,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          minimumSize: const Size(44, 44),
         ),
       ),
 
@@ -106,7 +118,10 @@ class XoloPremiumTheme {
         style: TextButton.styleFrom(
           foregroundColor: _textSecondary,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          minimumSize: const Size(44, 44),
         ),
       ),
 
@@ -115,7 +130,10 @@ class XoloPremiumTheme {
           foregroundColor: _textPrimary,
           side: const BorderSide(color: _border),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          minimumSize: const Size(44, 44),
         ),
       ),
 
@@ -157,6 +175,64 @@ class XoloPremiumTheme {
       ),
 
       iconTheme: const IconThemeData(color: _textSecondary, size: 20),
+    );
+  }
+
+  static ThemeData lightTheme(int primaryColorValue) {
+    final primary = Color(primaryColorValue);
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+      colorScheme:
+          ColorScheme.fromSeed(
+            seedColor: primary,
+            brightness: Brightness.light,
+          ).copyWith(
+            surface: Colors.white,
+            surfaceContainerHighest: const Color(0xFFF1F5F9),
+          ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+      ),
+      cardTheme: CardThemeData(
+        color: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: primary, width: 1.5),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          minimumSize: const Size(44, 44),
+        ),
+      ),
     );
   }
 

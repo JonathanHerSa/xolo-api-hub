@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/xolo_theme.dart';
+import '../../core/theme/xolo_design_tokens.dart';
 import '../../data/local/database.dart';
 import '../providers/database_providers.dart';
 import '../providers/history_provider.dart';
@@ -42,16 +43,27 @@ class HistoryScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.history,
-                    size: 64,
+                    Icons.history_rounded,
+                    size: 56,
                     color: colorScheme.outline.withValues(alpha: 0.5),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: XoloSpacing.lg),
                   Text(
                     'No hay historial reciente',
                     style: TextStyle(
                       color: colorScheme.onSurfaceVariant,
-                      fontSize: 16,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: XoloSpacing.sm),
+                  Text(
+                    'Tus requests ejecutadas apareceran aqui.',
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.85,
+                      ),
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -59,44 +71,87 @@ class HistoryScreen extends ConsumerWidget {
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: history.length,
-            itemBuilder: (context, index) {
-              final entry = history[index];
-              return Dismissible(
-                key: Key('history_${entry.id}'),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  color: colorScheme.errorContainer,
-                  child: Icon(Icons.delete_outline, color: colorScheme.error),
+          return Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: XoloSpacing.lg,
+                  vertical: XoloSpacing.md,
                 ),
-                onDismissed: (direction) {
-                  HapticFeedback.mediumImpact();
-                  // Optimistic UI updates automatically via Stream, but we must delete from DB
-                  final db = ref.read(databaseProvider);
-                  db.delete(db.historyEntries).delete(entry);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Entry deleted'),
-                      action: SnackBarAction(
-                        label: 'Undo',
-                        onPressed: () {
-                          // Undo logic: re-insert.
-                          // Requires converting Entry to Companion or Insertable.
-                          // For now, simple delete.
-                          db.into(db.historyEntries).insert(entry);
-                        },
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.26,
+                  ),
+                  borderRadius: XoloRadius.lg,
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.timeline_rounded, color: colorScheme.primary),
+                    const SizedBox(width: XoloSpacing.md),
+                    Expanded(
+                      child: Text(
+                        '${history.length} eventos en este contexto',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
                     ),
-                  );
-                },
-                child: _HistoryItem(entry: entry),
-              );
-            },
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  itemCount: history.length,
+                  itemBuilder: (context, index) {
+                    final entry = history[index];
+                    return Dismissible(
+                      key: Key('history_${entry.id}'),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        color: colorScheme.errorContainer,
+                        child: Icon(
+                          Icons.delete_outline,
+                          color: colorScheme.error,
+                        ),
+                      ),
+                      onDismissed: (direction) {
+                        HapticFeedback.mediumImpact();
+                        // Optimistic UI updates automatically via Stream, but we must delete from DB
+                        final db = ref.read(databaseProvider);
+                        db.delete(db.historyEntries).delete(entry);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Entry deleted'),
+                            action: SnackBarAction(
+                              label: 'Undo',
+                              onPressed: () {
+                                // Undo logic: re-insert.
+                                // Requires converting Entry to Companion or Insertable.
+                                // For now, simple delete.
+                                db.into(db.historyEntries).insert(entry);
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                      child: _HistoryItem(entry: entry),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -152,13 +207,15 @@ class _HistoryItem extends ConsumerWidget {
 
     return InkWell(
       onTap: () => _loadHistoryItem(context, ref),
+      borderRadius: XoloRadius.md,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-            ),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.22),
+          borderRadius: XoloRadius.md,
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.6),
           ),
         ),
         child: Row(

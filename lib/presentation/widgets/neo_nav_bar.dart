@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,174 +11,96 @@ class NeoNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     final items = [
-      (
-        index: 0,
-        iconOut: Icons.folder_open_outlined,
-        iconIn: Icons.folder_rounded,
-        label: 'Projects',
-      ),
-      (
-        index: 1,
-        iconOut: Icons.history_outlined,
-        iconIn: Icons.history_rounded,
-        label: 'History',
-      ),
-      (
-        index: 2,
-        iconOut: Icons.add_circle_outline_rounded,
-        iconIn: Icons.add_circle_rounded,
-        label: 'New',
-      ),
-      (
-        index: 3,
-        iconOut: Icons.cloud_outlined,
-        iconIn: Icons.cloud_rounded,
-        label: 'Sync',
-      ),
-      (
-        index: 4,
-        iconOut: Icons.settings_outlined,
-        iconIn: Icons.settings_rounded,
-        label: 'Settings',
-      ),
+      (icon: Icons.grid_view_rounded, label: 'Projects'),
+      (icon: Icons.history_rounded, label: 'History'),
+      (icon: Icons.bolt_rounded, label: 'Compose'),
+      (icon: Icons.backup_rounded, label: 'Backup'),
+      (icon: Icons.tune_rounded, label: 'Settings'),
     ];
 
-    return Container(
-      height: 80, // Fixed height area
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-      ), // Remove vertical padding to align coordinate systems
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor.withOpacity(0.9), // Subtle scrim
-        border: Border(
-          top: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: colorScheme.surface.withValues(alpha: 0.94),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final totalWidth = constraints.maxWidth;
-          final totalHeight = constraints.maxHeight;
-          final itemWidth = totalWidth / items.length;
-
-          // Calculate Pill Position and Width
-          // We want the pill to center on the item.
-          // Let's say we want a pill that expands for text.
-          // BUT resizing pills cause "jumps" if adjacent items don't move smoothly.
-          // For MAX FLUIDITY: Sliding pill of fixed width OR smoothly interpolated width.
-          // Let's do: Sliding Pill (Capsule). Text fades in.
-
-          // Pill Width: Large enough for text?
-          // Let's try a dynamic width pill that centers itself.
-          // Actually, let's use AnimatedAlign with a fraction.
-
-          // Pill Dimensions
-          const pillHeight = 44.0;
-          final pillTop = (totalHeight - pillHeight) / 2;
-
-          return Stack(
-            children: [
-              // 1. Sliding Pill Background
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.easeInOutCubicEmphasized,
-                left:
-                    currentIndex * itemWidth +
-                    (itemWidth - (itemWidth * 0.8)) / 2,
-                top: pillTop,
-                child: Container(
-                  width: itemWidth * 0.8,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.4),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+        child: Row(
+          children: List.generate(items.length, (index) {
+            final isActive = index == currentIndex;
+            final item = items[index];
+            return Expanded(
+              child: Semantics(
+                button: true,
+                selected: isActive,
+                label: item.label,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onTap(index);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      gradient: isActive
+                          ? LinearGradient(
+                              colors: [
+                                colorScheme.primary,
+                                colorScheme.primary.withValues(alpha: 0.75),
+                              ],
+                            )
+                          : null,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          item.icon,
+                          size: 21,
+                          color: isActive
+                              ? colorScheme.onPrimary
+                              : colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: isActive
+                                ? colorScheme.onPrimary
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-
-              // 2. Icons Row
-              Row(
-                children: items.map((item) {
-                  final isSelected = currentIndex == item.index;
-                  final isNewButton = item.index == 2;
-
-                  // User requested White for selected state
-                  final activeFg = Colors.white;
-                  final inactiveFg = isDark ? Colors.white38 : Colors.black45;
-
-                  // Distinct style for New button
-                  final iconSize = isNewButton ? 32.0 : 28.0;
-
-                  return SizedBox(
-                    width: itemWidth,
-                    height: 80, // Full height hit area
-                    child: InkWell(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        onTap(item.index);
-                      },
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      child: Center(
-                        child: AnimatedScale(
-                          scale: isSelected ? 1.0 : (isNewButton ? 1.0 : 0.9),
-                          duration: const Duration(milliseconds: 400),
-                          curve: Curves.easeOut,
-                          child: Container(
-                            padding: isNewButton && !isSelected
-                                ? const EdgeInsets.all(8)
-                                : null,
-                            decoration: isNewButton && !isSelected
-                                ? BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: theme.colorScheme.primaryContainer
-                                        .withOpacity(0.3),
-                                  )
-                                : null,
-                            child: Icon(
-                              isSelected ? item.iconIn : item.iconOut,
-                              color: isSelected
-                                  ? activeFg
-                                  : (isNewButton
-                                        ? theme.colorScheme.primary
-                                        : inactiveFg),
-                              size: iconSize,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          );
-        },
+            );
+          }),
+        ),
       ),
     );
-  }
-}
-
-// Custom Spring for organic feel
-const spring = SpringCurve();
-
-class SpringCurve extends Curve {
-  final double a;
-  final double w;
-
-  const SpringCurve({this.a = 0.15, this.w = 12}); // Softer spring
-
-  @override
-  double transformInternal(double t) {
-    return (1 - math.exp(-t * 6) * math.cos(t * w)).clamp(0.0, 1.0);
   }
 }

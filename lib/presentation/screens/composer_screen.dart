@@ -10,9 +10,11 @@ import '../widgets/url_input_bar.dart';
 import '../widgets/request_tabs.dart';
 import '../widgets/browser_tab_bar.dart';
 import '../widgets/import_curl_dialog.dart';
+import '../widgets/import_collection_dialog.dart';
 import '../widgets/command_palette.dart';
 import 'package:flutter/services.dart';
 import 'saved_requests_screen.dart'; // For dialog access
+import '../../core/theme/xolo_design_tokens.dart';
 
 class ComposerScreen extends ConsumerWidget {
   final Widget? drawer;
@@ -21,10 +23,12 @@ class ComposerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final tabs = ref.watch(tabsProvider);
 
     return Scaffold(
       drawer: drawer,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: const _WorkspaceTitle(),
         centerTitle: true,
@@ -47,9 +51,24 @@ class ComposerScreen extends ConsumerWidget {
                   builder: (_) =>
                       ImportCurlDialog(activeTabId: tabs.activeTabId),
                 );
+              } else if (value == 'collection') {
+                showDialog(
+                  context: context,
+                  builder: (_) => const ImportCollectionDialog(),
+                );
               }
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'collection',
+                child: Row(
+                  children: [
+                    Icon(Icons.folder_zip_outlined, size: 18),
+                    SizedBox(width: 8),
+                    Text('Import API Project'),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'curl',
                 child: Row(
@@ -79,6 +98,44 @@ class ComposerScreen extends ConsumerWidget {
             bottom: true,
             child: Column(
               children: [
+                Container(
+                  margin: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: XoloSpacing.lg,
+                    vertical: XoloSpacing.md,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.22,
+                    ),
+                    borderRadius: XoloRadius.md,
+                    border: Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.terminal_rounded, color: colorScheme.primary),
+                      const SizedBox(width: XoloSpacing.md),
+                      Expanded(
+                        child: Text(
+                          'Daily driver mode • Focused API testing',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _showCommandPalette(context),
+                        icon: const Icon(Icons.keyboard_command_key, size: 15),
+                        label: const Text('Cmd+K'),
+                      ),
+                    ],
+                  ),
+                ),
+
                 // BROWSER TABS
                 const BrowserTabBar(),
 
@@ -90,14 +147,32 @@ class ComposerScreen extends ConsumerWidget {
                     key: ValueKey(
                       tabs.activeTabId,
                     ), // Force rebuild on tab switch
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6, bottom: 0),
-                          child: UrlInputBar(tabId: tabs.activeTabId),
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(10, 6, 10, 10),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.16,
                         ),
-                        Expanded(child: RequestTabs(tabId: tabs.activeTabId)),
-                      ],
+                        borderRadius: XoloRadius.lg,
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              top: 8,
+                              left: 6,
+                              right: 6,
+                            ),
+                            child: UrlInputBar(tabId: tabs.activeTabId),
+                          ),
+                          Expanded(child: RequestTabs(tabId: tabs.activeTabId)),
+                        ],
+                      ),
                     ),
                   ),
               ],

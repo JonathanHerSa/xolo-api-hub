@@ -10,6 +10,9 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:intl/intl.dart';
 
+import '../../core/services/security_profile_service.dart';
+import '../../core/theme/xolo_design_tokens.dart';
+
 class SyncScreen extends ConsumerStatefulWidget {
   const SyncScreen({super.key});
 
@@ -30,14 +33,14 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(XoloSpacing.xl),
               children: [
                 // Info Card
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(XoloSpacing.xl),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: XoloRadius.xl,
                     border: Border.all(color: colorScheme.outlineVariant),
                   ),
                   child: Column(
@@ -66,7 +69,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: XoloSpacing.xxl),
                 const Text(
                   'ACTIONS',
                   style: TextStyle(
@@ -75,7 +78,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                     letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: XoloSpacing.lg),
 
                 _buildActionCard(
                   context,
@@ -85,7 +88,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                   color: Colors.blue,
                   onTap: () => _performExport(context, ref),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: XoloSpacing.lg),
                 _buildActionCard(
                   context,
                   title: 'Import Backup',
@@ -95,7 +98,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                   onTap: () => _performImport(context, ref),
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: XoloSpacing.xxl),
                 Center(
                   child: Text(
                     "Cloud Sync coming in v1.0",
@@ -120,12 +123,12 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: XoloRadius.lg,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(XoloSpacing.lg),
         decoration: BoxDecoration(
           border: Border.all(color: theme.colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: XoloRadius.lg,
           color: theme.colorScheme.surface,
         ),
         child: Row(
@@ -172,6 +175,12 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
   }
 
   Future<void> _performExport(BuildContext context, WidgetRef ref) async {
+    final policy = await ref.read(securityPolicyProvider.future);
+    if (policy.confirmBeforeExport) {
+      final confirmed = await _confirmHighSecurityExport(context);
+      if (confirmed != true) return;
+    }
+
     final password = await _promptPassword(
       context,
       'Create Backup Password',
@@ -218,6 +227,28 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
         _showError(context, e.toString());
       }
     }
+  }
+
+  Future<bool?> _confirmHighSecurityExport(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm Secure Export'),
+        content: const Text(
+          'Your profile requires explicit confirmation before exporting data. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _performImport(BuildContext context, WidgetRef ref) async {

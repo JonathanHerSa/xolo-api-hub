@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/collections_provider.dart';
+import '../providers/history_provider.dart';
 import '../providers/environment_provider.dart';
 import '../providers/database_providers.dart';
+import '../providers/request_session_provider.dart';
 import '../providers/tabs_provider.dart';
 import '../providers/workspace_provider.dart';
 import '../../data/local/database.dart'; // For types
@@ -46,6 +48,8 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
     // 1. Fetch Data
     final collectionsAsync = ref.watch(flattenedCollectionsStreamProvider);
     final envsAsync = ref.watch(environmentsListProvider);
+    final savedRequestsAsync = ref.watch(savedRequestsStreamProvider);
+    final historyAsync = ref.watch(recentHistoryStreamProvider);
     final theme = Theme.of(context);
 
     return Dialog(
@@ -60,7 +64,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -89,6 +93,8 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                         _getResults(
                           collectionsAsync,
                           envsAsync,
+                          savedRequestsAsync,
+                          historyAsync,
                         )[_selectedIndex],
                       ),
                     ),
@@ -119,7 +125,14 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
             const Divider(height: 1),
 
             // Results List
-            Expanded(child: _buildResultsList(collectionsAsync, envsAsync)),
+            Expanded(
+              child: _buildResultsList(
+                collectionsAsync,
+                envsAsync,
+                savedRequestsAsync,
+                historyAsync,
+              ),
+            ),
           ],
         ),
       ),
@@ -129,6 +142,8 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
   List<PaletteItem> _getResults(
     AsyncValue<List<FlattenedCollection>> cols,
     AsyncValue<List<Environment>> envs,
+    AsyncValue<List<SavedRequest>> savedRequests,
+    AsyncValue<List<HistoryEntry>> history,
   ) {
     final results = <PaletteItem>[];
 
@@ -211,19 +226,79 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
       }
     });
 
+    // 4. Saved requests
+    savedRequests.whenData((list) {
+      for (final req in list) {
+        if (req.name.toLowerCase().contains(q) ||
+            req.url.toLowerCase().contains(q)) {
+          results.add(
+            PaletteItem(
+              title: req.name,
+              subtitle: 'Request • ${req.method} ${req.url}',
+              icon: Icons.http,
+              action: () {
+                final tabsState = ref.read(tabsProvider);
+                final activeTabId = tabsState.activeTabId;
+                ref
+                    .read(requestSessionControllerProvider(activeTabId))
+                    .loadRequest(req);
+                ref.read(tabsProvider.notifier).setActiveTab(activeTabId);
+              },
+            ),
+          );
+        }
+      }
+    });
+
+    // 5. History
+    history.whenData((list) {
+      for (final item in list) {
+        final line = '${item.method} ${item.url}';
+        if (line.toLowerCase().contains(q)) {
+          results.add(
+            PaletteItem(
+              title: line,
+              subtitle:
+                  'History • ${item.statusCode ?? '-'} • ${item.durationMs ?? 0}ms',
+              icon: Icons.history,
+              action: () {
+                final tabsState = ref.read(tabsProvider);
+                final activeTabId = tabsState.activeTabId;
+                final session = ref.read(
+                  requestSessionControllerProvider(activeTabId),
+                );
+                session.setMethod(item.method);
+                session.setUrl(item.originalUrl ?? item.url);
+                if (item.body != null) {
+                  session.setBody(item.body!);
+                }
+              },
+            ),
+          );
+        }
+      }
+    });
+
     return results;
   }
 
   Widget _buildResultsList(
     AsyncValue<List<FlattenedCollection>> cols,
     AsyncValue<List<Environment>> envs,
+    AsyncValue<List<SavedRequest>> savedRequests,
+    AsyncValue<List<HistoryEntry>> history,
   ) {
     // Handling shortcut navigation
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.arrowDown): () {
           setState(() {
-            final count = _getResults(cols, envs).length;
+            final count = _getResults(
+              cols,
+              envs,
+              savedRequests,
+              history,
+            ).length;
             if (_selectedIndex < count - 1) _selectedIndex++;
           });
         },
@@ -237,7 +312,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         autofocus: true,
         child: Builder(
           builder: (context) {
-            final results = _getResults(cols, envs);
+            final results = _getResults(cols, envs, savedRequests, history);
             if (results.isEmpty) {
               return const Center(child: Text('No results found'));
             }

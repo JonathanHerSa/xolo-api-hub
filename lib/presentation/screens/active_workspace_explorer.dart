@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/local/database.dart';
+import '../../core/theme/xolo_design_tokens.dart';
 import '../providers/database_providers.dart';
 import '../providers/collections_provider.dart';
 import '../providers/workspace_provider.dart';
@@ -45,14 +46,17 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
               position: PopupMenuPosition.under,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: XoloSpacing.md,
+                  vertical: XoloSpacing.sm,
                 ),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerHighest.withValues(
                     alpha: 0.5,
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: XoloRadius.xl,
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -185,7 +189,7 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
           );
         }
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(XoloSpacing.lg),
           itemCount: projects.length,
           itemBuilder: (ctx, i) {
             final p = projects[i];
@@ -194,13 +198,18 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
               color: Theme.of(
                 context,
               ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              margin: const EdgeInsets.only(bottom: XoloSpacing.md),
               child: ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.folder)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: XoloSpacing.lg,
+                  vertical: XoloSpacing.sm,
+                ),
+                leading: const CircleAvatar(child: Icon(Icons.folder_rounded)),
                 title: Text(
                   p.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: Text('ID: ${p.id}'),
+                subtitle: Text('Proyecto #${p.id}'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -345,12 +354,30 @@ class ExplorableFolderTile extends ConsumerWidget {
     final foldersAsync = ref.watch(subCollectionsProvider(collection.id));
     final requestsAsync = ref.watch(collectionRequestsProvider(collection.id));
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
-        leading: const Icon(Icons.folder, color: Colors.amber, size: 20),
-        title: Text(collection.name, style: const TextStyle(fontSize: 14)),
-        minTileHeight: 40,
+        collapsedBackgroundColor: colorScheme.surfaceContainerHighest
+            .withValues(alpha: 0.18),
+        backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.24,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: XoloRadius.md),
+        collapsedShape: RoundedRectangleBorder(borderRadius: XoloRadius.md),
+        leading: Icon(
+          Icons.folder_rounded,
+          color: colorScheme.primary,
+          size: 20,
+        ),
+        title: Text(
+          collection.name,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        tilePadding: const EdgeInsets.symmetric(horizontal: XoloSpacing.md),
+        childrenPadding: const EdgeInsets.fromLTRB(12, 4, 6, 10),
+        minTileHeight: 46,
         trailing: PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert, size: 18),
           onSelected: (val) {
@@ -399,7 +426,6 @@ class ExplorableFolderTile extends ConsumerWidget {
             ),
           ],
         ),
-        childrenPadding: const EdgeInsets.only(left: 16), // Indent
         children: [_buildChildren(foldersAsync, requestsAsync)],
       ),
     );
@@ -452,26 +478,48 @@ class RequestTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      dense: true,
-      visualDensity: VisualDensity.compact,
-      contentPadding: const EdgeInsets.only(left: 8, right: 16),
-      leading: _buildMethodBadge(context, request.method),
-      title: Text(
-        request.name,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-      ),
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      borderRadius: XoloRadius.md,
       onTap: () {
-        // OPEN REQUEST IN COMPOSER
         final tabs = ref.read(tabsProvider);
         final activeTab = tabs.activeTabId;
 
         ref
             .read(requestSessionControllerProvider(activeTab))
             .loadRequest(request);
-
-        // Todo: Switch Tab
       },
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(4, 0, 4, 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: XoloRadius.md,
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+          ),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.16),
+        ),
+        child: Row(
+          children: [
+            _buildMethodBadge(context, request.method),
+            const SizedBox(width: XoloSpacing.md),
+            Expanded(
+              child: Text(
+                request.name,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -487,7 +535,12 @@ class RequestTile extends ConsumerWidget {
       color = Colors.red;
 
     return Container(
-      width: 36,
+      width: 40,
+      height: 24,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: XoloRadius.sm,
+      ),
       alignment: Alignment.center,
       child: Text(
         method.substring(0, method.length > 3 ? 3 : method.length),

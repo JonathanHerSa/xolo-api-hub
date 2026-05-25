@@ -34,21 +34,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (isDesktop) {
       return Scaffold(
-        body: Row(
-          children: [
-            // REUSE EXISTING SIDEBAR BUT MAP NEW SCREENS
-            Expanded(
-              flex: 0,
-              child: PremiumSidebar(
-                selectedIndex: _desktopIndex,
-                onIndexChanged: (index) {
-                  // Map Sidebar events
-                  setState(() => _desktopIndex = index);
-                },
-              ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.22),
+              ],
             ),
-            Expanded(child: _getDesktopContent(_desktopIndex)),
-          ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 0,
+                child: PremiumSidebar(
+                  selectedIndex: _desktopIndex,
+                  onIndexChanged: (index) {
+                    setState(() => _desktopIndex = index);
+                  },
+                ),
+              ),
+              Expanded(child: _getDesktopContent(_desktopIndex)),
+            ],
+          ),
         ),
       );
     }

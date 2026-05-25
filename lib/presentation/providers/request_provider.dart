@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:json_path/json_path.dart';
 
+import '../../core/network/http_client_provider.dart';
+import '../../core/services/app_logger.dart';
 import '../../core/utils/variable_parser.dart';
 import '../../core/services/auth_resolver_service.dart';
 import '../providers/environment_provider.dart';
@@ -49,13 +51,16 @@ class RequestState {
 class RequestController {
   final Ref ref;
   final String tabId;
-  final Dio _dio = Dio();
+  late final Dio _dio;
 
   final StreamController<RequestState> _controller =
       StreamController<RequestState>.broadcast();
   RequestState _state = RequestState();
+  CancelToken? _activeCancelToken;
 
-  RequestController(this.ref, this.tabId);
+  RequestController(this.ref, this.tabId) {
+    _dio = ref.read(dioProvider);
+  }
 
   RequestState get state => _state;
 
@@ -79,6 +84,10 @@ class RequestController {
     String? authData,
     int? collectionId,
   }) async {
+    _activeCancelToken?.cancel('Superseded by a new request');
+    final cancelToken = CancelToken();
+    _activeCancelToken = cancelToken;
+
     // 1. Loading
     _update(_state.copyWith(isLoading: true, error: null, statusCode: null));
 
@@ -182,7 +191,7 @@ class RequestController {
             }
           }
         } catch (e) {
-          print('Error injecting auth: $e');
+          AppLogger.warn('Error injecting auth');
         }
       }
 
@@ -231,6 +240,7 @@ class RequestController {
         parsedUrl,
         data: finalBody,
         queryParameters: parsedParams,
+        cancelToken: cancelToken,
         options: Options(
           method: method,
           headers: parsedHeaders,
@@ -255,6 +265,16 @@ class RequestController {
       // 5. Execute Scripts (Request Chaining)
       await _executeScripts(response.data);
     } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        _update(
+          _state.copyWith(
+            isLoading: false,
+            error: 'Request canceled',
+            durationMs: stopwatch.elapsedMilliseconds,
+          ),
+        );
+        return;
+      }
       stopwatch.stop();
       statusCode = e.response?.statusCode;
       responseData = e.response?.data;
@@ -279,7 +299,7 @@ class RequestController {
           durationMs: stopwatch.elapsedMilliseconds,
         ),
       );
-      print('Error en request ($tabId): $e\n$stack');
+      AppLogger.error('Error en request ($tabId)', e, stack);
     }
 
     // Save History (if not Incognito)
@@ -307,7 +327,7 @@ class RequestController {
         workspaceId: activeWorkspaceId,
       );
     } catch (e) {
-      print('Error guardando historial: $e');
+      AppLogger.warn('Error guardando historial: $e');
     }
   }
 
@@ -366,11 +386,11 @@ class RequestController {
             }
           }
         } catch (e) {
-          print('Error parsing JSON Path "$pathStr": $e');
+          AppLogger.warn('Error parsing JSON Path for scripts');
         }
       }
     } catch (e) {
-      print('Error executing scripts: $e');
+      AppLogger.warn('Error executing scripts');
     }
   }
 
@@ -393,11 +413,11 @@ class RequestController {
           final evaluated = VariableParser.parse(template, baseVars);
           results[varName] = evaluated;
         } catch (e) {
-          print('Error evaluating pre-script rule "$varName": $e');
+          AppLogger.warn('Error evaluating pre-script rule');
         }
       }
     } catch (e) {
-      print('Error parsing pre-scripts JSON: $e');
+      AppLogger.warn('Error parsing pre-scripts JSON');
     }
     return results;
   }
@@ -429,9 +449,14 @@ class RequestController {
         }
       }
     } catch (e) {
-      print('Error testing scripts: $e');
+      AppLogger.warn('Error testing scripts');
     }
     return results;
+  }
+
+  void dispose() {
+    _activeCancelToken?.cancel('Controller disposed');
+    _controller.close();
   }
 }
 
@@ -443,7 +468,15 @@ final requestControllerProvider = Provider.family<RequestController, String>((
   ref,
   id,
 ) {
-  return _requestControllers.putIfAbsent(id, () => RequestController(ref, id));
+  final controller = _requestControllers.putIfAbsent(
+    id,
+    () => RequestController(ref, id),
+  );
+  ref.onDispose(() {
+    controller.dispose();
+    _requestControllers.remove(id);
+  });
+  return controller;
 });
 
 final requestProvider = StreamProvider.family<RequestState, String>((ref, id) {

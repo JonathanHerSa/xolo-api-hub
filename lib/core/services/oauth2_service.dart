@@ -1,11 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:dio/dio.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../network/http_client_provider.dart';
+
 class OAuth2Service {
-  final Dio _dio = Dio();
+  OAuth2Service(this._dio);
+
+  final Dio _dio;
 
   Future<String> getAccessToken({
     required String tokenUrl,
@@ -17,6 +24,7 @@ class OAuth2Service {
     String? scope,
     String? code,
     String? redirectUri,
+    String? codeVerifier,
   }) async {
     final Map<String, dynamic> data = {
       'grant_type': grantType ?? 'client_credentials',
@@ -34,6 +42,7 @@ class OAuth2Service {
     } else if (grantType == 'authorization_code') {
       data['code'] = code;
       data['redirect_uri'] = redirectUri;
+      data['code_verifier'] = codeVerifier;
     }
 
     try {
@@ -62,8 +71,11 @@ class OAuth2Service {
     required String clientSecret,
     required String scope,
   }) async {
-    const port = 54321;
+    final port = _randomPort();
     final redirectUri = 'http://localhost:$port';
+    final state = _randomUrlSafeString(32);
+    final codeVerifier = _randomUrlSafeString(64);
+    final codeChallenge = _pkceS256(codeVerifier);
 
     // 1. Start local server
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
@@ -76,6 +88,9 @@ class OAuth2Service {
           'client_id': clientId,
           'redirect_uri': redirectUri,
           'scope': scope,
+          'state': state,
+          'code_challenge': codeChallenge,
+          'code_challenge_method': 'S256',
         },
       );
 
@@ -89,6 +104,7 @@ class OAuth2Service {
       await for (var request in server) {
         final params = request.uri.queryParameters;
         authCode = params['code'];
+        final callbackState = params['state'];
 
         request.response
           ..statusCode = HttpStatus.ok
@@ -97,6 +113,10 @@ class OAuth2Service {
             '<h1>Autenticación exitosa</h1><p>Puedes cerrar esta ventana y volver a Xolo.</p>',
           )
           ..close();
+
+        if (callbackState != state) {
+          throw Exception('Invalid OAuth state');
+        }
 
         if (authCode != null) break;
       }
@@ -111,11 +131,34 @@ class OAuth2Service {
         grantType: 'authorization_code',
         code: authCode,
         redirectUri: redirectUri,
+        codeVerifier: codeVerifier,
       );
     } finally {
       await server.close();
     }
   }
+
+  int _randomPort() {
+    final random = Random.secure();
+    return 49152 + random.nextInt(10000);
+  }
+
+  String _randomUrlSafeString(int length) {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => chars[random.nextInt(chars.length)],
+    ).join();
+  }
+
+  String _pkceS256(String verifier) {
+    final digest = sha256.convert(utf8.encode(verifier));
+    return base64Url.encode(digest.bytes).replaceAll('=', '');
+  }
 }
 
-final oauth2ServiceProvider = Provider<OAuth2Service>((ref) => OAuth2Service());
+final oauth2ServiceProvider = Provider<OAuth2Service>(
+  (ref) => OAuth2Service(ref.read(dioProvider)),
+);

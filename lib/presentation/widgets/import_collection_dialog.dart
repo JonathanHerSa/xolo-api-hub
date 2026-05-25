@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import '../../data/services/import_manager.dart';
+import '../../core/theme/xolo_design_tokens.dart';
 import '../providers/workspace_provider.dart';
 import '../providers/database_providers.dart';
 
@@ -109,18 +110,32 @@ class _ImportCollectionDialogState
     final colorScheme = theme.colorScheme;
 
     return AlertDialog(
-      title: const Text('Importar Colección'),
+      title: const Row(
+        children: [
+          Icon(Icons.folder_zip_rounded),
+          SizedBox(width: 8),
+          Text('Import API Project'),
+        ],
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              'Importa OpenAPI/Swagger o Postman desde URL o archivo.',
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: XoloSpacing.lg),
             // 1. Source Toggle
             const Text(
               'Fuente:',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: XoloSpacing.sm),
             SegmentedButton<bool>(
               segments: const [
                 ButtonSegment(
@@ -140,14 +155,14 @@ class _ImportCollectionDialogState
               },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: XoloSpacing.lg),
 
             // 2. Format Selection
             const Text(
               'Formato:',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: XoloSpacing.sm),
             DropdownButtonFormField<ImportFormat>(
               initialValue: _selectedFormat,
               decoration: const InputDecoration(
@@ -173,7 +188,7 @@ class _ImportCollectionDialogState
               },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: XoloSpacing.lg),
 
             // 3. Input Area
             if (_isUrl)
@@ -197,17 +212,20 @@ class _ImportCollectionDialogState
                   ),
                 ),
                 style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
+                  minimumSize: const Size(
+                    double.infinity,
+                    XoloA11y.minTouchTarget,
+                  ),
                 ),
               ),
 
             if (_error != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: XoloSpacing.lg),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(XoloSpacing.sm),
                 decoration: BoxDecoration(
                   color: colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: XoloRadius.sm,
                 ),
                 child: Text(
                   _error!,
@@ -220,7 +238,7 @@ class _ImportCollectionDialogState
             ],
 
             if (_isLoading) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: XoloSpacing.lg),
               const LinearProgressIndicator(),
             ],
           ],

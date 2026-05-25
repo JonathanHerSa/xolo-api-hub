@@ -7,6 +7,7 @@ import '../../core/services/security_service.dart';
 import '../providers/database_providers.dart';
 import 'advanced_color_picker.dart';
 import '../../core/services/biometric_service.dart';
+import '../../core/services/app_logger.dart';
 
 class SettingsDialog extends ConsumerWidget {
   const SettingsDialog({super.key});
@@ -42,6 +43,42 @@ class SettingsDialog extends ConsumerWidget {
                   ref
                       .read(themeColorProvider.notifier)
                       .setColor(newColor.value);
+                },
+              ),
+
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+
+              Text(
+                'Theme Mode',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<ThemeMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: ThemeMode.dark,
+                    icon: Icon(Icons.dark_mode),
+                    label: Text('Dark'),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.light,
+                    icon: Icon(Icons.light_mode),
+                    label: Text('Light'),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.system,
+                    icon: Icon(Icons.settings_suggest),
+                    label: Text('System'),
+                  ),
+                ],
+                selected: {ref.watch(themeModeProvider)},
+                onSelectionChanged: (selection) {
+                  final mode = selection.first;
+                  ref.read(themeModeProvider.notifier).setMode(mode);
                 },
               ),
 
@@ -182,12 +219,16 @@ class SettingsDialog extends ConsumerWidget {
       // 2. Clear History (DB)
       final db = ref.read(databaseProvider);
       await db.delete(db.historyEntries).go();
-      // Optional: Clear Variables? For now just history/tokens.
-      // await db.delete(db.envVariables).go();
+      await db.delete(db.savedRequests).go();
+      await db.delete(db.envVariables).go();
+      await db.delete(db.environments).go();
+      await db.delete(db.collections).go();
+      await db.delete(db.appSettings).go();
 
       // 3. Exit App
       SystemNavigator.pop();
     } catch (e) {
+      AppLogger.error('Panic protocol failed', e);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Panic Failed: $e')));

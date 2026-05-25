@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xolo/data/local/database.dart';
 import 'package:xolo/presentation/providers/database_providers.dart';
 
+import 'auth_secret_service.dart';
+
 class ResolvedAuth {
   final String? type;
   final String? data;
@@ -12,8 +14,9 @@ class ResolvedAuth {
 
 class AuthResolverService {
   final AppDatabase _db;
+  final AuthSecretService _authSecretService;
 
-  AuthResolverService(this._db);
+  AuthResolverService(this._db, this._authSecretService);
 
   /// Resolves the effective authentication for a given request or context.
   ///
@@ -31,7 +34,7 @@ class AuthResolverService {
         requestAuthType != 'none') {
       return ResolvedAuth(
         type: requestAuthType,
-        data: requestAuthData,
+        data: await _authSecretService.resolveAuthData(requestAuthData),
         source: 'request',
       );
     }
@@ -66,7 +69,7 @@ class AuthResolverService {
           type != 'none') {
         return ResolvedAuth(
           type: type,
-          data: col.authData,
+          data: await _authSecretService.resolveAuthData(col.authData),
           source: col.parentId == null ? 'project' : 'folder',
         );
       }
@@ -82,5 +85,5 @@ class AuthResolverService {
 
 final authResolverServiceProvider = Provider<AuthResolverService>((ref) {
   final db = ref.watch(databaseProvider);
-  return AuthResolverService(db);
+  return AuthResolverService(db, ref.read(authSecretServiceProvider));
 });
