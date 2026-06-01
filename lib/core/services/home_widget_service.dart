@@ -1,8 +1,9 @@
 import 'package:home_widget/home_widget.dart';
 
+import 'package:xolo/core/services/app_logger.dart';
+
 class HomeWidgetService {
-  static const String appGroupId =
-      'group.xolo_api_client'; // Relevant for iOS, optional for Android
+  static const String appGroupId = 'group.xolo_api_client';
   static const String androidWidgetName = 'HomeWidgetProvider';
 
   Future<void> updateLastRequest(String method, String url) async {
@@ -14,7 +15,7 @@ class HomeWidgetService {
         androidName: androidWidgetName,
       );
     } catch (e) {
-      print('Error updating widget: $e');
+      AppLogger.warn('Error updating widget: $e');
     }
   }
 }

@@ -1,10 +1,11 @@
-import 'package:encrypt/encrypt.dart' as enc;
-import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:crypto/crypto.dart';
+import 'package:encrypt/encrypt.dart' as enc;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _pbkdf2Rounds = 120000;
 const _keyLength = 32;
@@ -14,7 +15,7 @@ const _ivLength = 16;
 class EncryptionService {
   enc.Key _deriveKeyPbkdf2(String password, List<int> salt) {
     var block = <int>[];
-    var output = <int>[];
+    final output = <int>[];
     var counter = 1;
 
     while (output.length < _keyLength) {

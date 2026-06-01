@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/local/database.dart';
-import '../providers/collections_provider.dart';
-import '../providers/workspace_provider.dart';
-import '../screens/history_screen.dart';
-import '../screens/environments_screen.dart';
-import '../screens/collection_detail_screen.dart';
-import 'import_collection_dialog.dart';
-import 'create_collection_dialog.dart';
+import 'package:xolo/domain/entities/collection_entity.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/collections_provider.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
+import 'package:xolo/presentation/screens/collection_detail_screen.dart';
+import 'package:xolo/presentation/screens/environments_screen.dart';
+import 'package:xolo/presentation/screens/history_screen.dart';
+import 'package:xolo/presentation/widgets/create_collection_dialog.dart';
+import 'package:xolo/presentation/widgets/import_collection_dialog.dart';
+import 'package:xolo/presentation/widgets/xolo_brand_mark.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final collectionsAsync = ref.watch(flattenedCollectionsStreamProvider);
@@ -23,29 +26,36 @@ class AppDrawer extends ConsumerWidget {
       child: Column(
         children: [
           DrawerHeader(
+            margin: EdgeInsets.zero,
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.hub, size: 48, color: colorScheme.primary),
-                  const SizedBox(height: 12),
-                  Text('Xolo API Hub', style: theme.textTheme.titleLarge),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.primary.withValues(alpha: 0.16),
+                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
                 ],
               ),
+              border: Border(
+                bottom: BorderSide(
+                  color: colorScheme.outline.withValues(alpha: 0.35),
+                ),
+              ),
+            ),
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: XoloBrandMark(subtitle: l10n.appTitle),
             ),
           ),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                // Standard Menu Items
-                /* 
+                /*
                 ListTile(
                   leading: const Icon(Icons.folder_special),
-                  title: const Text('All Requests'),
+                  title: Text(l10n.allRequests),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -57,7 +67,7 @@ class AppDrawer extends ConsumerWidget {
                 */
                 ListTile(
                   leading: const Icon(Icons.history),
-                  title: const Text('Historial'),
+                  title: Text(l10n.history),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -68,7 +78,7 @@ class AppDrawer extends ConsumerWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.layers),
-                  title: const Text('Entornos y Variables'),
+                  title: Text(l10n.environmentsAndVariables),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -81,7 +91,7 @@ class AppDrawer extends ConsumerWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.cloud_download),
-                  title: const Text('Importar Colección'),
+                  title: Text(l10n.importCollection),
                   onTap: () {
                     Navigator.pop(context);
                     showDialog(
@@ -95,7 +105,7 @@ class AppDrawer extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Text(
-                    'PROYECTOS',
+                    l10n.projectsSection,
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: colorScheme.secondary,
                       fontWeight: FontWeight.bold,
@@ -103,13 +113,12 @@ class AppDrawer extends ConsumerWidget {
                   ),
                 ),
 
-                // Collection Tree
                 collectionsAsync.when(
                   data: (flattened) {
                     if (flattened.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text('No hay proyectos.'),
+                      return Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(l10n.noProjectsFound),
                       );
                     }
                     return Column(
@@ -120,11 +129,7 @@ class AppDrawer extends ConsumerWidget {
 
                         return InkWell(
                           onTap: () {
-                            // Close drawer and navigate/set active
                             Navigator.pop(context);
-                            // Set active workspace logic if it's a root?
-                            // Or navigate to Detail Screen?
-                            // Let's navigate to detail screen for drill down
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -133,7 +138,6 @@ class AppDrawer extends ConsumerWidget {
                               ),
                             );
 
-                            // Optional: Set as active workspace if root
                             if (col.parentId == null) {
                               ref
                                   .read(activeWorkspaceIdProvider.notifier)
@@ -181,37 +185,47 @@ class AppDrawer extends ConsumerWidget {
                                       ),
                                     );
                                   } else if (val == 'delete') {
-                                    _confirmDeleteCollection(context, ref, col);
+                                    _confirmDeleteCollection(
+                                      context,
+                                      ref,
+                                      col,
+                                      l10n,
+                                    );
                                   }
                                 },
                                 itemBuilder: (ctx) => [
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'edit',
                                     child: ListTile(
-                                      leading: Icon(Icons.edit, size: 18),
-                                      title: Text('Editar'),
+                                      leading: const Icon(Icons.edit, size: 18),
+                                      title: Text(l10n.edit),
                                       dense: true,
                                     ),
                                   ),
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'import',
                                     child: ListTile(
-                                      leading: Icon(Icons.input, size: 18),
-                                      title: Text('Importar'),
+                                      leading: const Icon(
+                                        Icons.input,
+                                        size: 18,
+                                      ),
+                                      title: Text(l10n.import),
                                       dense: true,
                                     ),
                                   ),
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'delete',
                                     child: ListTile(
-                                      leading: Icon(
+                                      leading: const Icon(
                                         Icons.delete,
                                         size: 18,
                                         color: Colors.red,
                                       ),
                                       title: Text(
-                                        'Eliminar',
-                                        style: TextStyle(color: Colors.red),
+                                        l10n.delete,
+                                        style: const TextStyle(
+                                          color: Colors.red,
+                                        ),
                                       ),
                                       dense: true,
                                     ),
@@ -228,7 +242,7 @@ class AppDrawer extends ConsumerWidget {
                   error: (err, _) => Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      'Error: $err',
+                      l10n.errorMessage(err.toString()),
                       style: const TextStyle(color: Colors.red),
                     ),
                   ),
@@ -238,7 +252,6 @@ class AppDrawer extends ConsumerWidget {
           ),
 
           const Divider(),
-          // ... (Configuración)
         ],
       ),
     );
@@ -247,27 +260,28 @@ class AppDrawer extends ConsumerWidget {
   void _confirmDeleteCollection(
     BuildContext context,
     WidgetRef ref,
-    Collection col,
+    CollectionEntity col,
+    AppLocalizations l10n,
   ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('¿Eliminar "${col.name}"?'),
-        content: const Text('Se eliminarán todos los requests contenidos.'),
+        title: Text(l10n.deleteNamedTitle(col.name)),
+        content: Text(l10n.deleteCollectionMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              ref
+              await ref
                   .read(collectionsControllerProvider.notifier)
                   .deleteCollection(col.id);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Eliminar'),
+            child: Text(l10n.delete),
           ),
         ],
       ),

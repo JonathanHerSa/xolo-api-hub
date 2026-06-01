@@ -6,15 +6,15 @@ class CurlParser {
     '"'
     r"]+)['"
     '"'
-    r"]?",
+    r']?',
   );
-  static final RegExp _methodRegex = RegExp(r"(-X|--request)\s+([A-Z]+)");
+  static final RegExp _methodRegex = RegExp(r'(-X|--request)\s+([A-Z]+)');
   static final RegExp _dataRegex = RegExp(
     r"(-d|--data|--data-raw)\s+['"
     '"'
     r"]?(.*?)['"
     '"'
-    r"]?(\s|$)",
+    r']?(\s|$)',
     multiLine: true,
     dotAll: true,
   );
@@ -25,7 +25,7 @@ class CurlParser {
     '"'
     r"\s]+)['"
     '"'
-    r"]?",
+    r']?',
   );
 
   static ParsedCurl? parse(String curlCommand) {
@@ -33,7 +33,7 @@ class CurlParser {
 
     String method = 'GET';
     String url = '';
-    Map<String, String> headers = {};
+    final Map<String, String> headers = {};
     String? body;
 
     // Extract Method

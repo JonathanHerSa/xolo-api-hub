@@ -1,0 +1,413 @@
+{
+  "@@locale": "en",
+  "appTitle": "Xolo API Client",
+  "backupsAndSync": "Backups & Sync",
+  "secureLocalBackup": "Secure Local Backup",
+  "secureBackupDescription": "Export your collections and history to a secure, encrypted file. Share it to your Drive, Email, or other devices.",
+  "actions": "ACTIONS",
+  "exportBackup": "Export Backup",
+  "exportBackupSubtitle": "Create an encrypted .xolo file.",
+  "importBackup": "Import Backup",
+  "importBackupSubtitle": "Restore from a .xolo file.",
+  "cloudSyncComingSoon": "Cloud Sync coming in v1.0",
+  "createBackupPassword": "Create Backup Password",
+  "createBackupPasswordDescription": "This password will be required to restore the file.",
+  "generatingBackup": "Generating Backup...",
+  "backupCreated": "Backup Created!",
+  "myXoloApiBackup": "My Xolo API Backup",
+  "confirmSecureExport": "Confirm Secure Export",
+  "confirmSecureExportMessage": "Your profile requires explicit confirmation before exporting data. Continue?",
+  "continueAction": "Continue",
+  "enterDecryptionPassword": "Enter Decryption Password",
+  "enterDecryptionPasswordDescription": "Enter the password used to create this backup.",
+  "restoring": "Restoring...",
+  "restoreComplete": "Restore Complete!",
+  "restoreFailedInvalidPasswordOrFile": "Restore Failed: Invalid Password or File",
+  "passwordHint": "Password",
+  "projects": "Projects",
+  "history": "History",
+  "compose": "Compose",
+  "composer": "Composer",
+  "explorer": "Explorer",
+  "backup": "Backup",
+  "sync": "Sync",
+  "settings": "Settings",
+  "save": "Save",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "add": "Add",
+  "import": "Import",
+  "export": "Export",
+  "clear": "Clear",
+  "undo": "Undo",
+  "tabParams": "Params",
+  "tabAuth": "Auth",
+  "tabHeaders": "Headers",
+  "tabBody": "Body",
+  "tabScripts": "Scripts",
+  "tabResponse": "Response",
+  "showCode": "Show Code",
+  "errorMessage": "Error: {message}",
+  "@errorMessage": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "appTheme": "App Theme",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeSystem": "System",
+  "securityAndPrivacy": "SECURITY & PRIVACY",
+  "clearHistory": "Clear History",
+  "clearHistoryConfirmTitle": "Clear History",
+  "clearHistoryConfirmMessage": "Are you sure you want to delete all request history?",
+  "historyCleared": "History cleared",
+  "emergencyWipeTitle": "⚠️ EMERGENCY WIPE",
+  "emergencyWipeMessage": "This will permanently delete ALL history, secure keys, and local data.\n\nThe app will close immediately.",
+  "deleteEverything": "DELETE EVERYTHING",
+  "panicButton": "EMERGENCY WIPE (PANIC BUTTON)",
+  "clearHistoryTooltip": "Clear history (current context)",
+  "noRecentHistory": "No recent history",
+  "requestsWillAppearHere": "Your executed requests will appear here.",
+  "historyEventsCount": "{count, plural, =1{1 event in this context} other{{count} events in this context}}",
+  "@historyEventsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearHistoryDialogTitle": "Clear History?",
+  "clearHistoryDialogMessage": "Entries from this workspace will be deleted.",
+  "entryDeleted": "Entry deleted",
+  "requestLoadedInNewTab": "Request loaded in a new tab",
+  "authInheritFromParent": "Inherit from Parent",
+  "authNone": "No Auth",
+  "authBearerToken": "Bearer Token",
+  "authBasicAuth": "Basic Auth",
+  "authApiKey": "API Key",
+  "authDigestAuth": "Digest Auth",
+  "authOAuth1": "OAuth 1.0",
+  "authOAuth2": "OAuth 2.0",
+  "authAwsSignature": "AWS Signature",
+  "create": "Create",
+  "name": "Name",
+  "nameRequired": "Name is required",
+  "descriptionOptional": "Description (Optional)",
+  "method": "Method",
+  "loading": "Loading...",
+  "active": "Active",
+  "activate": "Activate",
+  "globals": "Global",
+  "saveRequestTooltip": "Save Request",
+  "importApiProject": "Import API Project",
+  "importCurl": "Import cURL",
+  "dailyDriverMode": "Daily driver mode • Focused API testing",
+  "cmdKShortcut": "Cmd+K",
+  "noActiveTabs": "No active tabs",
+  "projectLabel": "PROJECT",
+  "globalContext": "Global Context",
+  "errorGeneric": "Error",
+  "switchWorkspace": "Switch Workspace",
+  "globalContextSubtitle": "Shared variables & history",
+  "noProjectsFound": "No projects found.",
+  "switchEnvironmentTooltip": "Switch Environment",
+  "environmentsAndVariables": "Environments & Variables",
+  "globalVariables": "Global Variables",
+  "globalVariablesSubtitle": "Available across this workspace",
+  "environmentOverridesSubtitle": "Override global variables",
+  "newEnvironment": "New Environment",
+  "environmentNameHint": "Name (e.g. Dev)",
+  "deleteEnvironmentTitle": "Delete \"{name}\"?",
+  "@deleteEnvironmentTitle": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "deleteEnvironmentMessage": "The environment and its variables will be deleted.",
+  "noVariablesDefined": "No variables defined.\nAdd \"baseUrl\", \"token\", etc.",
+  "addVariable": "Add Variable",
+  "newVariable": "New Variable",
+  "editVariable": "Edit Variable",
+  "variableUsageHint": "Just write the name. E.g. \"host\".\nThen use it as {syntax}",
+  "@variableUsageHint": {
+    "placeholders": {
+      "syntax": {
+        "type": "String"
+      }
+    }
+  },
+  "keyLabel": "Key",
+  "valueLabel": "Value",
+  "searchInCollection": "Search in {name}...",
+  "@searchInCollection": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "newRequestTooltip": "New Request",
+  "newSubfolderTooltip": "New Subfolder",
+  "foldersSection": "FOLDERS",
+  "requestsSection": "REQUESTS",
+  "noRequestsFound": "No requests found",
+  "noRequestsHere": "No requests here",
+  "newRequest": "New Request",
+  "requestCreated": "Request created",
+  "createRequest": "Create Request",
+  "deleteCollectionMessage": "All contained requests will be deleted.",
+  "loadedRequest": "Loaded: {name}",
+  "@loadedRequest": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "selectProject": "Select Project",
+  "allProjects": "All Projects",
+  "activeWorkspace": "Active Workspace",
+  "noProjectsYet": "No Projects Yet",
+  "createFirstProject": "Create First Project",
+  "projectNumber": "Project #{id}",
+  "@projectNumber": {
+    "placeholders": {
+      "id": { "type": "int" }
+    }
+  },
+  "editProject": "Edit Project",
+  "editProjectSettings": "Edit Project Settings",
+  "emptyProject": "Empty Project",
+  "createFolder": "Create Folder",
+  "editFolder": "Edit Folder",
+  "emptyFolder": "Empty Folder",
+  "errorLoadingRequests": "Error loading requests: {message}",
+  "@errorLoadingRequests": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "deleteNamedTitle": "Delete \"{name}\"?",
+  "@deleteNamedTitle": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "deleteProjectMessage": "This will delete all folders and requests inside.",
+  "deleteFolderMessage": "This will delete all items inside.",
+  "myProjectsAndRequests": "My Projects & Requests",
+  "newProjectTooltip": "New Project",
+  "projectsWorkspacesSection": "PROJECTS / WORKSPACES",
+  "unclassifiedRoot": "UNCLASSIFIED (ROOT)",
+  "dragRequestsHere": "Drag requests here to remove them from folders",
+  "createProjectHint": "Create a project to isolate your environments and variables.",
+  "newProjectFolder": "New Project / Folder",
+  "deleteAll": "Delete All",
+  "deleteCollectionWithEnvironments": "All requests and environments will be deleted. This cannot be undone.",
+  "saveRequest": "Save Request",
+  "requestNameLabel": "Request Name",
+  "requestNameHint": "E.g. Get Users",
+  "folderProjectLabel": "Folder / Project",
+  "unclassifiedRootOption": "Unclassified (Root)",
+  "requestSavedSuccess": "Request saved successfully",
+  "requestMovedToRoot": "Request \"{name}\" moved to root",
+  "@requestMovedToRoot": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "renameProject": "Rename Project",
+  "renameFolder": "Rename Folder",
+  "newProject": "New Project",
+  "newFolder": "New Folder",
+  "authorization": "Authorization",
+  "authType": "Auth Type",
+  "inheritAuthDescription": "This folder will use the authentication configured in its parent folder or project.",
+  "noAuthDescription": "No authentication will be used.",
+  "addToLabel": "Add to",
+  "header": "Header",
+  "queryParams": "Query Params",
+  "configNotAvailable": "Configuration not available for this type yet.",
+  "projectSaved": "Project saved",
+  "folderSaved": "Folder saved",
+  "typeToSearch": "Type to search...",
+  "paletteAction": "Action",
+  "switchWorkspaceAction": "Switch Workspace",
+  "paletteProject": "Project",
+  "paletteFolder": "Folder",
+  "paletteEnvironment": "Environment",
+  "paletteRequest": "Request",
+  "paletteHistory": "History",
+  "noResultsFound": "No results found",
+  "allRequests": "All Requests",
+  "importCollection": "Import Collection",
+  "activateWorkspace": "Activate Workspace",
+  "syncExport": "Sync / Export",
+  "collectionExported": "Collection exported successfully",
+  "exportError": "Export error: {message}",
+  "@exportError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "environments": "Environments",
+  "newItem": "New Item",
+  "edit": "Edit",
+  "projectsSection": "PROJECTS",
+  "requestMovedToCollection": "Request \"{request}\" moved to \"{collection}\"",
+  "@requestMovedToCollection": {
+    "placeholders": {
+      "request": { "type": "String" },
+      "collection": { "type": "String" }
+    }
+  },
+  "projectMovedToCollection": "Project \"{project}\" moved into \"{collection}\"",
+  "@projectMovedToCollection": {
+    "placeholders": {
+      "project": { "type": "String" },
+      "collection": { "type": "String" }
+    }
+  },
+  "curlImportedSuccess": "cURL imported successfully!",
+  "invalidCurlCommand": "Invalid cURL command or format not supported",
+  "pasteCurlHint": "Paste your cURL command here...",
+  "importSuccess": "Imported successfully!",
+  "importDescription": "Import OpenAPI/Swagger or Postman from URL or file.",
+  "importSourceLabel": "Source:",
+  "importFormatLabel": "Format:",
+  "importAutoDetect": "Auto-detect",
+  "importOpenApi": "OpenAPI / Swagger",
+  "importPostman": "Postman Collection",
+  "importUrlLabel": "JSON/YAML URL",
+  "importUrlHint": "https://...",
+  "selectFile": "Select File",
+  "importNow": "Import Now",
+  "fileReadError": "Could not read file bytes",
+  "sourceUrl": "URL",
+  "sourceFile": "File",
+  "beautify": "Beautify",
+  "minify": "Minify",
+  "generateFromSchema": "Generate from Schema",
+  "bodyJsonHint": "\\\"key\\\": \\\"value\\\"",
+  "preRequestTab": "Pre-request",
+  "postRequestTab": "Post-request (Extract)",
+  "preRequestDescription": "Generate/replace variables before the request",
+  "postRequestDescription": "Extract variables from the response",
+  "test": "Test",
+  "variableNameHint": "Variable Name",
+  "jsonPathHint": "JSONPath (e.g. $.data.id)",
+  "valueHint": "Value (e.g. timestamp)",
+  "noResponseToTest": "No response available to test.",
+  "testCompleted": "Test completed",
+  "absoluteUrlError": "Error: Do not use absolute paths (http/https) here.",
+  "understood": "Got it",
+  "copyJson": "Copy JSON",
+  "jsonCopied": "JSON copied to clipboard",
+  "codeCopied": "Code copied to clipboard",
+  "biometricLockedTitle": "Xolo Locked",
+  "biometricVaultSubtitle": "Your secure API vault",
+  "unlock": "Unlock",
+  "unlockReason": "Unlock Xolo to continue",
+  "getNewAccessToken": "Get New Access Token",
+  "username": "Username",
+  "password": "Password",
+  "bearerTokenHint": "e.g. eyJhbGciOiJIUzI1Ni...",
+  "apiKeyHint": "e.g. X-API-Key",
+  "projectNameHint": "My API Project",
+  "oauthCompleteTokenUrl": "Please complete Token URL and Client ID",
+  "oauthCompleteAuthUrl": "Please complete Auth URL",
+  "oauthTokenSuccess": "Token obtained successfully",
+  "oauthClientCredentials": "Client Credentials",
+  "oauthPasswordGrant": "Password",
+  "oauthAuthorizationCode": "Authorization Code",
+  "oauthAuthUrlHint": "https://example.com/oauth/authorize",
+  "oauthTokenUrlHint": "https://example.com/oauth/token",
+  "obtainNewToken": "Obtain new token",
+  "biometricLock": "Biometric Lock",
+  "biometricLockSubtitle": "Require FaceID/Fingerprint to open",
+  "verifyToEnableLock": "Verify to enable lock",
+  "authError": "Auth Error: {message}",
+  "@authError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "autoLockDelay": "Auto-Lock Delay",
+  "immediately": "Immediately",
+  "after30Seconds": "After 30 seconds",
+  "after1Minute": "After 1 minute",
+  "after5Minutes": "After 5 minutes",
+  "delayNow": "Now",
+  "delaySeconds": "{seconds}s",
+  "@delaySeconds": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "delayMinutes": "{minutes}m",
+  "@delayMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "delaySecondsFull": "{seconds} seconds",
+  "@delaySecondsFull": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "delayMinutesFull": "{minutes} minute(s)",
+  "@delayMinutesFull": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "incognitoMode": "Incognito Mode",
+  "incognitoSubtitle": "Do not save history",
+  "dataOwnership": "DATA OWNERSHIP",
+  "dataStorage": "DATA & STORAGE",
+  "yourDataStaysYours": "Your data stays yours",
+  "dataOwnershipDescription1": "Xolo stores your data locally on this device by default. Nothing is uploaded unless you explicitly export and share a backup file.",
+  "dataOwnershipDescription2": "Use encrypted backups and security profiles to control how strict the app behaves.",
+  "securityProfile": "Security Profile",
+  "securityProfileError": "Security profile error: {message}",
+  "@securityProfileError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "profileStandard": "Standard",
+  "profileHardened": "Hardened",
+  "profileParanoid": "Paranoid",
+  "profileStandardDesc": "Balanced security and usability",
+  "profileHardenedDesc": "Hide secrets and tighter lock policy",
+  "profileParanoidDesc": "Maximum protection with immediate lock",
+  "themeWidgetError": "Theme Widget Error: {message}",
+  "@themeWidgetError": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "panicFailed": "Panic Failed: {message}",
+  "@panicFailed": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+  "appVersion": "Xolo API Client v0.9.5",
+  "collections": "Collections",
+  "hostHint": "host",
+  "invalidJson": "Invalid JSON",
+  "schemaGenerated": "Data generated from Schema",
+  "schemaEmptyResult": "Schema produced valid null/empty result.",
+  "schemaParseFailed": "Failed to parse Schema",
+  "noSchemaAvailable": "No Schema available for this request",
+  "codeSnippet": "Code Snippet",
+  "noResponse": "No response",
+  "responseErrorPrefix": "Error:\n{message}",
+  "@responseErrorPrefix": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  }
+}

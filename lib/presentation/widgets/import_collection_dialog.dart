@@ -1,11 +1,13 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:convert';
-import '../../data/services/import_manager.dart';
-import '../../core/theme/xolo_design_tokens.dart';
-import '../providers/workspace_provider.dart';
-import '../providers/database_providers.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/data/services/import_manager.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
 
 class ImportCollectionDialog extends ConsumerStatefulWidget {
   final int? targetCollectionId; // Optional: specify where to import
@@ -50,6 +52,8 @@ class _ImportCollectionDialogState
     if (_isUrl && _urlController.text.trim().isEmpty) return;
     if (!_isUrl && _selectedFile == null) return;
 
+    final l10n = AppLocalizations.of(context)!;
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -79,7 +83,7 @@ class _ImportCollectionDialogState
             format: _selectedFormat,
           );
         } else {
-          throw Exception('No se pudieron leer los bytes del archivo');
+          throw Exception(l10n.fileReadError);
         }
       }
 
@@ -87,7 +91,7 @@ class _ImportCollectionDialogState
         Navigator.of(context).pop();
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('¡Importado con éxito!')));
+        ).showSnackBar(SnackBar(content: Text(l10n.importSuccess)));
       }
     } catch (e) {
       if (mounted) {
@@ -106,15 +110,16 @@ class _ImportCollectionDialogState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return AlertDialog(
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.folder_zip_rounded),
-          SizedBox(width: 8),
-          Text('Import API Project'),
+          const Icon(Icons.folder_zip_rounded),
+          const SizedBox(width: 8),
+          Text(l10n.importApiProject),
         ],
       ),
       content: SingleChildScrollView(
@@ -123,30 +128,29 @@ class _ImportCollectionDialogState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Importa OpenAPI/Swagger o Postman desde URL o archivo.',
+              l10n.importDescription,
               style: TextStyle(
                 fontSize: 12,
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: XoloSpacing.lg),
-            // 1. Source Toggle
-            const Text(
-              'Fuente:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            Text(
+              l10n.importSourceLabel,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: XoloSpacing.sm),
             SegmentedButton<bool>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: true,
-                  label: Text('URL'),
-                  icon: Icon(Icons.link),
+                  label: Text(l10n.sourceUrl),
+                  icon: const Icon(Icons.link),
                 ),
                 ButtonSegment(
                   value: false,
-                  label: Text('Archivo'),
-                  icon: Icon(Icons.upload_file),
+                  label: Text(l10n.sourceFile),
+                  icon: const Icon(Icons.upload_file),
                 ),
               ],
               selected: {_isUrl},
@@ -157,10 +161,9 @@ class _ImportCollectionDialogState
 
             const SizedBox(height: XoloSpacing.lg),
 
-            // 2. Format Selection
-            const Text(
-              'Formato:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            Text(
+              l10n.importFormatLabel,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: XoloSpacing.sm),
             DropdownButtonFormField<ImportFormat>(
@@ -169,18 +172,18 @@ class _ImportCollectionDialogState
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: ImportFormat.auto,
-                  child: Text('Auto-detectar'),
+                  child: Text(l10n.importAutoDetect),
                 ),
                 DropdownMenuItem(
                   value: ImportFormat.openApi,
-                  child: Text('OpenAPI / Swagger'),
+                  child: Text(l10n.importOpenApi),
                 ),
                 DropdownMenuItem(
                   value: ImportFormat.postman,
-                  child: Text('Postman Collection'),
+                  child: Text(l10n.importPostman),
                 ),
               ],
               onChanged: (val) {
@@ -190,14 +193,13 @@ class _ImportCollectionDialogState
 
             const SizedBox(height: XoloSpacing.lg),
 
-            // 3. Input Area
             if (_isUrl)
               TextField(
                 controller: _urlController,
-                decoration: const InputDecoration(
-                  labelText: 'URL del JSON/YAML',
-                  hintText: 'https://...',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.importUrlLabel,
+                  hintText: l10n.importUrlHint,
+                  border: const OutlineInputBorder(),
                 ),
                 enabled: !_isLoading,
               )
@@ -207,7 +209,7 @@ class _ImportCollectionDialogState
                 icon: const Icon(Icons.file_open),
                 label: Flexible(
                   child: Text(
-                    _selectedFile?.name ?? 'Seleccionar Archivo',
+                    _selectedFile?.name ?? l10n.selectFile,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -247,11 +249,11 @@ class _ImportCollectionDialogState
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _import,
-          child: const Text('Importar Ahora'),
+          child: Text(l10n.importNow),
         ),
       ],
     );

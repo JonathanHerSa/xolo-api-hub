@@ -1,36 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-
-import '../../core/theme/premium_theme.dart';
-import '../../core/theme/xolo_design_tokens.dart';
-import '../../data/local/database.dart';
-import '../providers/database_providers.dart';
-import '../providers/history_provider.dart';
-import '../providers/workspace_provider.dart';
-import '../providers/tabs_provider.dart';
-import '../providers/request_session_provider.dart';
-import '../providers/home_tab_provider.dart';
+import 'package:xolo/core/theme/premium_theme.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/domain/entities/history_entry_entity.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/history_provider.dart';
+import 'package:xolo/presentation/providers/home_tab_provider.dart';
+import 'package:xolo/presentation/providers/request_session_provider.dart';
+import 'package:xolo/presentation/providers/tabs_provider.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Usamos el nuevo provider específico de historial
+    final l10n = AppLocalizations.of(context)!;
     final historyAsync = ref.watch(recentHistoryStreamProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial'),
+        title: Text(l10n.history),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Limpiar historial (Contexto actual)',
+            tooltip: l10n.clearHistoryTooltip,
             onPressed: () => _confirmClearHistory(context, ref),
           ),
         ],
@@ -49,7 +48,7 @@ class HistoryScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: XoloSpacing.lg),
                   Text(
-                    'No hay historial reciente',
+                    l10n.noRecentHistory,
                     style: TextStyle(
                       color: colorScheme.onSurfaceVariant,
                       fontSize: 15,
@@ -58,7 +57,7 @@ class HistoryScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: XoloSpacing.sm),
                   Text(
-                    'Tus requests ejecutadas apareceran aqui.',
+                    l10n.requestsWillAppearHere,
                     style: TextStyle(
                       color: colorScheme.onSurfaceVariant.withValues(
                         alpha: 0.85,
@@ -94,7 +93,7 @@ class HistoryScreen extends ConsumerWidget {
                     const SizedBox(width: XoloSpacing.md),
                     Expanded(
                       child: Text(
-                        '${history.length} eventos en este contexto',
+                        l10n.historyEventsCount(history.length),
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
@@ -128,19 +127,16 @@ class HistoryScreen extends ConsumerWidget {
                       onDismissed: (direction) {
                         HapticFeedback.mediumImpact();
                         // Optimistic UI updates automatically via Stream, but we must delete from DB
-                        final db = ref.read(databaseProvider);
-                        db.delete(db.historyEntries).delete(entry);
+                        final repo = ref.read(xoloRepositoryProvider);
+                        repo.deleteHistoryEntry(entry);
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('Entry deleted'),
+                            content: Text(l10n.entryDeleted),
                             action: SnackBarAction(
-                              label: 'Undo',
+                              label: l10n.undo,
                               onPressed: () {
-                                // Undo logic: re-insert.
-                                // Requires converting Entry to Companion or Insertable.
-                                // For now, simple delete.
-                                db.into(db.historyEntries).insert(entry);
+                                repo.restoreHistoryEntry(entry);
                               },
                             ),
                           ),
@@ -155,31 +151,32 @@ class HistoryScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        error: (err, stack) => Center(child: Text(l10n.errorMessage('$err'))),
       ),
     );
   }
 
   void _confirmClearHistory(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Limpiar Historial?'),
-        content: const Text('Se eliminarán las entradas de este Workspace.'),
+        title: Text(l10n.clearHistoryDialogTitle),
+        content: Text(l10n.clearHistoryDialogMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               // Limpiar solo historial del workspace activo
               final workspaceId = ref.read(activeWorkspaceIdProvider);
-              await ref.read(databaseProvider).clearHistory(workspaceId);
+              await ref.read(xoloRepositoryProvider).clearHistory(workspaceId);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Limpiar'),
+            child: Text(l10n.clear),
           ),
         ],
       ),
@@ -188,7 +185,7 @@ class HistoryScreen extends ConsumerWidget {
 }
 
 class _HistoryItem extends ConsumerWidget {
-  final HistoryEntry entry;
+  final HistoryEntryEntity entry;
 
   const _HistoryItem({required this.entry});
 
@@ -332,7 +329,9 @@ class _HistoryItem extends ConsumerWidget {
     // If we want to show the PAST response, we'd need to populate requestProvider(newTabId).restoreResponse(...)
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Request cargado en nueva pestaña')),
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.requestLoadedInNewTab),
+      ),
     );
     // Switch to Composer Tab (Index 2)
     ref.read(homeTabProvider.notifier).setIndex(2);

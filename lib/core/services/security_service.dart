@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'package:xolo/core/config/secure_storage.dart';
+
 class SecurityService {
-  final FlutterSecureStorage _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
+  final FlutterSecureStorage _storage = kSecureStorage;
 
   Future<void> saveSecure(String key, String value) async {
     await _storage.write(key: key, value: value);

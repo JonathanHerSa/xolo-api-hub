@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:xolo/data/local/database.dart';
+import 'package:xolo/core/services/auth_secret_service.dart';
+import 'package:xolo/domain/repositories/xolo_repository.dart';
 import 'package:xolo/presentation/providers/database_providers.dart';
-
-import 'auth_secret_service.dart';
 
 class ResolvedAuth {
   final String? type;
@@ -13,10 +12,10 @@ class ResolvedAuth {
 }
 
 class AuthResolverService {
-  final AppDatabase _db;
+  final XoloRepository _repo;
   final AuthSecretService _authSecretService;
 
-  AuthResolverService(this._db, this._authSecretService);
+  AuthResolverService(this._repo, this._authSecretService);
 
   /// Resolves the effective authentication for a given request or context.
   ///
@@ -50,7 +49,7 @@ class AuthResolverService {
       return ResolvedAuth(type: null, data: null, source: 'none');
     }
 
-    final path = await _db.getCollectionPath(collectionId);
+    final path = await _repo.getCollectionPath(collectionId);
     // path is [Root, Child, Grandchild]
     // We want to search closest parent first -> Reverse
     final reversedPath = path.reversed.toList();
@@ -84,6 +83,6 @@ class AuthResolverService {
 }
 
 final authResolverServiceProvider = Provider<AuthResolverService>((ref) {
-  final db = ref.watch(databaseProvider);
-  return AuthResolverService(db, ref.read(authSecretServiceProvider));
+  final repo = ref.watch(xoloRepositoryProvider);
+  return AuthResolverService(repo, ref.read(authSecretServiceProvider));
 });

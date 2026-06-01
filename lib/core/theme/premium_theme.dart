@@ -1,240 +1,363 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/core/theme/xolo_theme_extension.dart';
 
 class XoloPremiumTheme {
-  // Paleta de colores "Zinc" (Fija para el background Dark)
-  static const Color _bgDeep = Color(0xFF09090B);
-  static const Color _bgSurface = Color(0xFF18181B);
-  static const Color _bgElevated = Color(0xFF27272A);
-  static const Color _border = Color(0xFF3F3F46);
+  static const Color methodGet = Color(0xFF38BDF8);
+  static const Color methodPost = Color(0xFF34D399);
+  static const Color methodPut = Color(0xFFFBBF24);
+  static const Color methodDelete = Color(0xFFF87171);
+  static const Color methodPatch = Color(0xFFC084FC);
+  static const Color methodDefault = XoloPalette.textSecondary;
 
-  // Colores Semánticos (Fijos)
-  static const Color methodGet = Color(0xFF3B82F6);
-  static const Color methodPost = Color(0xFF10B981);
-  static const Color methodPut = Color(0xFFF59E0B);
-  static const Color methodDelete = Color(0xFFEF4444);
-  static const Color methodPatch = Color(0xFF8B5CF6);
-
-  // Textos
-  static const Color _textPrimary = Color(0xFFFAFAFA);
-  static const Color _textSecondary = Color(0xFFA1A1AA);
-  static const Color _textDisabled = Color(0xFF52525B);
-
-  /// Genera el tema oscuro usando un color primario personalizado
   static ThemeData darkTheme(int primaryColorValue) {
     final primary = Color(primaryColorValue);
     final onPrimary =
         ThemeData.estimateBrightnessForColor(primary) == Brightness.dark
         ? Colors.white
         : Colors.black;
+    final accentGradient = XoloSurfaces.accentGradient(primary);
+    final mono = GoogleFonts.jetBrainsMono(
+      fontSize: 13,
+      height: 1.35,
+      letterSpacing: 0,
+    );
+    final monoSmall = mono.copyWith(fontSize: 11);
+    final textTheme = _buildTextTheme(Brightness.dark);
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: _bgDeep,
-      fontFamily: 'Inter',
-
-      // Ajuste de System UI para Edge-to-Edge
-      appBarTheme: const AppBarTheme(
-        backgroundColor: _bgSurface,
+      scaffoldBackgroundColor: XoloPalette.obsidian,
+      fontFamily: GoogleFonts.outfit().fontFamily,
+      textTheme: textTheme,
+      extensions: [
+        XoloThemeExtension(
+          mono: mono,
+          monoSmall: monoSmall,
+          accentGradient: accentGradient,
+        ),
+      ],
+      appBarTheme: AppBarTheme(
+        backgroundColor: XoloPalette.graphite,
         scrolledUnderElevation: 0,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(
-          color: _textPrimary,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.5,
+        titleTextStyle: textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
         ),
-        iconTheme: IconThemeData(color: _textSecondary),
-        actionsIconTheme: IconThemeData(color: _textSecondary),
-        shape: Border(bottom: BorderSide(color: _border, width: 1)),
-        systemOverlayStyle: SystemUiOverlayStyle.light, // Status bar blanca
+        iconTheme: const IconThemeData(color: XoloPalette.textSecondary),
+        actionsIconTheme: const IconThemeData(color: XoloPalette.textSecondary),
+        shape: const Border(
+          bottom: BorderSide(color: XoloPalette.borderSubtle, width: 1),
+        ),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
-
       colorScheme: ColorScheme.dark(
         primary: primary,
         onPrimary: onPrimary,
-        secondary: primary,
-        surface: _bgSurface,
-        surfaceContainer: _bgElevated,
-        surfaceContainerHighest: _bgElevated,
-        onSurface: _textPrimary,
-        onSurfaceVariant: _textSecondary,
-        outline: _border,
+        secondary: XoloPalette.teal,
+        onSecondary: XoloPalette.obsidian,
+        tertiary: XoloPalette.emberSoft,
+        surface: XoloPalette.graphite,
+        surfaceContainerLowest: XoloPalette.obsidian,
+        surfaceContainerLow: XoloPalette.slate,
+        surfaceContainer: XoloPalette.slate,
+        surfaceContainerHigh: XoloPalette.elevated,
+        surfaceContainerHighest: XoloPalette.elevated,
+        onSurface: XoloPalette.textPrimary,
+        onSurfaceVariant: XoloPalette.textSecondary,
+        outline: XoloPalette.border,
+        outlineVariant: XoloPalette.borderSubtle,
         error: methodDelete,
       ),
-
       cardTheme: CardThemeData(
-        color: _bgSurface,
+        color: XoloPalette.slate,
         elevation: 0,
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: _border),
+          borderRadius: XoloRadius.lg,
+          side: BorderSide(color: XoloPalette.border.withValues(alpha: 0.75)),
         ),
       ),
-
-      // Inputs
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: _bgElevated,
+        fillColor: XoloPalette.elevated,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: XoloRadius.md,
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: XoloRadius.md,
           borderSide: const BorderSide(color: Colors.transparent),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: XoloRadius.md,
           borderSide: BorderSide(color: primary, width: 1.5),
         ),
-        hintStyle: const TextStyle(color: _textDisabled, fontSize: 13),
-        labelStyle: const TextStyle(color: _textSecondary, fontSize: 13),
+        hintStyle: GoogleFonts.jetBrainsMono(
+          color: XoloPalette.textMuted,
+          fontSize: 13,
+        ),
+        labelStyle: GoogleFonts.outfit(
+          color: XoloPalette.textSecondary,
+          fontSize: 13,
+        ),
       ),
-
-      // Botones
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: primary,
           foregroundColor: onPrimary,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+          shape: RoundedRectangleBorder(borderRadius: XoloRadius.md),
+          textStyle: GoogleFonts.outfit(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           minimumSize: const Size(44, 44),
         ),
       ),
-
-      // Text Buttons
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: _textSecondary,
+          foregroundColor: XoloPalette.textSecondary,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: XoloRadius.md),
           minimumSize: const Size(44, 44),
         ),
       ),
-
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: _textPrimary,
-          side: const BorderSide(color: _border),
+          foregroundColor: XoloPalette.textPrimary,
+          side: BorderSide(color: XoloPalette.border.withValues(alpha: 0.9)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: XoloRadius.md),
           minimumSize: const Size(44, 44),
         ),
       ),
-
-      // Menus
       popupMenuTheme: PopupMenuThemeData(
-        color: _bgElevated,
+        color: XoloPalette.elevated,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: _border),
+          borderRadius: XoloRadius.lg,
+          side: BorderSide(color: XoloPalette.border.withValues(alpha: 0.8)),
         ),
-        textStyle: const TextStyle(color: _textPrimary, fontSize: 13),
-        elevation: 8,
+        textStyle: GoogleFonts.outfit(
+          color: XoloPalette.textPrimary,
+          fontSize: 13,
+        ),
+        elevation: 12,
       ),
-
-      // Floating Action Button
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: XoloPalette.graphite,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.horizontal(right: Radius.circular(20)),
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: primary,
+        unselectedLabelColor: XoloPalette.textSecondary,
+        indicatorColor: primary,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: XoloPalette.borderSubtle,
+        labelStyle: GoogleFonts.outfit(
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+        ),
+        unselectedLabelStyle: GoogleFonts.outfit(
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+        ),
+      ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primary,
         foregroundColor: onPrimary,
         elevation: 4,
-        shape: const CircleBorder(),
+        shape: RoundedRectangleBorder(borderRadius: XoloRadius.lg),
       ),
-
-      // Dividers
       dividerTheme: const DividerThemeData(
-        color: _border,
+        color: XoloPalette.borderSubtle,
         thickness: 1,
         space: 1,
       ),
-
-      // ListTiles
       listTileTheme: const ListTileThemeData(
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         dense: true,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        selectedColor: _textPrimary, // Texto blanco al seleccionar? O Primary?
-        // Flutter usa selectedColor para texto e icono.
-        // Si usamos primary, queda bien.
-        // El background se maneja con 'selectedTileColor' que definimos en widgets a mano o themes.
+        shape: RoundedRectangleBorder(borderRadius: XoloRadius.md),
+        selectedColor: XoloPalette.textPrimary,
       ),
-
-      iconTheme: const IconThemeData(color: _textSecondary, size: 20),
+      iconTheme: const IconThemeData(
+        color: XoloPalette.textSecondary,
+        size: 20,
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: primary,
+        linearTrackColor: XoloPalette.borderSubtle,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: XoloPalette.elevated,
+        contentTextStyle: GoogleFonts.outfit(color: XoloPalette.textPrimary),
+        shape: RoundedRectangleBorder(borderRadius: XoloRadius.md),
+        behavior: SnackBarBehavior.floating,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: XoloPalette.slate,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: XoloRadius.lg,
+          side: BorderSide(color: XoloPalette.border.withValues(alpha: 0.8)),
+        ),
+        titleTextStyle: GoogleFonts.outfit(
+          color: XoloPalette.textPrimary,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
+        ),
+      ),
     );
   }
 
   static ThemeData lightTheme(int primaryColorValue) {
     final primary = Color(primaryColorValue);
+    final onPrimary =
+        ThemeData.estimateBrightnessForColor(primary) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
+    final accentGradient = XoloSurfaces.accentGradient(primary);
+    final mono = GoogleFonts.jetBrainsMono(fontSize: 13, height: 1.35);
+    final monoSmall = mono.copyWith(fontSize: 11);
+    final textTheme = _buildTextTheme(Brightness.light);
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: const Color(0xFFF3F6FB),
-      colorScheme:
-          ColorScheme.fromSeed(
-            seedColor: primary,
-            brightness: Brightness.light,
-          ).copyWith(
-            surface: Colors.white,
-            primary: const Color(0xFF2563EB),
-            surfaceContainerHighest: const Color(0xFFEAF0F8),
-          ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFF3F6FB),
+      scaffoldBackgroundColor: XoloPalette.lightCanvas,
+      fontFamily: GoogleFonts.outfit().fontFamily,
+      textTheme: textTheme,
+      extensions: [
+        XoloThemeExtension(
+          mono: mono,
+          monoSmall: monoSmall,
+          accentGradient: accentGradient,
+        ),
+      ],
+      colorScheme: ColorScheme.light(
+        primary: primary,
+        onPrimary: onPrimary,
+        secondary: const Color(0xFF0D9488),
+        surface: XoloPalette.lightSurface,
+        surfaceContainerHighest: const Color(0xFFE8EEF5),
+        onSurface: const Color(0xFF111827),
+        onSurfaceVariant: const Color(0xFF5B6472),
+        outline: XoloPalette.lightBorder,
+        outlineVariant: const Color(0xFFE3E9F1),
+        error: methodDelete,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: XoloPalette.lightCanvas,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        titleTextStyle: textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
       ),
       cardTheme: CardThemeData(
-        color: Colors.white,
+        color: XoloPalette.lightSurface,
         elevation: 0,
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: Color(0xFFD7E1EF)),
+          borderRadius: XoloRadius.lg,
+          side: const BorderSide(color: XoloPalette.lightBorder),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF7FAFF),
+        fillColor: const Color(0xFFF8FAFD),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: XoloRadius.md,
+          borderSide: const BorderSide(color: XoloPalette.lightBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: XoloRadius.md,
+          borderSide: const BorderSide(color: XoloPalette.lightBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: XoloRadius.md,
           borderSide: BorderSide(color: primary, width: 1.5),
+        ),
+        hintStyle: GoogleFonts.jetBrainsMono(
+          color: const Color(0xFF94A3B8),
+          fontSize: 13,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFF2563EB),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          backgroundColor: primary,
+          foregroundColor: onPrimary,
+          shape: RoundedRectangleBorder(borderRadius: XoloRadius.md),
           minimumSize: const Size(44, 44),
         ),
+      ),
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: XoloPalette.lightSurface,
+        surfaceTintColor: Colors.transparent,
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: primary,
+        unselectedLabelColor: const Color(0xFF64748B),
+        indicatorColor: primary,
+        labelStyle: GoogleFonts.outfit(
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: XoloPalette.lightSurface,
+        shape: RoundedRectangleBorder(borderRadius: XoloRadius.lg),
+      ),
+    );
+  }
+
+  static TextTheme _buildTextTheme(Brightness brightness) {
+    final base = brightness == Brightness.dark
+        ? ThemeData.dark().textTheme
+        : ThemeData.light().textTheme;
+    return GoogleFonts.outfitTextTheme(base).copyWith(
+      headlineLarge: GoogleFonts.outfit(
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.8,
+      ),
+      headlineMedium: GoogleFonts.outfit(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.5,
+      ),
+      titleLarge: GoogleFonts.outfit(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.3,
+      ),
+      titleMedium: GoogleFonts.outfit(
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+      ),
+      bodyLarge: GoogleFonts.outfit(height: 1.45),
+      bodyMedium: GoogleFonts.outfit(height: 1.4),
+      labelLarge: GoogleFonts.outfit(
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.2,
+      ),
+      labelSmall: GoogleFonts.outfit(
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.4,
       ),
     );
   }
@@ -252,7 +375,7 @@ class XoloPremiumTheme {
       case 'PATCH':
         return methodPatch;
       default:
-        return _textSecondary;
+        return methodDefault;
     }
   }
 }

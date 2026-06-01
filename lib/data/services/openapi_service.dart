@@ -1,11 +1,14 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../local/database.dart';
-import '../../core/utils/schema_helper.dart';
-import '../../core/network/http_client_provider.dart';
+import 'package:xolo/core/network/http_client_provider.dart';
+import 'package:xolo/core/utils/schema_helper.dart';
+import 'package:xolo/data/local/database.dart';
 
-final openApiServiceProvider = Provider((ref) => OpenApiService(ref.read(dioProvider)));
+final openApiServiceProvider = Provider(
+  (ref) => OpenApiService(ref.read(dioProvider)),
+);
 
 class OpenApiService {
   final Dio _dio;
@@ -197,10 +200,10 @@ class OpenApiService {
 
         // Swagger 2.0: parameters in body
         if (body == null && parameters != null) {
-          final bodyParam = parameters.firstWhere(
-            (p) => p['in'] == 'body',
-            orElse: () => null,
-          );
+          final bodyParam = parameters
+              .whereType<Map<String, dynamic>>()
+              .where((p) => p['in'] == 'body')
+              .firstOrNull;
           if (bodyParam != null) {
             final schema = bodyParam['schema'] as Map<String, dynamic>?;
             if (schema != null) {

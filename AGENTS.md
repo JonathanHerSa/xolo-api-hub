@@ -1,0 +1,1 @@
+/home/t3zcadev/Proyectos/Personal/dotfiles/dev-configs/flutter/AGENTS.md

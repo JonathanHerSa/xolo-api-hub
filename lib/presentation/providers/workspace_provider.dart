@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/local/database.dart';
-import 'database_providers.dart';
-import 'collections_provider.dart';
+
+import 'package:xolo/domain/entities/collection_entity.dart';
+import 'package:xolo/presentation/providers/collections_provider.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
 
 /// ID del Workspace (Colección Raíz) activo.
 /// null = Global / Sin Clasificar.
@@ -22,7 +23,7 @@ class WorkspaceNotifier extends Notifier<int?> {
 
   Future<void> _loadSavedWorkspace() async {
     try {
-      final db = ref.read(databaseProvider);
+      final db = ref.read(xoloRepositoryProvider);
       final savedIdStr = await db.getSetting(_kActiveWorkspaceKey);
 
       if (savedIdStr != null && savedIdStr.isNotEmpty) {
@@ -41,7 +42,7 @@ class WorkspaceNotifier extends Notifier<int?> {
 
   Future<void> setWorkspace(int? id) async {
     state = id;
-    final db = ref.read(databaseProvider);
+    final db = ref.read(xoloRepositoryProvider);
     await db.setSetting(_kActiveWorkspaceKey, id?.toString() ?? '');
 
     // Al cambiar de workspace, deberíamos resetear el entorno activo?
@@ -57,15 +58,9 @@ class WorkspaceNotifier extends Notifier<int?> {
 }
 
 /// Provider helper para obtener el objeto Collection del workspace activo (nombre, etc)
-final activeWorkspaceProvider = FutureProvider<Collection?>((ref) async {
+final activeWorkspaceProvider = FutureProvider<CollectionEntity?>((ref) async {
   final id = ref.watch(activeWorkspaceIdProvider);
   if (id == null) return null;
-
-  final db = ref.watch(databaseProvider);
-  // No tengo getCollectionById, uso query simple o agrego DAO.
-  // Usaré una query directa aquí si es posible o agrego metodo a DB.
-  // Agregaré un método getCollectionById a DB si hace falta,
-  // O filtro de la lista rootCollections (cacheada).
 
   final allRoots = await ref.watch(rootCollectionsProvider.future);
   try {

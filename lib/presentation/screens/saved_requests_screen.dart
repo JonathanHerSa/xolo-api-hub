@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../data/local/database.dart';
-import '../providers/database_providers.dart';
-import '../providers/form_providers.dart';
-import '../providers/collections_provider.dart';
-import '../providers/workspace_provider.dart';
-import '../providers/tabs_provider.dart';
-import '../providers/request_session_provider.dart';
-import 'collection_detail_screen.dart';
-import '../widgets/draggable_tiles.dart'; // IMPORT SHARED TILES
+import 'package:xolo/domain/entities/collection_entity.dart';
+import 'package:xolo/domain/entities/saved_request_entity.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/collections_provider.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/form_providers.dart';
+import 'package:xolo/presentation/providers/request_session_provider.dart';
+import 'package:xolo/presentation/providers/tabs_provider.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
+import 'package:xolo/presentation/screens/collection_detail_screen.dart';
+import 'package:xolo/presentation/widgets/draggable_tiles.dart'; // IMPORT SHARED TILES
 
 class SavedRequestsScreen extends ConsumerStatefulWidget {
   const SavedRequestsScreen({super.key});
@@ -22,6 +23,7 @@ class SavedRequestsScreen extends ConsumerStatefulWidget {
 class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -31,11 +33,11 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mis Proyectos y Requests'),
+        title: Text(l10n.myProjectsAndRequests),
         actions: [
           IconButton(
             icon: const Icon(Icons.create_new_folder_outlined),
-            tooltip: 'Nuevo Proyecto',
+            tooltip: l10n.newProjectTooltip,
             onPressed: () => _showCreateCollectionDialog(null),
           ),
         ],
@@ -48,7 +50,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'PROYECTOS / WORKSPACES',
+                l10n.projectsWorkspacesSection,
                 style: TextStyle(
                   color: colorScheme.primary,
                   fontWeight: FontWeight.bold,
@@ -61,7 +63,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
             rootCollectionsAsync.when(
               data: (collections) {
                 if (collections.isEmpty) {
-                  return _buildEmptyState(colorScheme);
+                  return _buildEmptyState(colorScheme, l10n);
                 }
 
                 return ListView.builder(
@@ -93,21 +95,19 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
                 );
               },
               loading: () => const Center(child: LinearProgressIndicator()),
-              error: (e, s) => Text('Error: $e'),
+              error: (e, s) => Text(l10n.errorMessage(e.toString())),
             ),
 
             const Divider(height: 32),
 
             // --- UNCLASSIFIED REQUESTS ---
-            DragTarget<SavedRequest>(
+            DragTarget<SavedRequestEntity>(
               onWillAcceptWithDetails: (_) => true,
               onAcceptWithDetails: (details) {
                 final req = details.data;
-                ref.read(databaseProvider).moveRequest(req.id, null);
+                ref.read(xoloRepositoryProvider).moveRequest(req.id, null);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Request "${req.name}" movido a raíz'),
-                  ),
+                  SnackBar(content: Text(l10n.requestMovedToRoot(req.name))),
                 );
               },
               builder: (context, candidateData, rejectedData) {
@@ -127,7 +127,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
                         child: Row(
                           children: [
                             Text(
-                              'SIN CLASIFICAR (RAÍZ)',
+                              l10n.unclassifiedRoot,
                               style: TextStyle(
                                 color: colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.bold,
@@ -152,7 +152,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
                               padding: const EdgeInsets.all(32.0),
                               child: Center(
                                 child: Text(
-                                  'Arrastra requests aquí para sacarlos de carpetas',
+                                  l10n.dragRequestsHere,
                                   style: TextStyle(
                                     color: colorScheme.outline,
                                     fontSize: 12,
@@ -165,7 +165,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: requests.length,
-                            separatorBuilder: (_, __) =>
+                            separatorBuilder: (_, _) =>
                                 const Divider(height: 1, indent: 16),
                             itemBuilder: (ctx, index) {
                               final req = requests[index];
@@ -174,7 +174,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
                                 onTap: () => _loadRequest(req),
                                 onDelete: () {
                                   ref
-                                      .read(databaseProvider)
+                                      .read(xoloRepositoryProvider)
                                       .softDeleteRequest(req.id);
                                 },
                               );
@@ -185,7 +185,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
                           height: 50,
                           child: Center(child: CircularProgressIndicator()),
                         ),
-                        error: (e, s) => Text('Error: $e'),
+                        error: (e, s) => Text(l10n.errorMessage(e.toString())),
                       ),
                     ],
                   ),
@@ -199,7 +199,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
     );
   }
 
-  Widget _buildEmptyState(ColorScheme colorScheme) {
+  Widget _buildEmptyState(ColorScheme colorScheme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
@@ -210,11 +210,7 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
             children: [
               Icon(Icons.lightbulb_outline, color: colorScheme.tertiary),
               const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  'Crea un proyecto para aislar tus entornos y variables.',
-                ),
-              ),
+              Expanded(child: Text(l10n.createProjectHint)),
             ],
           ),
         ),
@@ -222,7 +218,8 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
     );
   }
 
-  void _loadRequest(SavedRequest req) {
+  void _loadRequest(SavedRequestEntity req) {
+    final l10n = AppLocalizations.of(context)!;
     // 1. Create new tab
     final newTabId = ref.read(tabsProvider.notifier).addTab();
 
@@ -242,25 +239,26 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('Cargado: ${req.name}')));
+    ).showSnackBar(SnackBar(content: Text(l10n.loadedRequest(req.name))));
     Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   Future<void> _showCreateCollectionDialog(int? parentId) async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Nuevo Proyecto / Carpeta'),
+        title: Text(l10n.newProjectFolder),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(labelText: 'Nombre'),
+          decoration: InputDecoration(labelText: l10n.name),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -274,37 +272,38 @@ class _SavedRequestsScreenState extends ConsumerState<SavedRequestsScreen> {
                 if (context.mounted) Navigator.pop(context);
               }
             },
-            child: const Text('Crear'),
+            child: Text(l10n.create),
           ),
         ],
       ),
     );
   }
 
-  void _confirmDeleteCollection(Collection col) {
+  void _confirmDeleteCollection(CollectionEntity col) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Eliminar "${col.name}"?'),
-        content: const Text(
-          'Se eliminarán todos los requests y entornos contenidos. Esta acción no se puede deshacer.',
-        ),
+        title: Text(l10n.deleteNamedTitle(col.name)),
+        content: Text(l10n.deleteCollectionWithEnvironments),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               final activeId = ref.read(activeWorkspaceIdProvider);
               if (activeId == col.id) {
-                ref.read(activeWorkspaceIdProvider.notifier).setWorkspace(null);
+                await ref
+                    .read(activeWorkspaceIdProvider.notifier)
+                    .setWorkspace(null);
               }
-              await ref.read(databaseProvider).deleteCollection(col.id);
+              await ref.read(xoloRepositoryProvider).deleteCollection(col.id);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Eliminar Todo'),
+            child: Text(l10n.deleteAll),
           ),
         ],
       ),
@@ -337,35 +336,34 @@ class _SaveRequestDialogState extends State<_SaveRequestDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final collectionsAsync = widget.ref.watch(
       flattenedCollectionsStreamProvider,
     );
 
     return AlertDialog(
-      title: const Text('Guardar Request'),
+      title: Text(l10n.saveRequest),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Nombre del Request',
-                hintText: 'Ej: Get Users',
+              decoration: InputDecoration(
+                labelText: l10n.requestNameLabel,
+                hintText: l10n.requestNameHint,
               ),
               autofocus: true,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<int?>(
-              decoration: const InputDecoration(
-                labelText: 'Carpeta / Proyecto',
-              ),
+              decoration: InputDecoration(labelText: l10n.folderProjectLabel),
               initialValue: _selectedCollectionId,
               isExpanded: true,
               items: [
-                const DropdownMenuItem(
+                DropdownMenuItem(
                   value: null,
-                  child: Text('Sin Clasificar (Raíz)'),
+                  child: Text(l10n.unclassifiedRootOption),
                 ),
                 ...collectionsAsync.when(
                   data: (cols) => cols.map(
@@ -378,7 +376,7 @@ class _SaveRequestDialogState extends State<_SaveRequestDialog> {
                     ),
                   ),
                   loading: () => [],
-                  error: (_, __) => [],
+                  error: (_, _) => [],
                 ),
               ],
               onChanged: (val) => setState(() => _selectedCollectionId = val),
@@ -389,10 +387,10 @@ class _SaveRequestDialogState extends State<_SaveRequestDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          child: Text(l10n.cancel),
         ),
         FilledButton.icon(
-          label: const Text('Guardar'),
+          label: Text(l10n.save),
           icon: const Icon(Icons.save),
           onPressed: () async {
             if (_nameCtrl.text.isEmpty) return;
@@ -405,7 +403,7 @@ class _SaveRequestDialogState extends State<_SaveRequestDialog> {
             final body = widget.ref.read(bodyContentProvider);
 
             await widget.ref
-                .read(databaseProvider)
+                .read(xoloRepositoryProvider)
                 .createRequest(
                   name: name,
                   method: method,
@@ -416,9 +414,9 @@ class _SaveRequestDialogState extends State<_SaveRequestDialog> {
 
             if (context.mounted) {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Request guardado exitosamente')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l10n.requestSavedSuccess)));
             }
           },
         ),

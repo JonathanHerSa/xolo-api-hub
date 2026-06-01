@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'database_providers.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
 
 // Key para guardar en AppSettings
 const String kThemeColorKey = 'theme_primary_color';
@@ -17,8 +17,8 @@ final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(() {
 });
 
 class ThemeColorNotifier extends Notifier<int> {
-  // Color por defecto: Indigo (0xFF6366F1)
-  static const int defaultColor = 0xFF6366F1;
+  // Color por defecto: Ember (Xolo accent)
+  static const int defaultColor = 0xFFF97316;
 
   @override
   int build() {
@@ -28,7 +28,7 @@ class ThemeColorNotifier extends Notifier<int> {
   }
 
   Future<void> _loadColor() async {
-    final db = ref.read(databaseProvider);
+    final db = ref.read(xoloRepositoryProvider);
     final colorStr = await db.getSetting(kThemeColorKey);
     if (colorStr != null) {
       final value = int.tryParse(colorStr);
@@ -40,7 +40,7 @@ class ThemeColorNotifier extends Notifier<int> {
 
   Future<void> setColor(int colorValue) async {
     state = colorValue;
-    final db = ref.read(databaseProvider);
+    final db = ref.read(xoloRepositoryProvider);
     await db.setSetting(kThemeColorKey, colorValue.toString());
   }
 }
@@ -53,7 +53,7 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   }
 
   Future<void> _loadMode() async {
-    final db = ref.read(databaseProvider);
+    final db = ref.read(xoloRepositoryProvider);
     final modeStr = await db.getSetting(kThemeModeKey);
     if (modeStr == null) return;
     state = _fromString(modeStr);
@@ -61,7 +61,7 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 
   Future<void> setMode(ThemeMode mode) async {
     state = mode;
-    final db = ref.read(databaseProvider);
+    final db = ref.read(xoloRepositoryProvider);
     await db.setSetting(kThemeModeKey, mode.name);
   }
 

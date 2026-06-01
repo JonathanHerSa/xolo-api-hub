@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../local/database.dart';
+import 'package:xolo/data/local/database.dart';
 
 final postmanServiceProvider = Provider((ref) => PostmanService());
 
@@ -146,10 +146,12 @@ class PostmanService {
       }
     }
 
-    String? headersJson = headersList.isNotEmpty
+    final String? headersJson = headersList.isNotEmpty
         ? jsonEncode(headersList)
         : null;
-    String? paramsJson = paramsList.isNotEmpty ? jsonEncode(paramsList) : null;
+    final String? paramsJson = paramsList.isNotEmpty
+        ? jsonEncode(paramsList)
+        : null;
 
     // Update or Create
     final existing = await db.findRequestInCollection(

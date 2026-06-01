@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/app_logger.dart';
+import 'package:xolo/core/services/app_logger.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
 
 class AppConfig {
   const AppConfig({
@@ -81,7 +81,7 @@ const appConfigSettingKey = 'app_config_runtime';
 const appConfigUserOverrideSettingKey = 'app_config_user_override';
 
 final appConfigProvider = FutureProvider<AppConfig>((ref) async {
-  final db = ref.read(databaseProvider);
+  final db = ref.read(xoloRepositoryProvider);
   final defaults = AppConfig.defaults();
 
   final runtimeJson = await db.getSetting(appConfigSettingKey);

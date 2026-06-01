@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/services/biometric_service.dart';
-import '../../core/services/security_profile_service.dart';
-import '../../core/services/security_service.dart';
-import '../../core/theme/xolo_design_tokens.dart';
-import '../providers/theme_provider.dart';
-import '../providers/incognito_provider.dart';
-import '../providers/database_providers.dart';
-import '../widgets/advanced_color_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:xolo/core/services/app_logger.dart';
+import 'package:xolo/core/services/biometric_service.dart';
+import 'package:xolo/core/services/security_profile_service.dart';
+import 'package:xolo/core/services/security_service.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/incognito_provider.dart';
+import 'package:xolo/presentation/providers/theme_provider.dart';
+import 'package:xolo/presentation/widgets/advanced_color_picker.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -36,7 +38,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         });
       }
     } catch (e) {
-      debugPrint("Error loading delay: $e");
+      AppLogger.error('Error loading delay', e);
     }
   }
 
@@ -50,6 +52,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     // Watch providers safely
     final isIncognito = ref.watch(isIncognitoProvider);
@@ -57,9 +60,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(l10n.settings),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -71,15 +74,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           vertical: XoloSpacing.sm,
         ),
         children: [
-          _buildAppearanceCard(context, ref),
+          _buildAppearanceCard(context, ref, l10n),
 
           const SizedBox(height: XoloSpacing.xl),
-          _buildSectionTitle(context, 'SECURITY & PRIVACY'),
+          _buildSectionTitle(context, l10n.securityAndPrivacy),
           const SizedBox(height: XoloSpacing.sm),
 
           // Security Group
           _buildSettingsGroup(context, [
-            _buildSecurityProfileTile(context, ref),
+            _buildSecurityProfileTile(context, ref, l10n),
             const Divider(height: 1, indent: 64),
 
             // Biometric
@@ -88,13 +91,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
-                title: const Text(
-                  'Biometric Lock',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                title: Text(
+                  l10n.biometricLock,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                subtitle: const Text(
-                  'Require FaceID/Fingerprint to open',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                subtitle: Text(
+                  l10n.biometricLockSubtitle,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 secondary: Container(
                   padding: const EdgeInsets.all(8),
@@ -109,7 +112,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   final service = ref.read(biometricServiceProvider);
                   if (val) {
                     final authenticated = await service.authenticate(
-                      reason: 'Verify to enable lock',
+                      reason: l10n.verifyToEnableLock,
                     );
                     if (!authenticated) return;
                   }
@@ -119,7 +122,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               loading: () => const LinearProgressIndicator(),
               error: (e, s) => ListTile(
-                title: Text("Auth Error: $e"),
+                title: Text(l10n.authError(e.toString())),
                 leading: const Icon(Icons.error, color: Colors.red),
               ),
             ),
@@ -128,12 +131,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             // Lock Delay
             ListTile(
-              title: const Text(
-                'Auto-Lock Delay',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              title: Text(
+                l10n.autoLockDelay,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               subtitle: Text(
-                _getDelayLabel(_lockDelay),
+                _getDelayLabel(l10n, _lockDelay),
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
               leading: Container(
@@ -148,19 +151,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 initialValue: _lockDelay,
                 onSelected: _setDelay,
                 itemBuilder: (context) => [
-                  const PopupMenuItem(value: 0, child: Text('Immediately')),
-                  const PopupMenuItem(
-                    value: 30,
-                    child: Text('After 30 seconds'),
-                  ),
-                  const PopupMenuItem(value: 60, child: Text('After 1 minute')),
-                  const PopupMenuItem(
-                    value: 300,
-                    child: Text('After 5 minutes'),
-                  ),
+                  PopupMenuItem(value: 0, child: Text(l10n.immediately)),
+                  PopupMenuItem(value: 30, child: Text(l10n.after30Seconds)),
+                  PopupMenuItem(value: 60, child: Text(l10n.after1Minute)),
+                  PopupMenuItem(value: 300, child: Text(l10n.after5Minutes)),
                 ],
                 child: Chip(
-                  label: Text(_getDelayLabelShort(_lockDelay)),
+                  label: Text(_getDelayLabelShort(l10n, _lockDelay)),
                   backgroundColor: colorScheme.surfaceContainerHighest
                       .withValues(alpha: 0.5),
                   side: BorderSide.none,
@@ -177,13 +174,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   bottom: Radius.circular(16),
                 ),
               ),
-              title: const Text(
-                'Incognito Mode',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              title: Text(
+                l10n.incognitoMode,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              subtitle: const Text(
-                'Do not save history',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+              subtitle: Text(
+                l10n.incognitoSubtitle,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
               secondary: Container(
                 padding: const EdgeInsets.all(8),
@@ -201,19 +198,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ]),
 
           const SizedBox(height: XoloSpacing.xl),
-          _buildSectionTitle(context, 'DATA OWNERSHIP'),
+          _buildSectionTitle(context, l10n.dataOwnership),
           const SizedBox(height: XoloSpacing.sm),
-          _buildDataOwnershipCard(context),
+          _buildDataOwnershipCard(context, l10n),
 
           const SizedBox(height: XoloSpacing.xl),
-          _buildSectionTitle(context, 'DATA & STORAGE'),
+          _buildSectionTitle(context, l10n.dataStorage),
           const SizedBox(height: XoloSpacing.sm),
 
           _buildSettingsGroup(context, [
             ListTile(
-              title: const Text(
-                'Clear History',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              title: Text(
+                l10n.clearHistory,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               leading: Container(
                 padding: const EdgeInsets.all(8),
@@ -239,17 +236,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               onPressed: () => _showPanicDialog(context, ref),
               icon: const Icon(Icons.warning_amber_rounded),
-              label: const Text(
-                'EMERGENCY WIPE (PANIC BUTTON)',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              label: Text(
+                l10n.panicButton,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ),
 
-          const Center(
+          Center(
             child: Text(
-              'Xolo API Client v0.9.5',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              l10n.appVersion,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ),
           const SizedBox(height: 100), // Bottom padding
@@ -258,7 +255,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildSecurityProfileTile(BuildContext context, WidgetRef ref) {
+  Widget _buildSecurityProfileTile(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
     final profileAsync = ref.watch(securityProfileProvider);
     return profileAsync.when(
       data: (profile) {
@@ -266,12 +267,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
           ),
-          title: const Text(
-            'Security Profile',
-            style: TextStyle(fontWeight: FontWeight.w600),
+          title: Text(
+            l10n.securityProfile,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           subtitle: Text(
-            _profileDescription(profile),
+            _profileDescription(l10n, profile),
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
           leading: Container(
@@ -296,8 +297,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
             items: SecurityProfile.values
                 .map(
-                  (p) =>
-                      DropdownMenuItem(value: p, child: Text(_profileLabel(p))),
+                  (p) => DropdownMenuItem(
+                    value: p,
+                    child: Text(_profileLabel(l10n, p)),
+                  ),
                 )
                 .toList(),
           ),
@@ -305,29 +308,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       },
       loading: () => const LinearProgressIndicator(),
       error: (e, s) => ListTile(
-        title: Text('Security profile error: $e'),
+        title: Text(l10n.securityProfileError(e.toString())),
         leading: const Icon(Icons.error, color: Colors.red),
       ),
     );
   }
 
-  String _profileLabel(SecurityProfile profile) {
+  String _profileLabel(AppLocalizations l10n, SecurityProfile profile) {
     return switch (profile) {
-      SecurityProfile.standard => 'Standard',
-      SecurityProfile.hardened => 'Hardened',
-      SecurityProfile.paranoid => 'Paranoid',
+      SecurityProfile.standard => l10n.profileStandard,
+      SecurityProfile.hardened => l10n.profileHardened,
+      SecurityProfile.paranoid => l10n.profileParanoid,
     };
   }
 
-  String _profileDescription(SecurityProfile profile) {
+  String _profileDescription(AppLocalizations l10n, SecurityProfile profile) {
     return switch (profile) {
-      SecurityProfile.standard => 'Balanced security and usability',
-      SecurityProfile.hardened => 'Hide secrets and tighter lock policy',
-      SecurityProfile.paranoid => 'Maximum protection with immediate lock',
+      SecurityProfile.standard => l10n.profileStandardDesc,
+      SecurityProfile.hardened => l10n.profileHardenedDesc,
+      SecurityProfile.paranoid => l10n.profileParanoidDesc,
     };
   }
 
-  Widget _buildDataOwnershipCard(BuildContext context) {
+  Widget _buildDataOwnershipCard(BuildContext context, AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -336,22 +339,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         borderRadius: XoloRadius.lg,
         border: Border.all(color: colorScheme.outlineVariant),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Your data stays yours',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+            l10n.yourDataStaysYours,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
           ),
-          SizedBox(height: XoloSpacing.sm),
+          const SizedBox(height: XoloSpacing.sm),
           Text(
-            'Xolo stores your data locally on this device by default. Nothing is uploaded unless you explicitly export and share a backup file.',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            l10n.dataOwnershipDescription1,
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
-          SizedBox(height: XoloSpacing.sm),
+          const SizedBox(height: XoloSpacing.sm),
           Text(
-            'Use encrypted backups and security profiles to control how strict the app behaves.',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            l10n.dataOwnershipDescription2,
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
       ),
@@ -386,7 +389,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildAppearanceCard(BuildContext context, WidgetRef ref) {
+  Widget _buildAppearanceCard(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
     try {
       final currentColorInt = ref.watch(themeColorProvider);
       final currentColor = Color(currentColorInt);
@@ -411,13 +418,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.palette_outlined),
-                SizedBox(width: 8),
+                const Icon(Icons.palette_outlined),
+                const SizedBox(width: 8),
                 Text(
-                  "App Theme",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  l10n.appTheme,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ],
             ),
@@ -425,7 +435,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             AdvancedColorPicker(
               currentColor: currentColor,
               onColorChanged: (newColor) {
-                ref.read(themeColorProvider.notifier).setColor(newColor.value);
+                ref
+                    .read(themeColorProvider.notifier)
+                    .setColor(newColor.toARGB32());
               },
             ),
           ],
@@ -436,42 +448,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         color: Colors.red.withValues(alpha: 0.1),
         child: Text(
-          "Theme Widget Error: $e",
+          l10n.themeWidgetError(e.toString()),
           style: const TextStyle(color: Colors.red),
         ),
       );
     }
   }
 
-  String _getDelayLabel(int seconds) {
-    if (seconds == 0) return 'Immediately';
-    if (seconds < 60) return '$seconds seconds';
-    return '${seconds ~/ 60} minute(s)';
+  String _getDelayLabel(AppLocalizations l10n, int seconds) {
+    if (seconds == 0) return l10n.immediately;
+    if (seconds < 60) return l10n.delaySecondsFull(seconds);
+    return l10n.delayMinutesFull(seconds ~/ 60);
   }
 
-  String _getDelayLabelShort(int seconds) {
-    if (seconds == 0) return 'Now';
-    if (seconds < 60) return '${seconds}s';
-    return '${seconds ~/ 60}m';
+  String _getDelayLabelShort(AppLocalizations l10n, int seconds) {
+    if (seconds == 0) return l10n.delayNow;
+    if (seconds < 60) return l10n.delaySeconds(seconds);
+    return l10n.delayMinutes(seconds ~/ 60);
   }
 
   void _showPanicDialog(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('⚠️ EMERGENCY WIPE'),
-        content: const Text(
-          'This will permanently delete ALL history, secure keys, and local data.\n\nThe app will close immediately.',
-        ),
+        title: Text(l10n.emergencyWipeTitle),
+        content: Text(l10n.emergencyWipeMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => _performPanicProtocol(context, ref),
-            child: const Text('DELETE EVERYTHING'),
+            child: Text(l10n.deleteEverything),
           ),
         ],
       ),
@@ -482,47 +493,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       await ref.read(securityServiceProvider).clearAll();
-      final db = ref.read(databaseProvider);
-      await db.delete(db.historyEntries).go();
-      SystemNavigator.pop();
+      final repo = ref.read(xoloRepositoryProvider);
+      await repo.wipeAllLocalData();
+      await SystemNavigator.pop();
     } catch (e) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text(l10n.panicFailed(e.toString()))));
     }
   }
 
   Future<void> _clearHistory(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Clear History'),
-        content: const Text(
-          'Are you sure you want to delete all request history?',
-        ),
+        title: Text(l10n.clearHistoryConfirmTitle),
+        content: Text(l10n.clearHistoryConfirmMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear'),
+            child: Text(l10n.clear),
           ),
         ],
       ),
     );
 
     if (confirmed == true) {
-      final db = ref.read(databaseProvider);
-      await db.delete(db.historyEntries).go();
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('History cleared')));
-      }
+      final repo = ref.read(xoloRepositoryProvider);
+      await repo.clearAllHistory();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.historyCleared)));
     }
   }
 }

@@ -3,19 +3,26 @@ name: Release APK
 on:
   push:
     tags:
-      - "v*" # Se activa cuando subes un tag que empiece con 'v', ej: v1.0.0
+      - "v*"
+
+env:
+  FLUTTER_VERSION: "3.32.0"
 
 jobs:
+  quality:
+    uses: ./.github/workflows/qa.yml
+
   build:
+    needs: quality
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: "zulu"
           java-version: "17"
@@ -23,7 +30,8 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: "stable"
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
 
       - name: Install dependencies
         run: flutter pub get
@@ -32,7 +40,7 @@ jobs:
         run: flutter build apk --release
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: build/app/outputs/flutter-apk/app-release.apk
         env:

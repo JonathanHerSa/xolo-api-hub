@@ -1,17 +1,19 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme/premium_theme.dart';
-import 'package:file_picker/file_picker.dart';
-import '../../data/services/sync_service.dart';
-import '../../data/local/database.dart';
-import '../providers/collections_provider.dart';
-import '../providers/request_session_provider.dart';
-import '../providers/tabs_provider.dart';
-import '../providers/database_providers.dart';
-import '../providers/workspace_provider.dart';
+import 'package:xolo/core/theme/premium_theme.dart';
+import 'package:xolo/data/services/sync_service.dart';
+import 'package:xolo/domain/entities/collection_entity.dart';
+import 'package:xolo/domain/entities/saved_request_entity.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/collections_provider.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/request_session_provider.dart';
+import 'package:xolo/presentation/providers/tabs_provider.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
 
 class DraggableCollectionTile extends ConsumerWidget {
-  final Collection collection;
+  final CollectionEntity collection;
   final int? activeWorkspaceId;
   final VoidCallback onTap;
   final VoidCallback onActivate;
@@ -32,13 +34,12 @@ class DraggableCollectionTile extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
     final isActive = activeWorkspaceId == collection.id;
 
-    // Fetch Children
     final subCollectionsAsync = ref.watch(
       subCollectionsProvider(collection.id),
     );
     final requestsAsync = ref.watch(collectionRequestsProvider(collection.id));
 
-    return LongPressDraggable<Collection>(
+    return LongPressDraggable<CollectionEntity>(
       data: collection,
       feedback: Material(
         elevation: 4,
@@ -65,31 +66,32 @@ class DraggableCollectionTile extends ConsumerWidget {
       child: DragTarget<Object>(
         onWillAcceptWithDetails: (details) {
           final data = details.data;
-          if (data is SavedRequest) return true;
-          if (data is Collection && data.id != collection.id) return true;
+          if (data is SavedRequestEntity) return true;
+          if (data is CollectionEntity && data.id != collection.id) return true;
           return false;
         },
         onAcceptWithDetails: (details) async {
           final data = details.data;
-          final db = ref.read(databaseProvider);
-          if (data is SavedRequest) {
+          final l10n = AppLocalizations.of(context)!;
+          final db = ref.read(xoloRepositoryProvider);
+          if (data is SavedRequestEntity) {
             await db.moveRequest(data.id, collection.id);
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Request "${data.name}" movido a "${collection.name}"',
+                    l10n.requestMovedToCollection(data.name, collection.name),
                   ),
                 ),
               );
             }
-          } else if (data is Collection) {
+          } else if (data is CollectionEntity) {
             await db.moveCollection(data.id, collection.id);
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Proyecto "${data.name}" movido dentro de "${collection.name}"',
+                    l10n.projectMovedToCollection(data.name, collection.name),
                   ),
                 ),
               );
@@ -105,12 +107,12 @@ class DraggableCollectionTile extends ConsumerWidget {
                   _buildTile(context, ref, isActive, isHovering, subs, reqs),
               loading: () =>
                   _buildTile(context, ref, isActive, isHovering, subs, []),
-              error: (_, __) =>
+              error: (_, _) =>
                   _buildTile(context, ref, isActive, isHovering, subs, []),
             ),
             loading: () =>
                 _buildTile(context, ref, isActive, isHovering, [], []),
-            error: (_, __) =>
+            error: (_, _) =>
                 _buildTile(context, ref, isActive, isHovering, [], []),
           );
         },
@@ -123,8 +125,8 @@ class DraggableCollectionTile extends ConsumerWidget {
     WidgetRef ref,
     bool isActive,
     bool isHovering,
-    List<Collection> subCollections,
-    List<SavedRequest> requests,
+    List<CollectionEntity> subCollections,
+    List<SavedRequestEntity> requests,
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -137,9 +139,7 @@ class DraggableCollectionTile extends ConsumerWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: ExpansionTile(
-        key: PageStorageKey(
-          'collection-${collection.id}',
-        ), // Keep expansion state
+        key: PageStorageKey('collection-${collection.id}'),
         leading: Icon(
           isActive ? Icons.folder_special : Icons.folder,
           color: isActive ? colorScheme.primary : colorScheme.secondary,
@@ -166,34 +166,31 @@ class DraggableCollectionTile extends ConsumerWidget {
           ],
         ),
         childrenPadding: const EdgeInsets.only(left: 16),
-        shape: const Border(), // Remove borders when expanded
+        shape: const Border(),
         collapsedShape: const Border(),
         children: [
-          // 1. Sub-Collections (Recursive)
           ...subCollections.map(
             (sub) => DraggableCollectionTile(
               collection: sub,
               activeWorkspaceId: activeWorkspaceId,
-              onTap: () {}, // No-op, expansion handles it
+              onTap: () {},
               onActivate: () {
                 ref
                     .read(activeWorkspaceIdProvider.notifier)
                     .setWorkspace(sub.id);
               },
               onDelete: () async {
-                final db = ref.read(databaseProvider);
+                final db = ref.read(xoloRepositoryProvider);
                 await db.deleteCollection(sub.id);
               },
             ),
           ),
-
-          // 2. Requests
           ...requests.map(
             (req) => DraggableRequestTile(
               req: req,
               onTap: () => _loadRequest(context, ref, req),
               onDelete: () async {
-                final db = ref.read(databaseProvider);
+                final db = ref.read(xoloRepositoryProvider);
                 await db.softDeleteRequest(req.id);
               },
             ),
@@ -203,8 +200,12 @@ class DraggableCollectionTile extends ConsumerWidget {
     );
   }
 
-  void _loadRequest(BuildContext context, WidgetRef ref, SavedRequest req) {
-    // Shared Logic: Open Tab
+  void _loadRequest(
+    BuildContext context,
+    WidgetRef ref,
+    SavedRequestEntity req,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
     final newTabId = ref.read(tabsProvider.notifier).addTab();
 
     final sessionController = ref.read(
@@ -220,20 +221,18 @@ class DraggableCollectionTile extends ConsumerWidget {
 
     ref.read(tabsProvider.notifier).setActiveTab(newTabId);
 
-    // If we are in a Dialog or Drawer, close it?
-    // Usually tree view is on main screen, so no pop needed unless mobile drawer.
-    // But since this is recursive, we might be deep.
-    // For now, simple Snackbar feedback.
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Cargado: ${req.name}'),
+        content: Text(l10n.loadedRequest(req.name)),
         duration: const Duration(milliseconds: 800),
       ),
     );
   }
 
   Widget _buildPopupMenu(BuildContext context, WidgetRef ref, bool isActive) {
+    final l10n = AppLocalizations.of(context)!;
+
     return PopupMenuButton<String>(
       onSelected: (val) async {
         if (val == 'delete') onDelete();
@@ -252,16 +251,14 @@ class DraggableCollectionTile extends ConsumerWidget {
                   );
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Colección exportada correctamente'),
-                  ),
+                  SnackBar(content: Text(l10n.collectionExported)),
                 );
               }
             } catch (e) {
               if (context.mounted) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('Error exportando: $e')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.exportError(e.toString()))),
+                );
               }
             }
           }
@@ -269,23 +266,20 @@ class DraggableCollectionTile extends ConsumerWidget {
       },
       itemBuilder: (ctx) => [
         if (!isActive)
-          const PopupMenuItem(
-            value: 'activate',
-            child: Text('Activar Workspace'),
-          ),
-        const PopupMenuItem(
+          PopupMenuItem(value: 'activate', child: Text(l10n.activateWorkspace)),
+        PopupMenuItem(
           value: 'export',
           child: Row(
             children: [
               Icon(Icons.upload_file, size: 18, color: Colors.blueGrey),
               SizedBox(width: 8),
-              Text('Sync / Export'),
+              Text(l10n.syncExport),
             ],
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'delete',
-          child: Text('Eliminar', style: TextStyle(color: Colors.red)),
+          child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
         ),
       ],
     );
@@ -293,7 +287,7 @@ class DraggableCollectionTile extends ConsumerWidget {
 }
 
 class DraggableRequestTile extends StatelessWidget {
-  final SavedRequest req;
+  final SavedRequestEntity req;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
@@ -306,7 +300,7 @@ class DraggableRequestTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LongPressDraggable<SavedRequest>(
+    return LongPressDraggable<SavedRequestEntity>(
       data: req,
       feedback: Material(
         elevation: 4,

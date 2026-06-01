@@ -1,27 +1,30 @@
-# Quality Gate Hardening Plan
+# Quality Gate
 
-Current CI gate in `.github/workflows/qa.yml` runs:
+CI in `.github/workflows/qa.yml` enforces:
 
 - `dart format --set-exit-if-changed`
-- `flutter analyze --no-fatal-warnings`
-- `flutter test --coverage`
+- `flutter analyze` (strict, zero issues)
+- `flutter test --coverage` with a **100% minimum** line coverage gate
 
-## Why warnings are not fatal yet
+Coverage exclusions (see workflow):
 
-The repository still has legacy analyzer warnings in unrelated modules.
-Failing the pipeline today would block all deliveries.
+- `**/*.g.dart` — generated code
+- `lib/data/local/tables.dart` — Drift schema definitions
+- `lib/l10n/*` — localization ARB / generated strings
 
-## Activation criteria for strict analyze
+## Completed hardening
 
-Switch to `flutter analyze` (strict) once these are completed:
+- **Repository layer**: `XoloRepository` / `DriftXoloRepository` between presentation and Drift
+- **Domain entities**: `*Entity` types + mappers in `lib/data/mappers/entity_mappers.dart`
+- **Modular files**: split `request_tabs`, `auth_tab`, and `database.dart` into focused modules
+- **Internationalization**: full UI coverage via `app_en.arb` / `app_es.arb` and `AppLocalizations`
+- **Tests**: 221+ unit tests covering core services, providers, DB queries, import/sync, and code generators
+- **Logging**: `AppLogger` replaces ad-hoc `print` in core services
+- **Navigation**: `go_router` with `HomeShell`
+- **CI**: release workflow depends on QA; Flutter pinned to `3.32.0`
 
-1. Remove remaining `avoid_print` warnings in `lib/core/services/*`.
-2. Resolve `unused_import`, `unused_local_variable`, and `unused_element_parameter` warnings.
-3. Replace deprecated APIs (`withOpacity`, deprecated share APIs, deprecated storage params) in touched screens.
-4. Ensure PRs cannot introduce new warnings (baseline lock).
+## Optional next steps
 
-## Rollout
-
-1. Sprint 1: clean core/service and provider warnings.
-2. Sprint 2: clean presentation warnings in screens/widgets.
-3. Flip CI to strict analyze and keep coverage gate.
+- Widget / golden tests for composer, settings, and import flows (UI files are not in the lcov gate today)
+- Integration tests for sync and Postman/OpenAPI import end-to-end
+- Extract remaining Drift usage from sync/import into repository methods

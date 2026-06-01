@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:xolo/l10n/app_localizations.dart';
 
 /// JSON Viewer optimizado con nodos colapsables
 /// INICIA COLAPSADO para evitar renderizar todo de golpe
@@ -29,6 +30,7 @@ class _JsonViewerState extends State<JsonViewer> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Stack(
       children: [
         SelectionArea(
@@ -44,7 +46,7 @@ class _JsonViewerState extends State<JsonViewer> {
           right: 8,
           child: IconButton(
             icon: const Icon(Icons.copy, size: 16),
-            tooltip: 'Copiar JSON',
+            tooltip: l10n.copyJson,
             style: IconButton.styleFrom(
               backgroundColor: Theme.of(
                 context,
@@ -56,9 +58,9 @@ class _JsonViewerState extends State<JsonViewer> {
                 '  ',
               ).convert(widget.data);
               Clipboard.setData(ClipboardData(text: text));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('JSON copiado al portapapeles')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l10n.jsonCopied)));
             },
           ),
         ),

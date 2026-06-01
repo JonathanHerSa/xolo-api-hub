@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:dio/dio.dart';
+
 import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../network/http_client_provider.dart';
+import 'package:xolo/core/network/http_client_provider.dart';
 
 class OAuth2Service {
   OAuth2Service(this._dio);
@@ -111,8 +111,8 @@ class OAuth2Service {
           ..headers.contentType = ContentType.html
           ..write(
             '<h1>Autenticación exitosa</h1><p>Puedes cerrar esta ventana y volver a Xolo.</p>',
-          )
-          ..close();
+          );
+        await request.response.close();
 
         if (callbackState != state) {
           throw Exception('Invalid OAuth state');

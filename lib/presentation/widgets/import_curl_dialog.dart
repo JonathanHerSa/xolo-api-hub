@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/utils/curl_parser.dart';
-import '../../presentation/providers/request_session_provider.dart';
-import '../../domain/entities/key_value_pair.dart';
+import 'package:xolo/core/utils/curl_parser.dart';
+import 'package:xolo/domain/entities/key_value_pair.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/request_session_provider.dart';
 
 class ImportCurlDialog extends ConsumerStatefulWidget {
   final String activeTabId;
@@ -23,13 +24,14 @@ class _ImportCurlDialogState extends ConsumerState<ImportCurlDialog> {
   }
 
   void _import() {
+    final l10n = AppLocalizations.of(context)!;
     final text = _controller.text;
     if (text.isEmpty) return;
 
     final parsed = CurlParser.parse(text);
     if (parsed == null) {
       setState(() {
-        _error = 'Invalid cURL command or format not supported';
+        _error = l10n.invalidCurlCommand;
       });
       return;
     }
@@ -60,14 +62,16 @@ class _ImportCurlDialogState extends ConsumerState<ImportCurlDialog> {
 
     if (mounted) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('cURL imported successfully!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.curlImportedSuccess)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
@@ -77,16 +81,16 @@ class _ImportCurlDialogState extends ConsumerState<ImportCurlDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Import cURL',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Text(
+              l10n.importCurl,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _controller,
               maxLines: 8,
               decoration: InputDecoration(
-                hintText: 'Paste your cURL command here...',
+                hintText: l10n.pasteCurlHint,
                 border: const OutlineInputBorder(),
                 errorText: _error,
                 filled: true,
@@ -99,10 +103,10 @@ class _ImportCurlDialogState extends ConsumerState<ImportCurlDialog> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(l10n.cancel),
                 ),
                 const SizedBox(width: 8),
-                FilledButton(onPressed: _import, child: const Text('Import')),
+                FilledButton(onPressed: _import, child: Text(l10n.import)),
               ],
             ),
           ],

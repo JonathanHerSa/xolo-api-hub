@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
-import 'package:drift/drift.dart';
-import '../local/database.dart';
+import 'package:xolo/data/local/database.dart';
+import 'package:xolo/data/mappers/entity_mappers.dart';
+import 'package:xolo/domain/entities/collection_entity.dart';
 
 final syncServiceProvider = Provider((ref) => SyncService());
 
@@ -11,7 +14,7 @@ class SyncService {
   /// Export a collection (and all its children) to a JSON file in the target directory.
   /// Returns the created file.
   Future<File> exportCollection({
-    required Collection collection,
+    required CollectionEntity collection,
     required String directoryPath,
     required AppDatabase db,
   }) async {
@@ -33,7 +36,7 @@ class SyncService {
   }
 
   Future<SyncCollection> _buildSyncCollection(
-    Collection root,
+    CollectionEntity root,
     AppDatabase db,
   ) async {
     final items = await _buildChildren(root.id, db);
@@ -256,7 +259,7 @@ class SyncService {
 
     final workspaces = <SyncCollection>[];
     for (final root in roots) {
-      workspaces.add(await _buildSyncCollection(root, db));
+      workspaces.add(await _buildSyncCollection(root.toEntity(), db));
     }
 
     // 2. Fetch Global Environments & Variables

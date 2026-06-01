@@ -1,17 +1,18 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:file_picker/file_picker.dart';
-import '../../core/services/encryption_service.dart';
-import '../../data/services/sync_service.dart';
-import '../providers/database_providers.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-import 'package:path/path.dart' as p;
 import 'package:intl/intl.dart';
-
-import '../../core/services/security_profile_service.dart';
-import '../../core/theme/xolo_design_tokens.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:xolo/core/services/encryption_service.dart';
+import 'package:xolo/core/services/security_profile_service.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/data/services/sync_service.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
 
 class SyncScreen extends ConsumerStatefulWidget {
   const SyncScreen({super.key});
@@ -25,11 +26,13 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Backups & Sync'), centerTitle: true),
+      backgroundColor: colorScheme.surfaceContainerLowest,
+      appBar: AppBar(title: Text(l10n.backupsAndSync), centerTitle: true),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -38,10 +41,9 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                 // Info Card
                 Container(
                   padding: const EdgeInsets.all(XoloSpacing.xl),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  decoration: XoloSurfaces.accentPanel(
+                    colorScheme,
                     borderRadius: XoloRadius.xl,
-                    border: Border.all(color: colorScheme.outlineVariant),
                   ),
                   child: Column(
                     children: [
@@ -52,7 +54,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Secure Local Backup',
+                        l10n.secureLocalBackup,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -61,7 +63,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Export your collections and history to a secure, encrypted file. Share it to your Drive, Email, or other devices.',
+                        l10n.secureBackupDescription,
                         textAlign: TextAlign.center,
                         style: TextStyle(color: colorScheme.onSurfaceVariant),
                       ),
@@ -70,8 +72,8 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                 ),
 
                 const SizedBox(height: XoloSpacing.xxl),
-                const Text(
-                  'ACTIONS',
+                Text(
+                  l10n.actions,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -82,8 +84,8 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
 
                 _buildActionCard(
                   context,
-                  title: 'Export Backup',
-                  subtitle: 'Create an encrypted .xolo file.',
+                  title: l10n.exportBackup,
+                  subtitle: l10n.exportBackupSubtitle,
                   icon: Icons.upload_file,
                   color: Colors.blue,
                   onTap: () => _performExport(context, ref),
@@ -91,8 +93,8 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                 const SizedBox(height: XoloSpacing.lg),
                 _buildActionCard(
                   context,
-                  title: 'Import Backup',
-                  subtitle: 'Restore from a .xolo file.',
+                  title: l10n.importBackup,
+                  subtitle: l10n.importBackupSubtitle,
                   icon: Icons.download_for_offline,
                   color: Colors.green,
                   onTap: () => _performImport(context, ref),
@@ -101,9 +103,9 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                 const SizedBox(height: XoloSpacing.xxl),
                 Center(
                   child: Text(
-                    "Cloud Sync coming in v1.0",
+                    l10n.cloudSyncComingSoon,
                     style: TextStyle(
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                   ),
                 ),
@@ -136,7 +138,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 28),
@@ -166,7 +168,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
             ),
             Icon(
               Icons.chevron_right,
-              color: theme.colorScheme.onSurface.withOpacity(0.4),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ],
         ),
@@ -175,21 +177,43 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
   }
 
   Future<void> _performExport(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
     final policy = await ref.read(securityPolicyProvider.future);
+    if (!mounted) return;
     if (policy.confirmBeforeExport) {
+      if (!context.mounted) return;
       final confirmed = await _confirmHighSecurityExport(context);
       if (confirmed != true) return;
     }
 
+    if (!context.mounted) return;
     final password = await _promptPassword(
       context,
-      'Create Backup Password',
-      'This password will be required to restore the file.',
+      l10n.createBackupPassword,
+      l10n.createBackupPasswordDescription,
     );
     if (password == null || password.isEmpty) return;
     if (!mounted) return;
 
-    _showSnack(context, 'Generating Backup...', isLoading: true);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(l10n.generatingBackup),
+          ],
+        ),
+      ),
+    );
     setState(() => _isLoading = true);
 
     try {
@@ -215,36 +239,41 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
       await encryptedFile.writeAsBytes(encryptedBytes);
 
       setState(() => _isLoading = false);
-      if (mounted) _showSnack(context, 'Backup Created!');
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.backupCreated)));
 
       // 4. Share
-      await Share.shareXFiles([
-        XFile(encryptedFile.path),
-      ], text: 'My Xolo API Backup');
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(encryptedFile.path)],
+          text: l10n.myXoloApiBackup,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        _showError(context, e.toString());
+        messenger.showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
       }
     }
   }
 
   Future<bool?> _confirmHighSecurityExport(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirm Secure Export'),
-        content: const Text(
-          'Your profile requires explicit confirmation before exporting data. Continue?',
-        ),
+        title: Text(l10n.confirmSecureExport),
+        content: Text(l10n.confirmSecureExportMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Continue'),
+            child: Text(l10n.continueAction),
           ),
         ],
       ),
@@ -252,6 +281,8 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
   }
 
   Future<void> _performImport(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
     try {
       // 1. Pick File
       final result = await FilePicker.platform.pickFiles();
@@ -262,16 +293,34 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
 
       final file = File(path);
 
+      if (!context.mounted) return;
       final password = await _promptPassword(
         context,
-        'Enter Decryption Password',
-        'Enter the password used to create this backup.',
+        l10n.enterDecryptionPassword,
+        l10n.enterDecryptionPasswordDescription,
       );
       if (password == null || password.isEmpty) return;
       if (!mounted) return;
 
       setState(() => _isLoading = true);
-      _showSnack(context, 'Restoring...', isLoading: true);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(l10n.restoring),
+            ],
+          ),
+        ),
+      );
 
       // 2. Decrypt
       final encryptedBytes = await file.readAsBytes();
@@ -292,11 +341,17 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
       await syncService.importFullBackup(file: tempStartFile, db: db);
 
       setState(() => _isLoading = false);
-      if (mounted) _showSnack(context, 'Restore Complete!');
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.restoreComplete)));
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        _showError(context, 'Restore Failed: Invalid Password or File');
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(l10n.restoreFailedInvalidPasswordOrFile),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -306,6 +361,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
     String title,
     String subtitle,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     String val = '';
     return showDialog<String>(
       context: context,
@@ -323,9 +379,9 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
             TextField(
               obscureText: true,
               autofocus: true,
-              decoration: const InputDecoration(
-                hintText: 'Password',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: l10n.passwordHint,
+                border: const OutlineInputBorder(),
               ),
               onChanged: (v) => val = v,
             ),
@@ -334,44 +390,14 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, val),
-            child: const Text('Confirm'),
+            child: Text(l10n.confirm),
           ),
         ],
       ),
     );
-  }
-
-  void _showSnack(BuildContext context, String msg, {bool isLoading = false}) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            if (isLoading) ...[
-              const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 12),
-            ],
-            Text(msg),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showError(BuildContext context, String msg) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 }

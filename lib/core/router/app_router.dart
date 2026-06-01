@@ -1,0 +1,72 @@
+import 'package:go_router/go_router.dart';
+
+import 'package:xolo/presentation/screens/active_workspace_explorer.dart';
+import 'package:xolo/presentation/screens/composer_screen.dart';
+import 'package:xolo/presentation/screens/history_screen.dart';
+import 'package:xolo/presentation/screens/home_screen.dart';
+import 'package:xolo/presentation/screens/settings_screen.dart';
+import 'package:xolo/presentation/screens/sync_screen.dart';
+
+abstract final class AppRoutes {
+  static const explorer = '/';
+  static const history = '/history';
+  static const composer = '/composer';
+  static const sync = '/sync';
+  static const settings = '/settings';
+}
+
+final appRouter = GoRouter(
+  initialLocation: AppRoutes.explorer,
+  routes: [
+    ShellRoute(
+      builder: (context, state, child) => HomeShell(child: child),
+      routes: [
+        GoRoute(
+          path: AppRoutes.explorer,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: ActiveWorkspaceExplorer()),
+        ),
+        GoRoute(
+          path: AppRoutes.history,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: HistoryScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.composer,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: ComposerScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.sync,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: SyncScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.settings,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: SettingsScreen()),
+        ),
+      ],
+    ),
+  ],
+);
+
+/// Maps bottom-nav index to route path.
+String routeForTabIndex(int index) {
+  return switch (index) {
+    0 => AppRoutes.explorer,
+    1 => AppRoutes.history,
+    2 => AppRoutes.composer,
+    3 => AppRoutes.sync,
+    4 => AppRoutes.settings,
+    _ => AppRoutes.explorer,
+  };
+}
+
+int tabIndexForRoute(String location) {
+  if (location.startsWith(AppRoutes.history)) return 1;
+  if (location.startsWith(AppRoutes.composer)) return 2;
+  if (location.startsWith(AppRoutes.sync)) return 3;
+  if (location.startsWith(AppRoutes.settings)) return 4;
+  return 0;
+}

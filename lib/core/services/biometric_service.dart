@@ -1,8 +1,9 @@
-import 'package:local_auth/local_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../core/utils/boolean_notifier.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:xolo/core/config/secure_storage.dart';
+import 'package:xolo/core/services/app_logger.dart';
+import 'package:xolo/core/utils/boolean_notifier.dart';
 
 class BiometricService {
   final LocalAuthentication _auth = LocalAuthentication();
@@ -33,7 +34,7 @@ class BiometricService {
     } on PlatformException catch (e) {
       _isAuthenticating = false;
       // Handle error or return false
-      print('Biometric error: $e');
+      AppLogger.warn('Biometric error: $e');
       return false;
     }
   }
@@ -43,9 +44,7 @@ class BiometricService {
     _isAuthenticating = false;
   }
 
-  final _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
+  final _storage = kSecureStorage;
   static const _kBiometricEnabledKey = 'biometric_enabled';
 
   Future<bool> getBiometricEnabled() async {

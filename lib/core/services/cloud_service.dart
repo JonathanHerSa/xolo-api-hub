@@ -1,15 +1,15 @@
 import 'dart:io';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+
+import 'package:xolo/core/services/app_logger.dart';
 
 class CloudService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [
-      drive.DriveApi.driveAppdataScope,
-      // drive.DriveApi.driveFileScope, // If we want to see files created by us outside appData
-    ],
+    scopes: [drive.DriveApi.driveAppdataScope],
   );
 
   GoogleSignInAccount? _currentUser;
@@ -17,7 +17,6 @@ class CloudService {
 
   GoogleSignInAccount? get currentUser => _currentUser;
 
-  /// Initiate Sign In
   Future<GoogleSignInAccount?> signIn() async {
     try {
       _currentUser = await _googleSignIn.signIn();
@@ -28,7 +27,7 @@ class CloudService {
       }
       return _currentUser;
     } catch (e) {
-      print('Sign in error: $e');
+      AppLogger.error('Sign in error', e);
       return null;
     }
   }
@@ -43,7 +42,7 @@ class CloudService {
       }
       return _currentUser;
     } catch (e) {
-      print('Silent Sign in error: $e');
+      AppLogger.error('Silent sign in error', e);
       return null;
     }
   }
@@ -54,7 +53,6 @@ class CloudService {
     _driveApi = null;
   }
 
-  /// Uploads a file to the App Data Folder
   Future<String?> uploadBackup(
     File file,
     String filename,
@@ -66,7 +64,7 @@ class CloudService {
     final driveFile = drive.File()
       ..name = filename
       ..description = description
-      ..parents = ['appDataFolder']; // Special folder for app data
+      ..parents = ['appDataFolder'];
 
     try {
       final result = await _driveApi!.files.create(
@@ -75,29 +73,27 @@ class CloudService {
       );
       return result.id;
     } catch (e) {
-      print('Upload error: $e');
+      AppLogger.error('Upload error', e);
       rethrow;
     }
   }
 
-  /// Lists backups in App Data Folder
   Future<List<drive.File>> listBackups() async {
     if (_driveApi == null) return [];
 
     try {
       final fileList = await _driveApi!.files.list(
         spaces: 'appDataFolder',
-        q: "mimeType != 'application/vnd.google-apps.folder'", // Filter folders if any
+        q: "mimeType != 'application/vnd.google-apps.folder'",
         $fields: 'files(id, name, createdTime, size, description)',
       );
       return fileList.files ?? [];
     } catch (e) {
-      print('List error: $e');
+      AppLogger.error('List backups error', e);
       return [];
     }
   }
 
-  /// Downloads a file content
   Future<List<int>> downloadBackup(String fileId) async {
     if (_driveApi == null) throw Exception('Not signed in');
 
@@ -109,13 +105,11 @@ class CloudService {
               )
               as drive.Media;
 
-      final List<int> dataStore = [];
-      await media.stream.forEach((element) {
-        dataStore.addAll(element);
-      });
+      final dataStore = <int>[];
+      await media.stream.forEach(dataStore.addAll);
       return dataStore;
     } catch (e) {
-      print('Download error: $e');
+      AppLogger.error('Download error', e);
       rethrow;
     }
   }

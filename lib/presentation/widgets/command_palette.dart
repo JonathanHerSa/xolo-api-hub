@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/collections_provider.dart';
-import '../providers/history_provider.dart';
-import '../providers/environment_provider.dart';
-import '../providers/database_providers.dart';
-import '../providers/request_session_provider.dart';
-import '../providers/tabs_provider.dart';
-import '../providers/workspace_provider.dart';
-import '../../data/local/database.dart'; // For types
-import 'import_curl_dialog.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/domain/entities/environment_entity.dart';
+import 'package:xolo/domain/entities/history_entry_entity.dart';
+import 'package:xolo/domain/entities/saved_request_entity.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/collections_provider.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/environment_provider.dart';
+import 'package:xolo/presentation/providers/history_provider.dart';
+import 'package:xolo/presentation/providers/request_session_provider.dart';
+import 'package:xolo/presentation/providers/tabs_provider.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
+import 'package:xolo/presentation/widgets/import_curl_dialog.dart';
 
 class CommandPalette extends ConsumerStatefulWidget {
   const CommandPalette({super.key});
@@ -31,7 +35,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
     _controller.addListener(() {
       setState(() {
         _query = _controller.text;
-        _selectedIndex = 0; // Reset selection on new query
+        _selectedIndex = 0;
       });
     });
   }
@@ -45,7 +49,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Fetch Data
+    final l10n = AppLocalizations.of(context)!;
     final collectionsAsync = ref.watch(flattenedCollectionsStreamProvider);
     final envsAsync = ref.watch(environmentsListProvider);
     final savedRequestsAsync = ref.watch(savedRequestsStreamProvider);
@@ -60,20 +64,16 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         width: 600,
         constraints: const BoxConstraints(maxHeight: 500),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          color: theme.colorScheme.surfaceContainerHigh,
+          borderRadius: XoloRadius.lg,
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.55),
+          ),
+          boxShadow: XoloSurfaces.floatingShadow(opacity: 0.35),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Search Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
@@ -85,12 +85,13 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
                       controller: _controller,
                       focusNode: _focusNode,
                       autofocus: true,
-                      decoration: const InputDecoration.collapsed(
-                        hintText: 'Type to search...',
+                      decoration: InputDecoration.collapsed(
+                        hintText: l10n.typeToSearch,
                       ),
                       style: const TextStyle(fontSize: 18),
                       onSubmitted: (_) => _executeSelection(
                         _getResults(
+                          l10n,
                           collectionsAsync,
                           envsAsync,
                           savedRequestsAsync,
@@ -123,10 +124,9 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
               ),
             ),
             const Divider(height: 1),
-
-            // Results List
             Expanded(
               child: _buildResultsList(
+                l10n,
                 collectionsAsync,
                 envsAsync,
                 savedRequestsAsync,
@@ -140,60 +140,52 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
   }
 
   List<PaletteItem> _getResults(
+    AppLocalizations l10n,
     AsyncValue<List<FlattenedCollection>> cols,
-    AsyncValue<List<Environment>> envs,
-    AsyncValue<List<SavedRequest>> savedRequests,
-    AsyncValue<List<HistoryEntry>> history,
+    AsyncValue<List<EnvironmentEntity>> envs,
+    AsyncValue<List<SavedRequestEntity>> savedRequests,
+    AsyncValue<List<HistoryEntryEntity>> history,
   ) {
     final results = <PaletteItem>[];
 
-    // 1. Actions (Static)
     final actions = [
       PaletteItem(
-        title: 'Import cURL',
-        subtitle: 'Action',
+        title: l10n.importCurl,
+        subtitle: l10n.paletteAction,
         icon: Icons.terminal,
         action: () => _openCurlImport(),
       ),
       PaletteItem(
-        title: 'Switch Workspace',
-        subtitle: 'Action',
-        icon: Icons.public, // Or folder special
-        action: () {
-          // This is tricky to invoke directly as it needs context/ref properly
-          // We can perhaps just close and show the selector?
-          // For now, let's skip complex UI interactions that depend on parent widgets
-          // unless we refactor.
-          // Actually we are in a Dialog, we can close and perform action.
-        },
+        title: l10n.switchWorkspaceAction,
+        subtitle: l10n.paletteAction,
+        icon: Icons.public,
+        action: () {},
       ),
     ];
 
     if (_query.isEmpty) {
-      return actions; // Show actions by default
+      return actions;
     }
 
     final q = _query.toLowerCase();
 
-    // Filter Actions
     for (final a in actions) {
       if (a.title.toLowerCase().contains(q)) results.add(a);
     }
 
-    // 2. Collections (Projects/Folders)
     cols.whenData((list) {
       for (final item in list) {
         if (item.collection.name.toLowerCase().contains(q)) {
           results.add(
             PaletteItem(
               title: item.collection.name,
-              subtitle: item.collection.parentId == null ? 'Project' : 'Folder',
+              subtitle: item.collection.parentId == null
+                  ? l10n.paletteProject
+                  : l10n.paletteFolder,
               icon: item.collection.parentId == null
                   ? Icons.folder_special
                   : Icons.folder,
               action: () {
-                // Select the Workspace (if root) or Expand?
-                // Switching workspace is the main use case
                 if (item.collection.parentId == null) {
                   ref
                       .read(activeWorkspaceIdProvider.notifier)
@@ -206,17 +198,16 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
       }
     });
 
-    // 3. Environments
     envs.whenData((list) {
       for (final env in list) {
         if (env.name.toLowerCase().contains(q)) {
           results.add(
             PaletteItem(
               title: env.name,
-              subtitle: 'Environment',
+              subtitle: l10n.paletteEnvironment,
               icon: Icons.layers,
               action: () {
-                final db = ref.read(databaseProvider);
+                final db = ref.read(xoloRepositoryProvider);
                 final workspaceId = ref.read(activeWorkspaceIdProvider);
                 db.setActiveEnvironment(env.id, workspaceId);
               },
@@ -226,7 +217,6 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
       }
     });
 
-    // 4. Saved requests
     savedRequests.whenData((list) {
       for (final req in list) {
         if (req.name.toLowerCase().contains(q) ||
@@ -234,7 +224,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
           results.add(
             PaletteItem(
               title: req.name,
-              subtitle: 'Request • ${req.method} ${req.url}',
+              subtitle: '${l10n.paletteRequest} • ${req.method} ${req.url}',
               icon: Icons.http,
               action: () {
                 final tabsState = ref.read(tabsProvider);
@@ -250,7 +240,6 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
       }
     });
 
-    // 5. History
     history.whenData((list) {
       for (final item in list) {
         final line = '${item.method} ${item.url}';
@@ -259,7 +248,7 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
             PaletteItem(
               title: line,
               subtitle:
-                  'History • ${item.statusCode ?? '-'} • ${item.durationMs ?? 0}ms',
+                  '${l10n.paletteHistory} • ${item.statusCode ?? '-'} • ${item.durationMs ?? 0}ms',
               icon: Icons.history,
               action: () {
                 final tabsState = ref.read(tabsProvider);
@@ -283,17 +272,18 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
   }
 
   Widget _buildResultsList(
+    AppLocalizations l10n,
     AsyncValue<List<FlattenedCollection>> cols,
-    AsyncValue<List<Environment>> envs,
-    AsyncValue<List<SavedRequest>> savedRequests,
-    AsyncValue<List<HistoryEntry>> history,
+    AsyncValue<List<EnvironmentEntity>> envs,
+    AsyncValue<List<SavedRequestEntity>> savedRequests,
+    AsyncValue<List<HistoryEntryEntity>> history,
   ) {
-    // Handling shortcut navigation
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.arrowDown): () {
           setState(() {
             final count = _getResults(
+              l10n,
               cols,
               envs,
               savedRequests,
@@ -312,9 +302,15 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
         autofocus: true,
         child: Builder(
           builder: (context) {
-            final results = _getResults(cols, envs, savedRequests, history);
+            final results = _getResults(
+              l10n,
+              cols,
+              envs,
+              savedRequests,
+              history,
+            );
             if (results.isEmpty) {
-              return const Center(child: Text('No results found'));
+              return Center(child: Text(l10n.noResultsFound));
             }
 
             return ListView.builder(
@@ -381,15 +377,11 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
   }
 
   void _executeSelection(PaletteItem item) {
-    Navigator.pop(context); // Close palette
+    Navigator.pop(context);
     item.action();
   }
 
   void _openCurlImport() {
-    // Retrieve active tab ID for the dialog...
-    // This is a bit tricky from global palette.
-    // We can just rely on the fact that when dialog opens, it can check active tab?
-    // Or we assume the palette is invoked while on Composer.
     final tabs = ref.read(tabsProvider);
     showDialog(
       context: context,

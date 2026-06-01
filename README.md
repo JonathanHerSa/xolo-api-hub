@@ -41,24 +41,25 @@
 
 ## 🛠 Tech Stack & Architecture
 
-Xolo is built with a focus on stability, performance, and clean code principles.
-
 | Layer                 | Technology                                               |
 | :-------------------- | :------------------------------------------------------- |
 | **Framework**         | [Flutter 3.x](https://flutter.dev)                       |
 | **State Management**  | [Riverpod](https://riverpod.dev)                         |
+| **Navigation**        | [go_router](https://pub.dev/packages/go_router)           |
 | **Local Persistence** | [Drift](https://drift.simonbinder.eu/) (Reactive SQLite) |
 | **Networking**        | [Dio](https://pub.dev/packages/dio)                      |
 | **CI/CD**             | [GitHub Actions](https://github.com/features/actions)    |
 
-### Clean Architecture
+### Layered Architecture
 
-The project follows a strict layered architecture:
+- **Core**: Router, themes, secure storage, HTTP client, logging.
+- **Domain**: Repository contracts (`XoloRepository`), domain entities, and mappers separate from Drift rows.
+- **Data**: Drift database, repository implementations, import/sync services.
+- **Presentation**: Screens, widgets, and Riverpod providers.
 
-- **Core**: Shared utilities, themes, and global constants.
-- **Data**: Repository implementations, DTOs, and local/remote data sources.
-- **Domain**: Pure business logic, entities, and repository interfaces.
-- **Presentation**: UI components, screens, and Riverpod providers.
+Presentation code accesses persistence through `xoloRepositoryProvider`. Low-level Drift access stays in the data layer (sync/import services).
+
+**Localization:** UI strings live in `lib/l10n/app_en.arb` and `app_es.arb`; use `AppLocalizations.of(context)!` in widgets.
 
 ---
 
@@ -69,6 +70,20 @@ Xolo is currently in **Release Candidate (RC1)**. You can install it for free to
 1. Navigate to the **[Releases](https://github.com/JonathanHerSa/xolo-api-hub/releases)** page.
 2. Download the latest `app-release.apk`.
 3. Open the file on your Android device and follow the installation prompts.
+
+**Application ID:** `dev.jonathanhersa.xolo`
+
+---
+
+## 🧪 Quality
+
+CI runs on every PR and release:
+
+- `dart format --set-exit-if-changed`
+- `flutter analyze` (strict, zero issues)
+- `flutter test --coverage` with a **100% minimum** coverage gate (excluding generated `*.g.dart`, Drift schema tables, and l10n files)
+
+See [docs/quality-gate-plan.md](docs/quality-gate-plan.md) for the roadmap.
 
 ---
 

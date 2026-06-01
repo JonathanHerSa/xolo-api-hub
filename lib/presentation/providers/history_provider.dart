@@ -1,15 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/local/database.dart';
-import 'database_providers.dart';
-import 'workspace_provider.dart';
 
-/// Historial reciente filtrado por el Workspace activo
+import 'package:xolo/domain/entities/history_entry_entity.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
+
 final recentHistoryStreamProvider =
-    StreamProvider.autoDispose<List<HistoryEntry>>((ref) {
-      final db = ref.watch(databaseProvider);
+    StreamProvider.autoDispose<List<HistoryEntryEntity>>((ref) {
+      final repo = ref.watch(xoloRepositoryProvider);
       final workspaceId = ref.watch(activeWorkspaceIdProvider);
 
-      return db.watchRecentHistory(workspaceId);
+      return repo.watchRecentHistory(workspaceId);
     });
-
-// Podríamos agregar actions aquí si fuera un Notifier

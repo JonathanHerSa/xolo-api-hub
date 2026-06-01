@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/local/database.dart';
-import '../../core/theme/xolo_design_tokens.dart';
-import '../providers/database_providers.dart';
-import '../providers/collections_provider.dart';
-import '../providers/workspace_provider.dart';
-import '../widgets/create_collection_dialog.dart';
-import 'collection_detail_screen.dart';
-import 'environments_screen.dart';
-import 'package:xolo/presentation/providers/tabs_provider.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/domain/entities/collection_entity.dart';
+import 'package:xolo/domain/entities/saved_request_entity.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/collections_provider.dart';
 import 'package:xolo/presentation/providers/request_session_provider.dart';
-import 'composer_screen.dart';
-
-import '../widgets/import_collection_dialog.dart';
+import 'package:xolo/presentation/providers/tabs_provider.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
+import 'package:xolo/presentation/screens/environments_screen.dart';
+import 'package:xolo/presentation/widgets/create_collection_dialog.dart';
+import 'package:xolo/presentation/widgets/import_collection_dialog.dart';
 
 class ActiveWorkspaceExplorer extends ConsumerWidget {
   const ActiveWorkspaceExplorer({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     // 1. Get Active Workspace ID (null = Global / No Project Selected)
     final activeId = ref.watch(activeWorkspaceIdProvider);
 
@@ -29,20 +28,21 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
         title: projectsAsync.when(
           data: (projects) {
-            String currentName = 'Select Project';
+            String currentName = l10n.selectProject;
             if (activeId != null) {
               final found = projects.where((c) => c.id == activeId).firstOrNull;
               if (found != null) currentName = found.name;
             } else {
-              currentName = 'All Projects';
+              currentName = l10n.allProjects;
             }
 
             return PopupMenuButton<int?>(
               initialValue: activeId,
-              tooltip: 'Select Project',
+              tooltip: l10n.selectProject,
               position: PopupMenuPosition.under,
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -79,13 +79,13 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
                     .setWorkspace(newId);
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: null,
                   child: Row(
                     children: [
-                      Icon(Icons.dashboard_outlined, size: 18),
-                      SizedBox(width: 8),
-                      Text('All Projects'),
+                      const Icon(Icons.dashboard_outlined, size: 18),
+                      const SizedBox(width: 8),
+                      Text(l10n.allProjects),
                     ],
                   ),
                 ),
@@ -96,7 +96,7 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
                     child: Row(
                       children: [
                         const Icon(Icons.folder_outlined, size: 18),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(c.name),
                       ],
                     ),
@@ -105,8 +105,8 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
               ],
             );
           },
-          loading: () => const Text("Loading..."),
-          error: (_, __) => const Text("Active Workspace"),
+          loading: () => Text(l10n.loading),
+          error: (_, _) => Text(l10n.activeWorkspace),
         ),
         centerTitle: true,
         actions: [
@@ -119,7 +119,7 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
                 if (activeProj == null) return const SizedBox();
                 return IconButton(
                   icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'Edit Project Settings',
+                  tooltip: l10n.editProjectSettings,
                   onPressed: () => showCreateCollectionDialog(
                     context,
                     ref,
@@ -130,11 +130,11 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
                 );
               },
               loading: () => const SizedBox(),
-              error: (_, __) => const SizedBox(),
+              error: (_, _) => const SizedBox(),
             ),
             IconButton(
               icon: const Icon(Icons.layers_outlined),
-              tooltip: 'Environments',
+              tooltip: l10n.environments,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -146,7 +146,7 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
 
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: 'New Item',
+            tooltip: l10n.newItem,
             onPressed: () {
               if (activeId == null) {
                 showCreateCollectionDialog(context, ref, null);
@@ -166,8 +166,9 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
   Widget _buildProjectsList(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue<List<Collection>> asyncProjects,
+    AsyncValue<List<CollectionEntity>> asyncProjects,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return asyncProjects.when(
       data: (projects) {
         if (projects.isEmpty) {
@@ -175,14 +176,20 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.inbox, size: 64, color: Colors.grey),
+                Icon(
+                  Icons.inbox_rounded,
+                  size: 64,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.45),
+                ),
                 const SizedBox(height: 16),
-                const Text("No Projects Yet"),
+                Text(l10n.noProjectsYet),
                 const SizedBox(height: 8),
                 FilledButton(
                   onPressed: () =>
                       showCreateCollectionDialog(context, ref, null),
-                  child: const Text("Create First Project"),
+                  child: Text(l10n.createFirstProject),
                 ),
               ],
             ),
@@ -195,21 +202,24 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
             final p = projects[i];
             return Card(
               elevation: 0,
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               margin: const EdgeInsets.only(bottom: XoloSpacing.md),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: XoloSpacing.lg,
                   vertical: XoloSpacing.sm,
                 ),
-                leading: const CircleAvatar(child: Icon(Icons.folder_rounded)),
+                leading: CircleAvatar(
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.14),
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                  child: const Icon(Icons.folder_rounded),
+                ),
                 title: Text(
                   p.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: Text('Proyecto #${p.id}'),
+                subtitle: Text(l10n.projectNumber(p.id)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -236,33 +246,33 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
                         }
                       },
                       itemBuilder: (ctx) => [
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'edit',
                           child: ListTile(
-                            leading: Icon(Icons.edit, size: 18),
-                            title: Text('Edit Project'),
+                            leading: const Icon(Icons.edit, size: 18),
+                            title: Text(l10n.editProject),
                             dense: true,
                           ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'import',
                           child: ListTile(
-                            leading: Icon(Icons.input, size: 18),
-                            title: Text('Import'),
+                            leading: const Icon(Icons.input, size: 18),
+                            title: Text(l10n.import),
                             dense: true,
                           ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'delete',
                           child: ListTile(
-                            leading: Icon(
+                            leading: const Icon(
                               Icons.delete,
                               size: 18,
                               color: Colors.red,
                             ),
                             title: Text(
-                              'Delete',
-                              style: TextStyle(color: Colors.red),
+                              l10n.delete,
+                              style: const TextStyle(color: Colors.red),
                             ),
                             dense: true,
                           ),
@@ -283,7 +293,7 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Center(child: Text("Error: $e")),
+      error: (e, s) => Center(child: Text(l10n.errorMessage(e.toString()))),
     );
   }
 
@@ -293,6 +303,7 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
     WidgetRef ref,
     int workspaceId,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final foldersAsync = ref.watch(subCollectionsProvider(workspaceId));
     final requestsAsync = ref.watch(collectionRequestsProvider(workspaceId));
 
@@ -310,12 +321,12 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
                       child: Icon(Icons.folder_open, size: 64),
                     ),
                     const SizedBox(height: 16),
-                    const Text("Empty Project"),
+                    Text(l10n.emptyProject),
                     TextButton.icon(
                       onPressed: () =>
                           showCreateCollectionDialog(context, ref, workspaceId),
                       icon: const Icon(Icons.create_new_folder),
-                      label: const Text("Create Folder"),
+                      label: Text(l10n.createFolder),
                     ),
                   ],
                 ),
@@ -331,11 +342,11 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
             );
           },
           loading: () => const LinearProgressIndicator(),
-          error: (e, s) => Text("Error loading requests: $e"),
+          error: (e, s) => Text(l10n.errorLoadingRequests(e.toString())),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Center(child: Text("Error: $e")),
+      error: (e, s) => Center(child: Text(l10n.errorMessage(e.toString()))),
     );
   }
 }
@@ -344,12 +355,13 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
 // RECURSIVE FOLDER TILE
 // -----------------------------------------------------------------------------
 class ExplorableFolderTile extends ConsumerWidget {
-  final Collection collection;
+  final CollectionEntity collection;
 
   const ExplorableFolderTile({super.key, required this.collection});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     // Watch children
     final foldersAsync = ref.watch(subCollectionsProvider(collection.id));
     final requestsAsync = ref.watch(collectionRequestsProvider(collection.id));
@@ -400,41 +412,46 @@ class ExplorableFolderTile extends ConsumerWidget {
             }
           },
           itemBuilder: (ctx) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'edit',
               child: ListTile(
-                leading: Icon(Icons.edit, size: 18),
-                title: Text('Edit Folder'),
+                leading: const Icon(Icons.edit, size: 18),
+                title: Text(l10n.editFolder),
                 dense: true,
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'import',
               child: ListTile(
-                leading: Icon(Icons.input, size: 18),
-                title: Text('Import'),
+                leading: const Icon(Icons.input, size: 18),
+                title: Text(l10n.import),
                 dense: true,
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: ListTile(
-                leading: Icon(Icons.delete, size: 18, color: Colors.red),
-                title: Text('Delete', style: TextStyle(color: Colors.red)),
+                leading: const Icon(Icons.delete, size: 18, color: Colors.red),
+                title: Text(
+                  l10n.delete,
+                  style: const TextStyle(color: Colors.red),
+                ),
                 dense: true,
               ),
             ),
           ],
         ),
-        children: [_buildChildren(foldersAsync, requestsAsync)],
+        children: [_buildChildren(context, foldersAsync, requestsAsync)],
       ),
     );
   }
 
   Widget _buildChildren(
-    AsyncValue<List<Collection>> foldersAsync,
-    AsyncValue<List<SavedRequest>> requestsAsync,
+    BuildContext context,
+    AsyncValue<List<CollectionEntity>> foldersAsync,
+    AsyncValue<List<SavedRequestEntity>> requestsAsync,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     if (foldersAsync.isLoading || requestsAsync.isLoading) {
       return const Padding(
         padding: EdgeInsets.all(8.0),
@@ -446,11 +463,11 @@ class ExplorableFolderTile extends ConsumerWidget {
     final requests = requestsAsync.asData?.value ?? [];
 
     if (folders.isEmpty && requests.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(8.0),
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
         child: Text(
-          "Empty Folder",
-          style: TextStyle(
+          l10n.emptyFolder,
+          style: const TextStyle(
             color: Colors.grey,
             fontSize: 12,
             fontStyle: FontStyle.italic,
@@ -472,7 +489,7 @@ class ExplorableFolderTile extends ConsumerWidget {
 // REQUEST TILE
 // -----------------------------------------------------------------------------
 class RequestTile extends ConsumerWidget {
-  final SavedRequest request;
+  final SavedRequestEntity request;
 
   const RequestTile({super.key, required this.request});
 
@@ -527,12 +544,13 @@ class RequestTile extends ConsumerWidget {
     Color color = Colors.grey;
     if (method == 'GET') {
       color = Colors.green;
-    } else if (method == 'POST')
+    } else if (method == 'POST') {
       color = Colors.orange;
-    else if (method == 'PUT')
+    } else if (method == 'PUT') {
       color = Colors.blue;
-    else if (method == 'DELETE')
+    } else if (method == 'DELETE') {
       color = Colors.red;
+    }
 
     return Container(
       width: 40,
@@ -558,16 +576,21 @@ class RequestTile extends ConsumerWidget {
 // HELPERS
 // -----------------------------------------------------------------------------
 
-void _confirmDeleteProject(BuildContext context, WidgetRef ref, Collection p) {
+void _confirmDeleteProject(
+  BuildContext context,
+  WidgetRef ref,
+  CollectionEntity p,
+) {
+  final l10n = AppLocalizations.of(context)!;
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text('Delete "${p.name}"?'),
-      content: const Text('This will delete all folders and requests inside.'),
+      title: Text(l10n.deleteNamedTitle(p.name)),
+      content: Text(l10n.deleteProjectMessage),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -577,23 +600,28 @@ void _confirmDeleteProject(BuildContext context, WidgetRef ref, Collection p) {
                 .deleteCollection(p.id);
             Navigator.pop(ctx);
           },
-          child: const Text('Delete'),
+          child: Text(l10n.delete),
         ),
       ],
     ),
   );
 }
 
-void _confirmDeleteFolder(BuildContext context, WidgetRef ref, Collection f) {
+void _confirmDeleteFolder(
+  BuildContext context,
+  WidgetRef ref,
+  CollectionEntity f,
+) {
+  final l10n = AppLocalizations.of(context)!;
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text('Delete "${f.name}"?'),
-      content: const Text('This will delete all items inside.'),
+      title: Text(l10n.deleteNamedTitle(f.name)),
+      content: Text(l10n.deleteFolderMessage),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -603,7 +631,7 @@ void _confirmDeleteFolder(BuildContext context, WidgetRef ref, Collection f) {
                 .deleteCollection(f.id);
             Navigator.pop(ctx);
           },
-          child: const Text('Delete'),
+          child: Text(l10n.delete),
         ),
       ],
     ),

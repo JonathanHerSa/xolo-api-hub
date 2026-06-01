@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/entities/key_value_pair.dart';
+import 'package:xolo/domain/entities/key_value_pair.dart';
 
 // --- 1. CONFIGURACIÓN BÁSICA (URL y Método) ---
 

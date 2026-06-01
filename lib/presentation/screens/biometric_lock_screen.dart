@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/services/biometric_service.dart';
+import 'package:xolo/core/services/biometric_service.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/widgets/xolo_brand_mark.dart';
 
 class BiometricLockScreen extends ConsumerStatefulWidget {
   const BiometricLockScreen({super.key});
@@ -18,7 +21,6 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Auto-trigger auth when screen is shown
     _authenticate();
   }
 
@@ -31,7 +33,6 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Re-trigger auth if we return to the foreground and it's not already in progress
       _authenticate();
     }
   }
@@ -40,10 +41,9 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen>
     if (_isAuthenticating) return;
     setState(() => _isAuthenticating = true);
 
+    final l10n = AppLocalizations.of(context)!;
     final service = ref.read(biometricServiceProvider);
-    final authenticated = await service.authenticate(
-      reason: 'Desbloquea Xolo para continuar',
-    );
+    final authenticated = await service.authenticate(reason: l10n.unlockReason);
 
     if (mounted) {
       if (authenticated) {
@@ -55,33 +55,95 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.lock_outline, size: 80, color: colorScheme.primary),
-            const SizedBox(height: 24),
-            Text(
-              'Xolo Bloqueado',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+    return Material(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surfaceContainerLowest,
+              Color.alphaBlend(
+                colorScheme.primary.withValues(alpha: 0.12),
+                colorScheme.surface,
+              ),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: Padding(
+                padding: const EdgeInsets.all(XoloSpacing.xl),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const XoloBrandMark(size: 56, showLabel: false),
+                    const SizedBox(height: XoloSpacing.xxl),
+                    Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colorScheme.primary.withValues(alpha: 0.12),
+                        border: Border.all(
+                          color: colorScheme.primary.withValues(alpha: 0.35),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withValues(alpha: 0.25),
+                            blurRadius: 24,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.fingerprint_rounded,
+                        size: 42,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: XoloSpacing.xl),
+                    Text(
+                      l10n.biometricLockedTitle,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: XoloSpacing.md),
+                    Text(
+                      l10n.biometricVaultSubtitle,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: XoloSpacing.xxl),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _isAuthenticating ? null : _authenticate,
+                        icon: _isAuthenticating
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: colorScheme.onPrimary,
+                                ),
+                              )
+                            : const Icon(Icons.lock_open_rounded),
+                        label: Text(l10n.unlock),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            const Text('Tu bóveda segura de APIs'),
-            const SizedBox(height: 48),
-            FilledButton.icon(
-              onPressed: _authenticate,
-              icon: const Icon(Icons.fingerprint),
-              label: const Text('Desbloquear'),
-            ),
-          ],
+          ),
         ),
       ),
     );

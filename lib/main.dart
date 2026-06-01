@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'core/theme/premium_theme.dart';
-import 'core/services/app_logger.dart';
-import 'core/services/auth_secret_service.dart';
-import 'core/services/security_profile_service.dart';
-import 'presentation/providers/theme_provider.dart';
-import 'presentation/providers/database_providers.dart';
-import 'presentation/screens/home_screen.dart';
-import 'presentation/screens/biometric_lock_screen.dart';
-import 'core/services/biometric_service.dart';
+import 'package:xolo/core/router/app_router.dart';
+import 'package:xolo/core/services/app_logger.dart';
+import 'package:xolo/core/services/auth_secret_service.dart';
+import 'package:xolo/core/services/biometric_service.dart';
+import 'package:xolo/core/services/security_profile_service.dart';
+import 'package:xolo/core/theme/premium_theme.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/theme_provider.dart';
+import 'package:xolo/presentation/screens/biometric_lock_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // CONFIGURACIÓN PREMIUM: Edge-to-Edge (Contenido dibuja detrás de barras)
-  // Requiere SafeAreas en las pantallas.
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       systemNavigationBarColor: Colors.transparent,
@@ -95,18 +93,19 @@ class _XoloAppState extends ConsumerState<XoloApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // Escuchar el color seleccionado por el usuario
     final primaryColorValue = ref.watch(themeColorProvider);
+    final themeMode = ref.watch(themeModeProvider);
     final isLocked = ref.watch(isAppLockedProvider);
 
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Xolo API Client',
       debugShowCheckedModeBanner: false,
-      // Dynamic Theme based on persistence
       theme: XoloPremiumTheme.lightTheme(primaryColorValue),
       darkTheme: XoloPremiumTheme.darkTheme(primaryColorValue),
-      themeMode: ThemeMode.light,
-      home: const HomeScreen(),
+      themeMode: themeMode,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: appRouter,
       builder: (context, child) {
         return Stack(
           children: [

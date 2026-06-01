@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../data/local/database.dart';
-import '../providers/database_providers.dart';
-import '../providers/collections_provider.dart';
-import '../providers/workspace_provider.dart';
-import '../providers/tabs_provider.dart';
-import '../providers/request_session_provider.dart';
-import '../widgets/draggable_tiles.dart';
-import '../widgets/create_collection_dialog.dart';
+import 'package:xolo/domain/entities/collection_entity.dart';
+import 'package:xolo/domain/entities/saved_request_entity.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/collections_provider.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/request_session_provider.dart';
+import 'package:xolo/presentation/providers/tabs_provider.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
+import 'package:xolo/presentation/widgets/create_collection_dialog.dart';
+import 'package:xolo/presentation/widgets/draggable_tiles.dart';
 
 class CollectionDetailScreen extends ConsumerStatefulWidget {
-  final Collection collection;
+  final CollectionEntity collection;
 
   const CollectionDetailScreen({super.key, required this.collection});
 
@@ -33,6 +34,7 @@ class _CollectionDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final activeWorkspaceId = ref.watch(activeWorkspaceIdProvider);
@@ -57,7 +59,7 @@ class _CollectionDetailScreenState
               onChanged: (val) =>
                   setState(() => _searchQuery = val.toLowerCase()),
               decoration: InputDecoration(
-                hintText: 'Buscar en ${widget.collection.name}...',
+                hintText: l10n.searchInCollection(widget.collection.name),
                 prefixIcon: const Icon(Icons.search, size: 20),
                 prefixIconConstraints: const BoxConstraints(minWidth: 36),
                 isDense: true,
@@ -78,12 +80,12 @@ class _CollectionDetailScreenState
         actions: [
           IconButton(
             icon: const Icon(Icons.note_add_outlined),
-            tooltip: 'Nuevo Request',
+            tooltip: l10n.newRequestTooltip,
             onPressed: () => _showCreateRequestDialog(context, ref),
           ),
           IconButton(
             icon: const Icon(Icons.create_new_folder_outlined),
-            tooltip: 'Nueva Subcarpeta',
+            tooltip: l10n.newSubfolderTooltip,
             onPressed: () => showCreateCollectionDialog(
               context,
               ref,
@@ -122,7 +124,7 @@ class _CollectionDetailScreenState
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                       child: Text(
-                        'CARPETAS',
+                        l10n.foldersSection,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -157,7 +159,7 @@ class _CollectionDetailScreenState
                 );
               },
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
             ),
 
             // SECCIÓN: REQUESTS
@@ -174,7 +176,7 @@ class _CollectionDetailScreenState
                       padding: const EdgeInsets.all(32),
                       child: Center(
                         child: Text(
-                          'No se encontraron requests',
+                          l10n.noRequestsFound,
                           style: TextStyle(color: colorScheme.outline),
                         ),
                       ),
@@ -193,7 +195,7 @@ class _CollectionDetailScreenState
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No hay requests aquí',
+                            l10n.noRequestsHere,
                             style: TextStyle(
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -210,7 +212,7 @@ class _CollectionDetailScreenState
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                       child: Text(
-                        'REQUESTS',
+                        l10n.requestsSection,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -228,7 +230,7 @@ class _CollectionDetailScreenState
                           req: req,
                           onTap: () => _loadRequest(context, ref, req),
                           onDelete: () async {
-                            final db = ref.read(databaseProvider);
+                            final db = ref.read(xoloRepositoryProvider);
                             await db.softDeleteRequest(req.id);
                           },
                         );
@@ -242,8 +244,8 @@ class _CollectionDetailScreenState
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (err, stack) => Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Error: $err'),
+                padding: const EdgeInsets.all(16),
+                child: Text(l10n.errorMessage(err.toString())),
               ),
             ),
           ],
@@ -252,7 +254,12 @@ class _CollectionDetailScreenState
     );
   }
 
-  void _loadRequest(BuildContext context, WidgetRef ref, SavedRequest req) {
+  void _loadRequest(
+    BuildContext context,
+    WidgetRef ref,
+    SavedRequestEntity req,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
     // 1. Create new tab
     final newTabId = ref.read(tabsProvider.notifier).addTab();
 
@@ -272,7 +279,7 @@ class _CollectionDetailScreenState
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('Cargado: ${req.name}')));
+    ).showSnackBar(SnackBar(content: Text(l10n.loadedRequest(req.name))));
     Navigator.popUntil(context, (route) => route.isFirst);
   }
 
@@ -280,6 +287,7 @@ class _CollectionDetailScreenState
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final nameCtrl = TextEditingController();
     String selectedMethod = 'GET';
 
@@ -290,19 +298,19 @@ class _CollectionDetailScreenState
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: const Text('Nuevo Request'),
+            title: Text(l10n.newRequest),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nombre'),
+                  decoration: InputDecoration(labelText: l10n.name),
                   autofocus: true,
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: selectedMethod,
-                  decoration: const InputDecoration(labelText: 'Método'),
+                  decoration: InputDecoration(labelText: l10n.method),
                   items: methods
                       .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                       .toList(),
@@ -314,12 +322,12 @@ class _CollectionDetailScreenState
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar'),
+                child: Text(l10n.cancel),
               ),
               FilledButton(
                 onPressed: () async {
                   if (nameCtrl.text.isNotEmpty) {
-                    final db = ref.read(databaseProvider);
+                    final db = ref.read(xoloRepositoryProvider);
                     await db.createRequest(
                       name: nameCtrl.text,
                       method: selectedMethod,
@@ -330,12 +338,12 @@ class _CollectionDetailScreenState
                     if (ctx.mounted) {
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Request creado')),
+                        SnackBar(content: Text(l10n.requestCreated)),
                       );
                     }
                   }
                 },
-                child: const Text('Crear Request'),
+                child: Text(l10n.createRequest),
               ),
             ],
           );
@@ -347,28 +355,29 @@ class _CollectionDetailScreenState
   void _confirmDeleteCollection(
     BuildContext context,
     WidgetRef ref,
-    Collection col,
+    CollectionEntity col,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     // Show confirmation logic
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Eliminar "${col.name}"?'),
-        content: const Text('Se eliminarán todos los requests contenidos.'),
+        title: Text(l10n.deleteNamedTitle(col.name)),
+        content: Text(l10n.deleteCollectionMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              ref
+              await ref
                   .read(collectionsControllerProvider.notifier)
                   .deleteCollection(col.id);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Eliminar'),
+            child: Text(l10n.delete),
           ),
         ],
       ),

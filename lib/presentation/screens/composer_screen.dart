@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../providers/tabs_provider.dart';
-import '../providers/workspace_provider.dart';
-import '../providers/collections_provider.dart';
-import '../providers/database_providers.dart';
-import '../providers/environment_provider.dart';
-import '../widgets/url_input_bar.dart';
-import '../widgets/request_tabs.dart';
-import '../widgets/browser_tab_bar.dart';
-import '../widgets/import_curl_dialog.dart';
-import '../widgets/import_collection_dialog.dart';
-import '../widgets/command_palette.dart';
 import 'package:flutter/services.dart';
-import 'saved_requests_screen.dart'; // For dialog access
-import '../../core/theme/xolo_design_tokens.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/collections_provider.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/environment_provider.dart';
+import 'package:xolo/presentation/providers/tabs_provider.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
+import 'package:xolo/presentation/screens/saved_requests_screen.dart'; // For dialog access
+import 'package:xolo/presentation/widgets/browser_tab_bar.dart';
+import 'package:xolo/presentation/widgets/command_palette.dart';
+import 'package:xolo/presentation/widgets/import_collection_dialog.dart';
+import 'package:xolo/presentation/widgets/import_curl_dialog.dart';
+import 'package:xolo/presentation/widgets/request_tabs.dart';
+import 'package:xolo/presentation/widgets/url_input_bar.dart';
 
 class ComposerScreen extends ConsumerWidget {
   final Widget? drawer;
@@ -22,13 +22,14 @@ class ComposerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final tabs = ref.watch(tabsProvider);
 
     return Scaffold(
       drawer: drawer,
-      backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
         title: const _WorkspaceTitle(),
         centerTitle: true,
@@ -39,7 +40,7 @@ class ComposerScreen extends ConsumerWidget {
           const _EnvironmentSwitcher(),
           IconButton(
             icon: const Icon(Icons.save_outlined),
-            tooltip: 'Guardar Request',
+            tooltip: l10n.saveRequestTooltip,
             onPressed: () => showSaveRequestDialog(context: context, ref: ref),
           ),
           PopupMenuButton<String>(
@@ -59,23 +60,23 @@ class ComposerScreen extends ConsumerWidget {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'collection',
                 child: Row(
                   children: [
-                    Icon(Icons.folder_zip_outlined, size: 18),
-                    SizedBox(width: 8),
-                    Text('Import API Project'),
+                    const Icon(Icons.folder_zip_outlined, size: 18),
+                    const SizedBox(width: 8),
+                    Text(l10n.importApiProject),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'curl',
                 child: Row(
                   children: [
-                    Icon(Icons.terminal, size: 18),
-                    SizedBox(width: 8),
-                    Text('Import cURL'),
+                    const Icon(Icons.terminal, size: 18),
+                    const SizedBox(width: 8),
+                    Text(l10n.importCurl),
                   ],
                 ),
               ),
@@ -104,22 +105,14 @@ class ComposerScreen extends ConsumerWidget {
                     horizontal: XoloSpacing.lg,
                     vertical: XoloSpacing.md,
                   ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.22,
-                    ),
-                    borderRadius: XoloRadius.md,
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.7),
-                    ),
-                  ),
+                  decoration: XoloSurfaces.accentPanel(colorScheme),
                   child: Row(
                     children: [
                       Icon(Icons.terminal_rounded, color: colorScheme.primary),
                       const SizedBox(width: XoloSpacing.md),
                       Expanded(
                         child: Text(
-                          'Daily driver mode • Focused API testing',
+                          l10n.dailyDriverMode,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -130,7 +123,7 @@ class ComposerScreen extends ConsumerWidget {
                       TextButton.icon(
                         onPressed: () => _showCommandPalette(context),
                         icon: const Icon(Icons.keyboard_command_key, size: 15),
-                        label: const Text('Cmd+K'),
+                        label: Text(l10n.cmdKShortcut),
                       ),
                     ],
                   ),
@@ -141,7 +134,7 @@ class ComposerScreen extends ConsumerWidget {
 
                 // ACTIVE TAB CONTENT
                 if (tabs.openTabIds.isEmpty)
-                  const Expanded(child: Center(child: Text('No active tabs')))
+                  Expanded(child: Center(child: Text(l10n.noActiveTabs)))
                 else
                   Expanded(
                     key: ValueKey(
@@ -149,16 +142,10 @@ class ComposerScreen extends ConsumerWidget {
                     ), // Force rebuild on tab switch
                     child: Container(
                       margin: const EdgeInsets.fromLTRB(10, 6, 10, 10),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(
-                          alpha: 0.16,
-                        ),
+                      decoration: XoloSurfaces.panel(
+                        colorScheme,
                         borderRadius: XoloRadius.lg,
-                        border: Border.all(
-                          color: colorScheme.outlineVariant.withValues(
-                            alpha: 0.6,
-                          ),
-                        ),
+                        color: colorScheme.surface.withValues(alpha: 0.72),
                       ),
                       child: Column(
                         children: [
@@ -186,7 +173,7 @@ class ComposerScreen extends ConsumerWidget {
   void _showCommandPalette(BuildContext context) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (_) => const CommandPalette(),
     );
   }
@@ -197,6 +184,7 @@ class _WorkspaceTitle extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final activeWorkspaceAsync = ref.watch(activeWorkspaceProvider);
     final allCollectionsAsync = ref.watch(rootCollectionsProvider);
     final theme = Theme.of(context);
@@ -214,7 +202,7 @@ class _WorkspaceTitle extends ConsumerWidget {
             Column(
               children: [
                 Text(
-                  'PROJECT',
+                  l10n.projectLabel,
                   style: TextStyle(
                     fontSize: 10,
                     letterSpacing: 1.5,
@@ -223,7 +211,7 @@ class _WorkspaceTitle extends ConsumerWidget {
                 ),
                 activeWorkspaceAsync.when(
                   data: (ws) => Text(
-                    ws?.name ?? 'Global Context',
+                    ws?.name ?? l10n.globalContext,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -234,9 +222,9 @@ class _WorkspaceTitle extends ConsumerWidget {
                     height: 10,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  error: (_, __) => const Text(
-                    'Error',
-                    style: TextStyle(fontSize: 10, color: Colors.red),
+                  error: (_, _) => Text(
+                    l10n.errorGeneric,
+                    style: const TextStyle(fontSize: 10, color: Colors.red),
                   ),
                 ),
               ],
@@ -265,21 +253,25 @@ class _WorkspaceTitle extends ConsumerWidget {
         context: context,
         showDragHandle: true,
         builder: (ctx) {
+          final l10n = AppLocalizations.of(ctx)!;
           return SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    'Switch Workspace',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    l10n.switchWorkspace,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.public),
-                  title: const Text('Global Context'),
-                  subtitle: const Text('Shared variables & history'),
+                  title: Text(l10n.globalContext),
+                  subtitle: Text(l10n.globalContextSubtitle),
                   selected: activeId == null,
                   trailing: activeId == null ? const Icon(Icons.check) : null,
                   onTap: () {
@@ -291,9 +283,9 @@ class _WorkspaceTitle extends ConsumerWidget {
                 ),
                 const Divider(),
                 if (collections.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('No projects found.'),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(l10n.noProjectsFound),
                   ),
                 ...collections.map(
                   (col) => ListTile(
@@ -326,6 +318,7 @@ class _EnvironmentSwitcher extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final activeId = ref.watch(activeEnvironmentIdProvider).value;
     final envsAsync = ref.watch(environmentsListProvider);
@@ -338,10 +331,10 @@ class _EnvironmentSwitcher extends ConsumerWidget {
         }
 
         return PopupMenuButton<int>(
-          tooltip: 'Cambiar Entorno',
+          tooltip: l10n.switchEnvironmentTooltip,
           offset: const Offset(0, 40),
           onSelected: (id) {
-            final db = ref.read(databaseProvider);
+            final db = ref.read(xoloRepositoryProvider);
             final workspaceId = ref.read(activeWorkspaceIdProvider);
             db.setActiveEnvironment(id, workspaceId);
           },
@@ -418,7 +411,7 @@ class _EnvironmentSwitcher extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

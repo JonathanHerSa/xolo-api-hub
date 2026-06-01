@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/network/http_client_provider.dart';
-import '../local/database.dart';
-import 'openapi_service.dart';
-import 'postman_service.dart';
+import 'package:xolo/core/network/http_client_provider.dart';
+import 'package:xolo/data/local/database.dart';
+import 'package:xolo/data/services/openapi_service.dart';
+import 'package:xolo/data/services/postman_service.dart';
 
 enum ImportFormat { openApi, postman, auto }
 
@@ -34,7 +35,7 @@ class ImportManager {
   }) async {
     final response = await _dio.get(url);
     final payload = _normalizePayload(response.data);
-    final detectedFormat = _detectFormat(payload, format);
+    final detectedFormat = detectFormat(payload, format);
 
     if (detectedFormat == ImportFormat.postman) {
       await _postman.importFromJson(
@@ -66,7 +67,7 @@ class ImportManager {
       throw Exception('Invalid JSON format');
     }
 
-    final detectedFormat = _detectFormat(json, format);
+    final detectedFormat = detectFormat(json, format);
 
     if (detectedFormat == ImportFormat.postman) {
       await _postman.importFromJson(
@@ -85,10 +86,8 @@ class ImportManager {
     }
   }
 
-  ImportFormat _detectFormat(
-    Map<String, dynamic> json,
-    ImportFormat preferred,
-  ) {
+  @visibleForTesting
+  ImportFormat detectFormat(Map<String, dynamic> json, ImportFormat preferred) {
     if (preferred != ImportFormat.auto) return preferred;
 
     // Postman usually has 'info' and 'item'

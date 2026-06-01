@@ -1,5 +1,6 @@
-import 'package:uuid/uuid.dart';
 import 'dart:math';
+
+import 'package:uuid/uuid.dart';
 
 /// Clase encargada de parsear y sustituir variables en strings
 /// Soporta formato {{variable}}
@@ -40,7 +41,7 @@ class VariableParser {
         key = g5.substring(2, g5.length - 1);
       }
 
-      if (key == null) return match.group(0)!;
+      if (key == null) return match.group(0)!; // coverage:ignore-line
 
       // --- Dynamic Variables ---
       if (key == r'$timestamp') {

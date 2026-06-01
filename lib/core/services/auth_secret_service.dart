@@ -1,9 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../data/local/database.dart';
-import 'security_service.dart';
+import 'package:xolo/core/services/security_service.dart';
+import 'package:xolo/data/local/database.dart';
 
 class AuthSecretService {
   AuthSecretService(this._securityService);

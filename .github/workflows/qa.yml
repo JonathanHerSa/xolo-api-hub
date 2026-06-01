@@ -6,6 +6,10 @@ on:
     branches:
       - main
   workflow_dispatch:
+  workflow_call:
+
+env:
+  FLUTTER_VERSION: "3.32.0"
 
 jobs:
   quality:
@@ -19,6 +23,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
 
       - name: Install dependencies
         run: flutter pub get
@@ -27,25 +32,28 @@ jobs:
         run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Static analysis
-        run: flutter analyze --no-fatal-warnings
+        run: flutter analyze
 
       - name: Unit and widget tests
         run: flutter test --coverage
 
-  strict-analyze:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Strict static analysis
-        run: flutter analyze
+      - name: Coverage gate
+        run: |
+          lcov --remove coverage/lcov.info \
+            '**/*.g.dart' \
+            'lib/data/local/tables.dart' \
+            'lib/l10n/*' \
+            -o coverage/lcov.info
+          python3 - <<'PY'
+          from pathlib import Path
+          lf = lh = 0
+          for line in Path("coverage/lcov.info").read_text().splitlines():
+              if line.startswith("LF:"):
+                  lf += int(line[3:])
+              elif line.startswith("LH:"):
+                  lh += int(line[3:])
+          pct = 100 * lh / lf if lf else 0
+          print(f"Coverage: {pct:.1f}% ({lh}/{lf})")
+          if pct < 100:
+              raise SystemExit(f"Coverage {pct:.1f}% below 100% gate")
+          PY

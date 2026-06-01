@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../domain/entities/key_value_pair.dart';
-import '../../core/theme/premium_theme.dart';
-import '../providers/environment_provider.dart';
-import '../providers/request_provider.dart';
-import '../providers/request_session_provider.dart';
-import '../../core/utils/variable_text_controller.dart';
+import 'package:xolo/core/theme/premium_theme.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/core/theme/xolo_theme_extension.dart';
+import 'package:xolo/core/utils/variable_text_controller.dart';
+import 'package:xolo/domain/entities/key_value_pair.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/environment_provider.dart';
+import 'package:xolo/presentation/providers/request_provider.dart';
+import 'package:xolo/presentation/providers/request_session_provider.dart';
 
 class UrlInputBar extends ConsumerStatefulWidget {
   final String tabId;
@@ -266,11 +268,8 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
     final showPrefix = hasBaseUrl;
 
     return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline),
-      ),
+      decoration: XoloSurfaces.panel(colorScheme, borderRadius: XoloRadius.lg),
+      clipBehavior: Clip.antiAlias,
       child: Row(
         children: [
           _buildMethodDropdown(selectedMethod, colorScheme),
@@ -374,10 +373,13 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
                           fontSize: 14,
                         ),
                       ),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: colorScheme.onSurface,
-                      ),
+                      style:
+                          (XoloThemeExtension.of(context)?.mono ??
+                                  const TextStyle())
+                              .copyWith(
+                                fontSize: 14,
+                                color: colorScheme.onSurface,
+                              ),
                       onChanged: _onTextChanged,
                       onSubmitted: (_) => _sendRequest(),
                     ),
@@ -389,45 +391,56 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
 
           Padding(
             padding: const EdgeInsets.all(6),
-            child: Material(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(8),
-              child: InkWell(
-                onTap: requestAsync.isLoading ? null : _sendRequest,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient:
+                    XoloThemeExtension.of(context)?.accentGradient ??
+                    XoloSurfaces.accentGradient(colorScheme.primary),
+                borderRadius: XoloRadius.md,
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                  child: requestAsync.isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Send',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            SizedBox(width: 6),
-                            Icon(
-                              Icons.arrow_forward,
-                              size: 16,
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: requestAsync.isLoading ? null : _sendRequest,
+                  borderRadius: XoloRadius.md,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 11,
+                    ),
+                    child: requestAsync.isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
                               color: Colors.white,
                             ),
-                          ],
-                        ),
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Send',
+                                style: Theme.of(context).textTheme.labelLarge
+                                    ?.copyWith(color: Colors.white),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ],
+                          ),
+                  ),
                 ),
               ),
             ),
@@ -475,11 +488,13 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
             const SizedBox(width: 8),
             Text(
               selectedMethod,
-              style: TextStyle(
-                color: methodColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
+              style:
+                  (XoloThemeExtension.of(context)?.monoSmall ??
+                          const TextStyle())
+                      .copyWith(
+                        color: methodColor,
+                        fontWeight: FontWeight.w700,
+                      ),
             ),
             const SizedBox(width: 4),
             Icon(
@@ -533,12 +548,11 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
           url.startsWith('http://') || url.startsWith('https://');
 
       if (isAbsolute) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'Error: No uses rutas absolutas (http/https) aquí.',
-            ),
-            action: SnackBarAction(label: 'Entendido', onPressed: () {}),
+            content: Text(l10n.absoluteUrlError),
+            action: SnackBarAction(label: l10n.understood, onPressed: () {}),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

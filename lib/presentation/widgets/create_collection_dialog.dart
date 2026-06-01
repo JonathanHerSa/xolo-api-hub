@@ -1,16 +1,18 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/local/database.dart';
-import '../../core/services/auth_secret_service.dart';
-import '../providers/database_providers.dart';
+import 'package:xolo/core/services/auth_secret_service.dart';
+import 'package:xolo/domain/entities/collection_entity.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
 
 void showCreateCollectionDialog(
   BuildContext context,
   WidgetRef ref,
   int? parentId, {
   bool isWorkspace = false,
-  Collection? collectionToEdit,
+  CollectionEntity? collectionToEdit,
 }) {
   showDialog(
     context: context,
@@ -25,7 +27,7 @@ void showCreateCollectionDialog(
 class _CreateCollectionDialog extends ConsumerStatefulWidget {
   final int? parentId;
   final bool isWorkspace;
-  final Collection? collectionToEdit;
+  final CollectionEntity? collectionToEdit;
 
   const _CreateCollectionDialog({
     this.parentId,
@@ -42,21 +44,10 @@ class _CreateCollectionDialogState
     extends ConsumerState<_CreateCollectionDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _descController; // Optional description
+  late TextEditingController _descController;
 
-  // Auth State
   String _authType = 'inherit';
   Map<String, dynamic> _authData = {};
-
-  final Map<String, String> _authTypes = {
-    'inherit': 'Inherit from Parent',
-    'none': 'No Auth',
-    'bearer': 'Bearer Token',
-    'basic': 'Basic Auth',
-    'api_key': 'API Key',
-    'oauth2': 'OAuth 2.0',
-    'aws': 'AWS Signature',
-  };
 
   @override
   void initState() {
@@ -84,9 +75,8 @@ class _CreateCollectionDialogState
         } catch (_) {}
       }
     } else {
-      // Defaults
       if (widget.isWorkspace) {
-        _authType = 'none'; // Workspaces can't inherit
+        _authType = 'none';
       } else {
         _authType = 'inherit';
       }
@@ -105,13 +95,23 @@ class _CreateCollectionDialogState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final authTypes = {
+      'inherit': l10n.authInheritFromParent,
+      'none': l10n.authNone,
+      'bearer': l10n.authBearerToken,
+      'basic': l10n.authBasicAuth,
+      'api_key': l10n.authApiKey,
+      'oauth2': l10n.authOAuth2,
+      'aws': l10n.authAwsSignature,
+    };
+
     final isEdit = widget.collectionToEdit != null;
     final title = isEdit
-        ? 'Rename ${widget.isWorkspace ? "Project" : "Folder"}'
-        : 'New ${widget.isWorkspace ? "Project" : "Folder"}';
+        ? (widget.isWorkspace ? l10n.renameProject : l10n.renameFolder)
+        : (widget.isWorkspace ? l10n.newProject : l10n.newFolder);
 
-    // Remove 'inherit' option if it's a Workspace (Root)
-    final availableAuthTypes = Map.of(_authTypes);
+    final availableAuthTypes = Map.of(authTypes);
     if (widget.isWorkspace) {
       availableAuthTypes.remove('inherit');
     }
@@ -125,22 +125,21 @@ class _CreateCollectionDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Basic Info
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Name',
-                        hintText: 'My API Project',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.name,
+                        hintText: l10n.projectNameHint,
+                        border: const OutlineInputBorder(),
                       ),
                       autofocus: true,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Name is required';
+                          return l10n.nameRequired;
                         }
                         return null;
                       },
@@ -148,9 +147,9 @@ class _CreateCollectionDialogState
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _descController,
-                      decoration: const InputDecoration(
-                        labelText: 'Description (Optional)',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.descriptionOptional,
+                        border: const OutlineInputBorder(),
                       ),
                       maxLines: 2,
                     ),
@@ -160,10 +159,8 @@ class _CreateCollectionDialogState
               const SizedBox(height: 24),
               const Divider(),
               const SizedBox(height: 16),
-
-              // 2. Auth Configuration
               Text(
-                'Authorization',
+                l10n.authorization,
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -173,10 +170,10 @@ class _CreateCollectionDialogState
                 initialValue: availableAuthTypes.containsKey(_authType)
                     ? _authType
                     : (widget.isWorkspace ? 'none' : 'inherit'),
-                decoration: const InputDecoration(
-                  labelText: 'Auth Type',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(
+                decoration: InputDecoration(
+                  labelText: l10n.authType,
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 12,
                   ),
@@ -191,13 +188,12 @@ class _CreateCollectionDialogState
                   if (val != null) {
                     setState(() {
                       _authType = val;
-                      // Don't clear data immediately to allow undo
                     });
                   }
                 },
               ),
               const SizedBox(height: 16),
-              _buildAuthForm(),
+              _buildAuthForm(l10n),
             ],
           ),
         ),
@@ -205,31 +201,40 @@ class _CreateCollectionDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
-        FilledButton(onPressed: _save, child: Text(isEdit ? 'Save' : 'Create')),
+        FilledButton(
+          onPressed: _save,
+          child: Text(isEdit ? l10n.save : l10n.create),
+        ),
       ],
     );
   }
 
-  Widget _buildAuthForm() {
+  Widget _buildAuthForm(AppLocalizations l10n) {
     switch (_authType) {
       case 'inherit':
-        return const Text(
-          'This folder will use the authentication configured in its parent folder or project.',
-          style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+        return Text(
+          l10n.inheritAuthDescription,
+          style: const TextStyle(
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
+          ),
         );
       case 'none':
-        return const Text(
-          'No authentication will be used.',
-          style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+        return Text(
+          l10n.noAuthDescription,
+          style: const TextStyle(
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
+          ),
         );
       case 'bearer':
         return TextFormField(
           initialValue: _authData['token'],
-          decoration: const InputDecoration(
-            labelText: 'Bearer Token',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.authBearerToken,
+            border: const OutlineInputBorder(),
           ),
           onChanged: (v) => _authData['token'] = v,
         );
@@ -238,18 +243,18 @@ class _CreateCollectionDialogState
           children: [
             TextFormField(
               initialValue: _authData['username'],
-              decoration: const InputDecoration(
-                labelText: 'Username',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.username,
+                border: const OutlineInputBorder(),
               ),
               onChanged: (v) => _authData['username'] = v,
             ),
             const SizedBox(height: 12),
             TextFormField(
               initialValue: _authData['password'],
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.password,
+                border: const OutlineInputBorder(),
               ),
               obscureText: true,
               onChanged: (v) => _authData['password'] = v,
@@ -261,52 +266,52 @@ class _CreateCollectionDialogState
           children: [
             TextFormField(
               initialValue: _authData['key'],
-              decoration: const InputDecoration(
-                labelText: 'Key',
-                border: OutlineInputBorder(),
-                hintText: 'X-API-Key',
+              decoration: InputDecoration(
+                labelText: l10n.keyLabel,
+                border: const OutlineInputBorder(),
+                hintText: l10n.apiKeyHint,
               ),
               onChanged: (v) => _authData['key'] = v,
             ),
             const SizedBox(height: 12),
             TextFormField(
               initialValue: _authData['value'],
-              decoration: const InputDecoration(
-                labelText: 'Value',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.valueLabel,
+                border: const OutlineInputBorder(),
               ),
               onChanged: (v) => _authData['value'] = v,
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _authData['in'] ?? 'header',
-              decoration: const InputDecoration(
-                labelText: 'Add to',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.addToLabel,
+                border: const OutlineInputBorder(),
               ),
-              items: const [
-                DropdownMenuItem(value: 'header', child: Text('Header')),
-                DropdownMenuItem(value: 'query', child: Text('Query Params')),
+              items: [
+                DropdownMenuItem(value: 'header', child: Text(l10n.header)),
+                DropdownMenuItem(value: 'query', child: Text(l10n.queryParams)),
               ],
               onChanged: (v) => _authData['in'] = v,
             ),
           ],
         );
       default:
-        return const Text('Configuration not available for this type yet.');
+        return Text(l10n.configNotAvailable);
     }
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final db = ref.read(databaseProvider);
+    final l10n = AppLocalizations.of(context)!;
+    final db = ref.read(xoloRepositoryProvider);
     final name = _nameController.text.trim();
     final desc = _descController.text.trim().isEmpty
         ? null
         : _descController.text.trim();
 
-    // Encode Auth Data
     String? authDataJson;
     if (_authData.isNotEmpty && _authType != 'none' && _authType != 'inherit') {
       authDataJson = jsonEncode(_authData);
@@ -318,7 +323,6 @@ class _CreateCollectionDialogState
 
       if (widget.collectionToEdit != null) {
         await secretService.deleteAuthData(widget.collectionToEdit!.authData);
-        // Edit
         await db.updateCollection(
           widget.collectionToEdit!.id,
           name,
@@ -327,7 +331,6 @@ class _CreateCollectionDialogState
           authData: authSecretRef,
         );
       } else {
-        // Create
         await db.createCollection(
           name: name,
           description: desc,
@@ -341,14 +344,19 @@ class _CreateCollectionDialogState
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${widget.isWorkspace ? "Project" : "Folder"} saved'),
+            content: Text(
+              widget.isWorkspace ? l10n.projectSaved : l10n.folderSaved,
+            ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(l10n.errorMessage(e.toString())),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }

@@ -48,7 +48,7 @@ class _AdvancedColorPickerState extends State<AdvancedColorPicker> {
           ),
           alignment: Alignment.center,
           child: Text(
-            '#${HSVColor.fromAHSV(1.0, _hue, _saturation, _value).toColor().value.toRadixString(16).toUpperCase().substring(2)}',
+            '#${HSVColor.fromAHSV(1.0, _hue, _saturation, _value).toColor().toARGB32().toRadixString(16).toUpperCase().substring(2)}',
             style: TextStyle(
               color: _value > 0.5 ? Colors.black : Colors.white,
               fontWeight: FontWeight.bold,

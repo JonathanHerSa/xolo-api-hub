@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/utils/code_generators.dart';
-import '../../presentation/providers/request_session_provider.dart';
+import 'package:xolo/core/utils/code_generators.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/request_session_provider.dart';
 
 class CodeSnippetDialog extends ConsumerStatefulWidget {
   final String tabId;
@@ -55,6 +56,7 @@ class _CodeSnippetDialogState extends ConsumerState<CodeSnippetDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -69,9 +71,12 @@ class _CodeSnippetDialogState extends ConsumerState<CodeSnippetDialog> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Text(
-                    'Code Snippet',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Text(
+                    l10n.codeSnippet,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const Spacer(),
                   // Lang Selector
@@ -156,9 +161,9 @@ class _CodeSnippetDialogState extends ConsumerState<CodeSnippetDialog> {
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: _code));
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Code copied to clipboard'),
-                            duration: Duration(seconds: 1),
+                          SnackBar(
+                            content: Text(l10n.codeCopied),
+                            duration: const Duration(seconds: 1),
                           ),
                         );
                       },

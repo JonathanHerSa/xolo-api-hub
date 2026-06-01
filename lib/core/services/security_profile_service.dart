@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
 
 enum SecurityProfile { standard, hardened, paranoid }
 
@@ -28,13 +28,13 @@ class SecurityProfileService {
   final Ref _ref;
 
   Future<SecurityProfile> getProfile() async {
-    final db = _ref.read(databaseProvider);
+    final db = _ref.read(xoloRepositoryProvider);
     final value = await db.getSetting(_profileSettingKey);
     return _parseProfile(value);
   }
 
   Future<void> setProfile(SecurityProfile profile) async {
-    final db = _ref.read(databaseProvider);
+    final db = _ref.read(xoloRepositoryProvider);
     await db.setSetting(_profileSettingKey, profile.name);
   }
 

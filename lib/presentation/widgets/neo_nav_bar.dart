@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
+import 'package:xolo/l10n/app_localizations.dart';
 
 class NeoNavBar extends StatelessWidget {
   final int currentIndex;
@@ -9,96 +11,94 @@ class NeoNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final items = [
-      (icon: Icons.grid_view_rounded, label: 'Projects'),
-      (icon: Icons.history_rounded, label: 'History'),
-      (icon: Icons.bolt_rounded, label: 'Compose'),
-      (icon: Icons.backup_rounded, label: 'Backup'),
-      (icon: Icons.tune_rounded, label: 'Settings'),
+      (icon: Icons.grid_view_rounded, label: l10n.projects),
+      (icon: Icons.history_rounded, label: l10n.history),
+      (icon: Icons.bolt_rounded, label: l10n.compose),
+      (icon: Icons.backup_rounded, label: l10n.backup),
+      (icon: Icons.tune_rounded, label: l10n.settings),
     ];
 
     return SafeArea(
       top: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        decoration: BoxDecoration(
-          color: colorScheme.surface.withValues(alpha: 0.94),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.7),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colorScheme.surface.withValues(alpha: 0.92),
+            borderRadius: XoloRadius.xl,
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.55),
             ),
-          ],
-        ),
-        child: Row(
-          children: List.generate(items.length, (index) {
-            final isActive = index == currentIndex;
-            final item = items[index];
-            return Expanded(
-              child: Semantics(
-                button: true,
-                selected: isActive,
-                label: item.label,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    onTap(index);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      gradient: isActive
-                          ? LinearGradient(
-                              colors: [
-                                colorScheme.primary,
-                                colorScheme.primary.withValues(alpha: 0.75),
-                              ],
-                            )
-                          : null,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          item.icon,
-                          size: 21,
+            boxShadow: XoloSurfaces.floatingShadow(opacity: 0.22),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            child: Row(
+              children: List.generate(items.length, (index) {
+                final isActive = index == currentIndex;
+                final item = items[index];
+                return Expanded(
+                  child: Semantics(
+                    button: true,
+                    selected: isActive,
+                    label: item.label,
+                    child: InkWell(
+                      borderRadius: XoloRadius.lg,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        onTap(index);
+                      },
+                      child: AnimatedContainer(
+                        duration: XoloMotion.normal,
+                        curve: XoloMotion.standard,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: XoloRadius.lg,
                           color: isActive
-                              ? colorScheme.onPrimary
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
+                              ? colorScheme.primary.withValues(alpha: 0.14)
+                              : Colors.transparent,
+                          border: Border.all(
                             color: isActive
-                                ? colorScheme.onPrimary
-                                : colorScheme.onSurfaceVariant,
+                                ? colorScheme.primary.withValues(alpha: 0.28)
+                                : Colors.transparent,
                           ),
                         ),
-                      ],
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              item.icon,
+                              size: 21,
+                              color: isActive
+                                  ? colorScheme.primary
+                                  : colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    fontSize: 10,
+                                    color: isActive
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            );
-          }),
+                );
+              }),
+            ),
+          ),
         ),
       ),
     );

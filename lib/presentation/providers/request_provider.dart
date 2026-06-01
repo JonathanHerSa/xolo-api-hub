@@ -1,18 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:json_path/json_path.dart';
-
-import '../../core/network/http_client_provider.dart';
-import '../../core/services/app_logger.dart';
-import '../../core/utils/variable_parser.dart';
-import '../../core/services/auth_resolver_service.dart';
-import '../providers/environment_provider.dart';
-import '../providers/request_session_provider.dart';
-import '../providers/database_providers.dart';
-import '../providers/workspace_provider.dart';
-import '../providers/incognito_provider.dart';
+import 'package:xolo/core/network/http_client_provider.dart';
+import 'package:xolo/core/services/app_logger.dart';
+import 'package:xolo/core/services/auth_resolver_service.dart';
+import 'package:xolo/core/utils/script_executor.dart';
+import 'package:xolo/core/utils/variable_parser.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/environment_provider.dart';
+import 'package:xolo/presentation/providers/incognito_provider.dart';
+import 'package:xolo/presentation/providers/request_session_provider.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
 
 // --- State ---
 class RequestState {
@@ -97,7 +98,6 @@ class RequestController {
     String attemptUrl = url;
     String? errorMsg;
     int? statusCode;
-    dynamic responseData;
 
     try {
       // 2. Variable Parsing (Global + Env + Chains)
@@ -105,7 +105,10 @@ class RequestController {
       final session = ref.read(requestSessionProvider(tabId)).asData?.value;
 
       // Execute Pre-Request Scripts
-      final preVars = _executePreScripts(session?.preScriptsJson, baseVars);
+      final preVars = ScriptExecutor.executePreScripts(
+        session?.preScriptsJson,
+        baseVars,
+      );
       final resolvedVars = {...baseVars, ...preVars};
 
       // Parse URL
@@ -250,7 +253,6 @@ class RequestController {
 
       stopwatch.stop();
       statusCode = response.statusCode;
-      responseData = response.data;
 
       // 4. Success State
       _update(
@@ -277,7 +279,6 @@ class RequestController {
       }
       stopwatch.stop();
       statusCode = e.response?.statusCode;
-      responseData = e.response?.data;
 
       final errorPrefix = e.message ?? 'Error de red';
       errorMsg = '$errorPrefix\n(URL: $attemptUrl)';
@@ -310,15 +311,10 @@ class RequestController {
         return;
       }
 
-      final db = ref.read(databaseProvider);
+      final repo = ref.read(xoloRepositoryProvider);
       final activeWorkspaceId = ref.read(activeWorkspaceIdProvider);
 
-      String? responseBodyStr;
-      if (responseData != null) {
-        responseBodyStr = responseData.toString();
-      }
-
-      await db.addHistoryItem(
+      await repo.addHistoryItem(
         method: method,
         url: attemptUrl, // Parsed/Resolved URL
         originalUrl: url, // Template URL
@@ -361,7 +357,7 @@ class RequestController {
 
     try {
       final List<dynamic> rules = jsonDecode(scriptsJson);
-      final db = ref.read(databaseProvider);
+      final db = ref.read(xoloRepositoryProvider);
       final activeEnvId = ref.read(activeEnvironmentIdProvider).asData?.value;
       final workspaceId = ref.read(activeWorkspaceIdProvider);
 
@@ -394,64 +390,9 @@ class RequestController {
     }
   }
 
-  Map<String, String> _executePreScripts(
-    String? preScriptsJson,
-    Map<String, String> baseVars,
-  ) {
-    if (preScriptsJson == null || preScriptsJson.isEmpty) return {};
-    final results = <String, String>{};
-
-    try {
-      final List<dynamic> rules = jsonDecode(preScriptsJson);
-      for (final rule in rules) {
-        final varName = rule['key'];
-        final template = rule['value']; // E.g. "order_{{$timestamp}}"
-        if (varName == null || template == null || template.isEmpty) continue;
-
-        try {
-          // Evaluar el template usando las variables base
-          final evaluated = VariableParser.parse(template, baseVars);
-          results[varName] = evaluated;
-        } catch (e) {
-          AppLogger.warn('Error evaluating pre-script rule');
-        }
-      }
-    } catch (e) {
-      AppLogger.warn('Error parsing pre-scripts JSON');
-    }
-    return results;
-  }
-
   /// Tests scripts against a specific response data without saving to DB
   Map<String, String> testScripts(dynamic responseData, String scriptsJson) {
-    if (scriptsJson.isEmpty) return {};
-    final results = <String, String>{};
-
-    try {
-      final List<dynamic> rules = jsonDecode(scriptsJson);
-      for (final rule in rules) {
-        final varName = rule['key'];
-        final pathStr = rule['path'];
-        if (varName == null || pathStr == null || pathStr.isEmpty) continue;
-
-        try {
-          final jsonPath = JsonPath(pathStr);
-          final matches = jsonPath.read(responseData);
-
-          if (matches.isNotEmpty) {
-            final firstValue = matches.first.value;
-            results[varName] = firstValue?.toString() ?? 'null';
-          } else {
-            results[varName] = '[No Match]';
-          }
-        } catch (e) {
-          results[varName] = '[Error: $e]';
-        }
-      }
-    } catch (e) {
-      AppLogger.warn('Error testing scripts');
-    }
-    return results;
+    return ScriptExecutor.testPostScripts(responseData, scriptsJson);
   }
 
   void dispose() {

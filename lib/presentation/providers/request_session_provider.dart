@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/entities/key_value_pair.dart';
-import '../../data/local/database.dart';
 import 'dart:convert';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:xolo/domain/entities/key_value_pair.dart';
+import 'package:xolo/domain/entities/saved_request_entity.dart';
 
 /// Modelo inmutable del estado de input de un Request
 class RequestSession {
@@ -151,7 +152,7 @@ class RequestSessionController {
     _update(_state.copyWith(params: _ensureEmptyRow(newParams)));
   }
 
-  void loadRequest(SavedRequest req) {
+  void loadRequest(SavedRequestEntity req) {
     // Helper to parse JSON string to KeyValuePair list
     List<KeyValuePair> parseKV(String? jsonStr) {
       if (jsonStr == null || jsonStr.isEmpty) return [KeyValuePair()];

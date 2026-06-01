@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../domain/entities/key_value_pair.dart';
-import '../providers/request_session_provider.dart';
-
-import '../../core/utils/variable_text_controller.dart';
+import 'package:xolo/core/utils/variable_text_controller.dart';
+import 'package:xolo/domain/entities/key_value_pair.dart';
+import 'package:xolo/presentation/providers/request_session_provider.dart';
 
 enum TableType { headers, params }
 

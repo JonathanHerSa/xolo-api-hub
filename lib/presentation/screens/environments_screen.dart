@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme/premium_theme.dart';
-import '../../data/local/database.dart';
-import '../providers/database_providers.dart';
-import '../providers/environment_provider.dart';
-import '../providers/workspace_provider.dart';
+import 'package:xolo/domain/entities/env_variable_entity.dart';
+import 'package:xolo/domain/entities/environment_entity.dart';
+import 'package:xolo/l10n/app_localizations.dart';
+import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/providers/environment_provider.dart';
+import 'package:xolo/presentation/providers/workspace_provider.dart';
 
 class EnvironmentsScreen extends ConsumerStatefulWidget {
   const EnvironmentsScreen({super.key});
@@ -14,11 +15,12 @@ class EnvironmentsScreen extends ConsumerStatefulWidget {
 }
 
 class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
-  Environment? _selectedEnv;
+  EnvironmentEntity? _selectedEnv;
   bool _isSidebarVisible = false;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final environmentsAsync = ref.watch(environmentsListProvider);
     final activeEnvIdAsync = ref.watch(activeEnvironmentIdProvider);
@@ -29,7 +31,7 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Entornos y Variables'),
+        title: Text(l10n.environmentsAndVariables),
         leading: IconButton(
           icon: Icon(_isSidebarVisible ? Icons.menu_open : Icons.menu),
           onPressed: () =>
@@ -68,7 +70,7 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _selectedEnv?.name ?? 'Variables Globales',
+                                  _selectedEnv?.name ?? l10n.globalVariables,
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -76,8 +78,8 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
                                 ),
                                 Text(
                                   _selectedEnv == null
-                                      ? 'Disponibles en todo este Workspace'
-                                      : 'Sobreescriben las variables globales',
+                                      ? l10n.globalVariablesSubtitle
+                                      : l10n.environmentOverridesSubtitle,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: colorScheme.onSurfaceVariant,
@@ -92,7 +94,7 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
                                   activeEnvIdAsync.value == _selectedEnv!.id
                                   ? null // Ya activo
                                   : () => ref
-                                        .read(databaseProvider)
+                                        .read(xoloRepositoryProvider)
                                         .setActiveEnvironment(
                                           _selectedEnv!.id,
                                           workspaceId,
@@ -100,8 +102,8 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
                               icon: const Icon(Icons.check_circle_outline),
                               label: Text(
                                 activeEnvIdAsync.value == _selectedEnv!.id
-                                    ? 'Activo'
-                                    : 'Activar',
+                                    ? l10n.active
+                                    : l10n.activate,
                               ),
                             ),
                         ],
@@ -153,7 +155,7 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
                           Icons.public,
                           color: colorScheme.secondary,
                         ),
-                        title: const Text('Globales'),
+                        title: Text(l10n.globals),
                         selected: _selectedEnv == null,
                         onTap: () {
                           setState(() {
@@ -199,7 +201,7 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
                               trailing: PopupMenuButton<String>(
                                 icon: Icon(Icons.more_vert, size: 20),
                                 onSelected: (value) async {
-                                  final db = ref.read(databaseProvider);
+                                  final db = ref.read(xoloRepositoryProvider);
                                   if (value == 'activate') {
                                     await db.setActiveEnvironment(
                                       env.id,
@@ -211,15 +213,15 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
                                 },
                                 itemBuilder: (context) => [
                                   if (!isActive)
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'activate',
-                                      child: Text('Activar'),
+                                      child: Text(l10n.activate),
                                     ),
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'delete',
                                     child: Text(
-                                      'Eliminar',
-                                      style: TextStyle(color: Colors.red),
+                                      l10n.delete,
+                                      style: const TextStyle(color: Colors.red),
                                     ),
                                   ),
                                 ],
@@ -237,7 +239,7 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
                             onPressed: () =>
                                 _showAddEnvDialog(context, ref, workspaceId),
                             icon: const Icon(Icons.add),
-                            label: const Text('Nuevo Entorno'),
+                            label: Text(l10n.newEnvironment),
                           ),
                         ),
                       ),
@@ -249,7 +251,8 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        error: (err, stack) =>
+            Center(child: Text(l10n.errorMessage(err.toString()))),
       ),
     );
   }
@@ -259,47 +262,49 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
     WidgetRef ref,
     int? workspaceId,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Nuevo Entorno'),
+        title: Text(l10n.newEnvironment),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(labelText: 'Nombre (ej: Dev)'),
+          decoration: InputDecoration(labelText: l10n.environmentNameHint),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
               if (controller.text.isNotEmpty) {
                 await ref
-                    .read(databaseProvider)
+                    .read(xoloRepositoryProvider)
                     .createEnvironment(controller.text, workspaceId);
                 if (context.mounted) Navigator.pop(context);
               }
             },
-            child: const Text('Crear'),
+            child: Text(l10n.create),
           ),
         ],
       ),
     );
   }
 
-  void _confirmDeleteEnv(BuildContext context, Environment env) {
+  void _confirmDeleteEnv(BuildContext context, EnvironmentEntity env) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Eliminar "${env.name}"?'),
-        content: const Text('Se borrará el entorno y sus variables.'),
+        title: Text(l10n.deleteEnvironmentTitle(env.name)),
+        content: Text(l10n.deleteEnvironmentMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -307,10 +312,10 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
               if (_selectedEnv?.id == env.id) {
                 setState(() => _selectedEnv = null);
               }
-              await ref.read(databaseProvider).deleteEnvironment(env.id);
+              await ref.read(xoloRepositoryProvider).deleteEnvironment(env.id);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Eliminar'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -330,11 +335,12 @@ class _VariablesList extends ConsumerStatefulWidget {
 class _VariablesListState extends ConsumerState<_VariablesList> {
   @override
   Widget build(BuildContext context) {
-    final db = ref.watch(databaseProvider);
+    final l10n = AppLocalizations.of(context)!;
+    final db = ref.watch(xoloRepositoryProvider);
     final workspaceId = ref.watch(activeWorkspaceIdProvider);
 
     // Usamos watchVariables con la nueva firma
-    return StreamBuilder<List<EnvVariable>>(
+    return StreamBuilder<List<EnvVariableEntity>>(
       stream: db.watchVariables(workspaceId, widget.envId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -395,7 +401,7 @@ class _VariablesListState extends ConsumerState<_VariablesList> {
                 child: Padding(
                   padding: const EdgeInsets.all(32),
                   child: Text(
-                    'No hay variables definidas.\nAgrega "baseUrl", "token", etc.',
+                    l10n.noVariablesDefined,
                     textAlign: TextAlign.center,
                     style: TextStyle(color: colorScheme.onSurfaceVariant),
                   ),
@@ -408,7 +414,7 @@ class _VariablesListState extends ConsumerState<_VariablesList> {
                 onPressed: () =>
                     _showEditVariableDialog(context, null, workspaceId),
                 icon: const Icon(Icons.add),
-                label: const Text('Agregar Variable'),
+                label: Text(l10n.addVariable),
               ),
             ),
           ],
@@ -419,16 +425,17 @@ class _VariablesListState extends ConsumerState<_VariablesList> {
 
   void _showEditVariableDialog(
     BuildContext context,
-    EnvVariable? existingVar,
+    EnvVariableEntity? existingVar,
     int? workspaceId,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final keyCtrl = TextEditingController(text: existingVar?.key ?? '');
     final valueCtrl = TextEditingController(text: existingVar?.value ?? '');
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(existingVar == null ? 'Nueva Variable' : 'Editar Variable'),
+        title: Text(existingVar == null ? l10n.newVariable : l10n.editVariable),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,23 +448,23 @@ class _VariablesListState extends ConsumerState<_VariablesList> {
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                'Solo escribe el nombre. Ej: "host".\nLuego úsalo como {{host}}',
-                style: TextStyle(fontSize: 12),
+              child: Text(
+                l10n.variableUsageHint('{{host}}'),
+                style: const TextStyle(fontSize: 12),
               ),
             ),
             TextField(
               controller: keyCtrl,
               readOnly: existingVar?.key == 'baseUrl', // BLOQUEADO
-              decoration: const InputDecoration(
-                labelText: 'Clave',
-                hintText: 'host',
+              decoration: InputDecoration(
+                labelText: l10n.keyLabel,
+                hintText: l10n.hostHint,
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: valueCtrl,
-              decoration: const InputDecoration(labelText: 'Valor'),
+              decoration: InputDecoration(labelText: l10n.valueLabel),
               maxLines: null,
             ),
           ],
@@ -465,13 +472,13 @@ class _VariablesListState extends ConsumerState<_VariablesList> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
               if (keyCtrl.text.isNotEmpty) {
                 await ref
-                    .read(databaseProvider)
+                    .read(xoloRepositoryProvider)
                     .upsertVariable(
                       id: existingVar?.id,
                       key: keyCtrl.text.trim(),
@@ -483,7 +490,7 @@ class _VariablesListState extends ConsumerState<_VariablesList> {
                 if (context.mounted) Navigator.pop(context);
               }
             },
-            child: const Text('Guardar'),
+            child: Text(l10n.save),
           ),
         ],
       ),
