@@ -44,8 +44,7 @@ class _XoloAppState extends ConsumerState<XoloApp> with WidgetsBindingObserver {
 
   Future<void> _checkColdStart() async {
     final service = ref.read(biometricServiceProvider);
-    final enabled = await service.getBiometricEnabled();
-    if (enabled && mounted) {
+    if (await service.shouldLockOnColdStart() && mounted) {
       ref.read(isAppLockedProvider.notifier).set(true);
     }
   }
@@ -93,15 +92,14 @@ class _XoloAppState extends ConsumerState<XoloApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColorValue = ref.watch(themeColorProvider);
     final themeMode = ref.watch(themeModeProvider);
     final isLocked = ref.watch(isAppLockedProvider);
 
     return MaterialApp.router(
       title: 'Xolo API Client',
       debugShowCheckedModeBanner: false,
-      theme: XoloPremiumTheme.lightTheme(primaryColorValue),
-      darkTheme: XoloPremiumTheme.darkTheme(primaryColorValue),
+      theme: XoloPremiumTheme.lightTheme(0xFF059669),
+      darkTheme: XoloPremiumTheme.darkTheme(0xFF10B981),
       themeMode: themeMode,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

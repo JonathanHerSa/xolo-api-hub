@@ -67,9 +67,8 @@ class _CommandPaletteState extends ConsumerState<CommandPalette> {
           color: theme.colorScheme.surfaceContainerHigh,
           borderRadius: XoloRadius.lg,
           border: Border.all(
-            color: theme.colorScheme.outline.withValues(alpha: 0.55),
+            color: theme.colorScheme.outline.withValues(alpha: 0.65),
           ),
-          boxShadow: XoloSurfaces.floatingShadow(opacity: 0.35),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

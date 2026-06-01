@@ -13,6 +13,8 @@ import 'package:xolo/core/theme/xolo_design_tokens.dart';
 import 'package:xolo/data/services/sync_service.dart';
 import 'package:xolo/l10n/app_localizations.dart';
 import 'package:xolo/presentation/providers/database_providers.dart';
+import 'package:xolo/presentation/widgets/ui/xolo_interactive_card.dart';
+import 'package:xolo/presentation/widgets/ui/xolo_section_header.dart';
 
 class SyncScreen extends ConsumerStatefulWidget {
   const SyncScreen({super.key});
@@ -27,76 +29,78 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLowest,
-      appBar: AppBar(title: Text(l10n.backupsAndSync), centerTitle: true),
+      appBar: AppBar(title: Text(l10n.backupsAndSync)),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(XoloSpacing.xl),
               children: [
-                // Info Card
                 Container(
-                  padding: const EdgeInsets.all(XoloSpacing.xl),
-                  decoration: XoloSurfaces.accentPanel(
+                  padding: const EdgeInsets.all(XoloSpacing.xxl),
+                  decoration: XoloSurfaces.panel(
                     colorScheme,
-                    borderRadius: XoloRadius.xl,
+                    borderRadius: XoloRadius.lg,
                   ),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.save_alt_rounded,
-                        size: 64,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        l10n.secureLocalBackup,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.12),
+                          borderRadius: XoloRadius.lg,
+                          border: Border.all(
+                            color: colorScheme.primary.withValues(alpha: 0.22),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.save_alt_rounded,
+                          size: 34,
+                          color: colorScheme.primary,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: XoloSpacing.lg),
+                      Text(
+                        l10n.secureLocalBackup,
+                        style: XoloTypography.cardTitle(colorScheme).copyWith(
+                          fontSize: 20,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: XoloSpacing.sm),
                       Text(
                         l10n.secureBackupDescription,
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+                        style: XoloTypography.cardSubtitle(colorScheme),
                       ),
                     ],
                   ),
                 ),
 
                 const SizedBox(height: XoloSpacing.xxl),
-                Text(
-                  l10n.actions,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    letterSpacing: 1.2,
-                  ),
+                XoloSectionHeader(
+                  title: l10n.actions.toUpperCase(),
+                  padding: const EdgeInsets.only(bottom: XoloSpacing.md),
                 ),
-                const SizedBox(height: XoloSpacing.lg),
 
                 _buildActionCard(
                   context,
                   title: l10n.exportBackup,
                   subtitle: l10n.exportBackupSubtitle,
-                  icon: Icons.upload_file,
-                  color: Colors.blue,
+                  icon: Icons.upload_file_outlined,
+                  color: colorScheme.primary,
                   onTap: () => _performExport(context, ref),
                 ),
-                const SizedBox(height: XoloSpacing.lg),
                 _buildActionCard(
                   context,
                   title: l10n.importBackup,
                   subtitle: l10n.importBackupSubtitle,
-                  icon: Icons.download_for_offline,
-                  color: Colors.green,
+                  icon: Icons.download_for_offline_outlined,
+                  color: XoloPalette.accentHover,
                   onTap: () => _performImport(context, ref),
                 ),
 
@@ -104,9 +108,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                 Center(
                   child: Text(
                     l10n.cloudSyncComingSoon,
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                    ),
+                    style: XoloTypography.meta(colorScheme),
                   ),
                 ),
               ],
@@ -122,56 +124,41 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
-    return InkWell(
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return XoloInteractiveCard(
       onTap: onTap,
-      borderRadius: XoloRadius.lg,
-      child: Container(
-        padding: const EdgeInsets.all(XoloSpacing.lg),
-        decoration: BoxDecoration(
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-          borderRadius: XoloRadius.lg,
-          color: theme.colorScheme.surface,
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 28),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: XoloRadius.md,
+              border: Border.all(color: color.withValues(alpha: 0.25)),
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: XoloSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: XoloTypography.cardTitle(colorScheme)),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: XoloTypography.cardSubtitle(colorScheme),
+                ),
+              ],
             ),
-            Icon(
-              Icons.chevron_right,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-            ),
-          ],
-        ),
+          ),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ],
       ),
     );
   }

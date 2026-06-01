@@ -1610,6 +1610,18 @@ abstract class AppLocalizations {
   /// **'Require FaceID/Fingerprint to open'**
   String get biometricLockSubtitle;
 
+  /// No description provided for @biometricAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify your identity. Try again.'**
+  String get biometricAuthFailed;
+
+  /// No description provided for @biometricUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available on this device'**
+  String get biometricUnavailable;
+
   /// No description provided for @verifyToEnableLock.
   ///
   /// In en, this message translates to:

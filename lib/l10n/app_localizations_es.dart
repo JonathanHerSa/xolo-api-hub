@@ -138,13 +138,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get undo => 'Deshacer';
 
   @override
-  String get tabParams => 'Params';
+  String get tabParams => 'Parámetros';
 
   @override
   String get tabAuth => 'Auth';
 
   @override
-  String get tabHeaders => 'Headers';
+  String get tabHeaders => 'Cabeceras';
 
   @override
   String get tabBody => 'Body';
@@ -820,6 +820,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get biometricLockSubtitle => 'Solicitar huella/cara al iniciar';
+
+  @override
+  String get biometricAuthFailed =>
+      'No se pudo verificar tu identidad. Inténtalo de nuevo.';
+
+  @override
+  String get biometricUnavailable => 'No disponible en este dispositivo';
 
   @override
   String get verifyToEnableLock => 'Verifica para activar el bloqueo';

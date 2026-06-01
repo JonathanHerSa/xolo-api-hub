@@ -14,137 +14,97 @@ class BrowserTabBar extends ConsumerWidget {
     final tabs = ref.watch(tabsProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        border: Border(
-          bottom: BorderSide(
-            color: colorScheme.outline.withValues(alpha: 0.45),
-          ),
-        ),
-      ),
+    return SizedBox(
+      height: XoloLayout.requestTabHeight,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.only(left: 8, top: 6, bottom: 0),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         itemCount: tabs.openTabIds.length + 1,
         itemBuilder: (context, index) {
           if (index == tabs.openTabIds.length) {
-            return _AddTabButton(colorScheme: colorScheme);
+            return _AddTab(colorScheme: colorScheme);
           }
-
-          final tabId = tabs.openTabIds[index];
-          final isActive = tabId == tabs.activeTabId;
-
-          return _TabItem(tabId: tabId, isActive: isActive);
+          return _RequestTab(
+            tabId: tabs.openTabIds[index],
+            isActive: tabs.openTabIds[index] == tabs.activeTabId,
+          );
         },
       ),
     );
   }
 }
 
-class _TabItem extends ConsumerWidget {
+class _RequestTab extends ConsumerWidget {
+  const _RequestTab({required this.tabId, required this.isActive});
+
   final String tabId;
   final bool isActive;
 
-  const _TabItem({required this.tabId, required this.isActive});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionAsync = ref.watch(requestSessionProvider(tabId));
-    final session = sessionAsync.asData?.value;
+    final session = ref.watch(requestSessionProvider(tabId)).asData?.value;
     final colorScheme = Theme.of(context).colorScheme;
     final mono = XoloThemeExtension.of(context)?.monoSmall;
 
     if (session == null) {
-      return Container(
-        width: 120,
-        alignment: Alignment.center,
-        child: const SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2),
+      return const SizedBox(
+        width: 100,
+        child: Center(
+          child: SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         ),
       );
     }
 
     final methodColor = XoloPremiumTheme.getMethodColor(session.method);
+    final name = session.name.isNotEmpty ? session.name : 'Untitled';
 
     return Padding(
-      padding: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.only(right: 4, top: 6),
       child: Material(
-        color: Colors.transparent,
+        color: isActive
+            ? colorScheme.surfaceContainerHighest
+            : Colors.transparent,
+        borderRadius: XoloRadius.sm,
         child: InkWell(
-          onTap: () {
-            ref.read(tabsProvider.notifier).setActiveTab(tabId);
-          },
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-          child: AnimatedContainer(
-            duration: XoloMotion.normal,
-            width: 168,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? colorScheme.surfaceContainerHighest
-                  : colorScheme.surface.withValues(alpha: 0.45),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(10),
-              ),
-              border: Border(
-                top: BorderSide(
-                  color: isActive ? methodColor : Colors.transparent,
-                  width: 2,
-                ),
-                left: BorderSide(
-                  color: colorScheme.outline.withValues(alpha: 0.35),
-                ),
-                right: BorderSide(
-                  color: colorScheme.outline.withValues(alpha: 0.35),
-                ),
-              ),
-            ),
+          onTap: () => ref.read(tabsProvider.notifier).setActiveTab(tabId),
+          borderRadius: XoloRadius.sm,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 200, minWidth: 120),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: methodColor.withValues(alpha: 0.14),
-                    borderRadius: XoloRadius.sm,
-                  ),
-                  child: Text(
-                    session.method,
-                    style: (mono ?? const TextStyle(fontSize: 10)).copyWith(
-                      color: methodColor,
-                      fontWeight: FontWeight.w700,
-                    ),
+                Text(
+                  session.method,
+                  style: (mono ?? const TextStyle(fontSize: 11)).copyWith(
+                    color: methodColor,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    session.name.isNotEmpty ? session.name : 'Untitled',
+                    name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                      color: isActive
+                          ? colorScheme.onSurface
+                          : colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
-                InkWell(
-                  onTap: () {
-                    ref.read(tabsProvider.notifier).closeTab(tabId);
-                  },
-                  borderRadius: BorderRadius.circular(99),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.close_rounded,
-                      size: 14,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                GestureDetector(
+                  onTap: () => ref.read(tabsProvider.notifier).closeTab(tabId),
+                  child: Icon(
+                    Icons.close,
+                    size: 14,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -156,36 +116,19 @@ class _TabItem extends ConsumerWidget {
   }
 }
 
-class _AddTabButton extends ConsumerWidget {
-  final ColorScheme colorScheme;
+class _AddTab extends ConsumerWidget {
+  const _AddTab({required this.colorScheme});
 
-  const _AddTabButton({required this.colorScheme});
+  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.only(left: 2, right: 8, top: 2),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => ref.read(tabsProvider.notifier).addTab(),
-          borderRadius: XoloRadius.md,
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              borderRadius: XoloRadius.md,
-              border: Border.all(
-                color: colorScheme.outline.withValues(alpha: 0.45),
-              ),
-            ),
-            child: Icon(
-              Icons.add,
-              size: 18,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
+      padding: const EdgeInsets.only(left: 4, top: 6),
+      child: IconButton(
+        visualDensity: VisualDensity.compact,
+        icon: Icon(Icons.add, size: 18, color: colorScheme.onSurfaceVariant),
+        onPressed: () => ref.read(tabsProvider.notifier).addTab(),
       ),
     );
   }

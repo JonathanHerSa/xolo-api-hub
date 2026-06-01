@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:xolo/core/theme/xolo_design_tokens.dart';
 import 'package:xolo/domain/entities/env_variable_entity.dart';
 import 'package:xolo/domain/entities/environment_entity.dart';
 import 'package:xolo/l10n/app_localizations.dart';
 import 'package:xolo/presentation/providers/database_providers.dart';
 import 'package:xolo/presentation/providers/environment_provider.dart';
 import 'package:xolo/presentation/providers/workspace_provider.dart';
+import 'package:xolo/presentation/widgets/ui/xolo_empty_state.dart';
+import 'package:xolo/presentation/widgets/ui/xolo_interactive_card.dart';
+import 'package:xolo/presentation/widgets/ui/xolo_section_header.dart';
 
 class EnvironmentsScreen extends ConsumerStatefulWidget {
   const EnvironmentsScreen({super.key});
@@ -30,6 +34,7 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
     // También obtener nombre del workspace para mostrar en UI si se desea
 
     return Scaffold(
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
         title: Text(l10n.environmentsAndVariables),
         leading: IconButton(
@@ -48,42 +53,44 @@ class _EnvironmentsScreenState extends ConsumerState<EnvironmentsScreen> {
                   children: [
                     // Header del panel derecho
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(XoloSpacing.lg),
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: colorScheme.outline),
+                          bottom: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.6),
+                          ),
                         ),
-                        color: colorScheme.surfaceContainerHighest.withValues(
-                          alpha: 0.5,
-                        ),
+                        color: colorScheme.surfaceContainerHigh,
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            _selectedEnv == null ? Icons.public : Icons.layers,
-                            color: colorScheme.primary,
-                            size: 28,
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary.withValues(alpha: 0.12),
+                              borderRadius: XoloRadius.sm,
+                            ),
+                            child: Icon(
+                              _selectedEnv == null ? Icons.public : Icons.layers,
+                              color: colorScheme.primary,
+                              size: 20,
+                            ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: XoloSpacing.md),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   _selectedEnv?.name ?? l10n.globalVariables,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: XoloTypography.cardTitle(colorScheme),
                                 ),
                                 Text(
                                   _selectedEnv == null
                                       ? l10n.globalVariablesSubtitle
                                       : l10n.environmentOverridesSubtitle,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
+                                  style: XoloTypography.meta(colorScheme),
                                 ),
                               ],
                             ),
@@ -351,72 +358,75 @@ class _VariablesListState extends ConsumerState<_VariablesList> {
         final colorScheme = Theme.of(context).colorScheme;
 
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(XoloSpacing.lg),
           children: [
-            if (variables.isNotEmpty)
-              Card(
-                child: Column(
-                  children: [
-                    for (var i = 0; i < variables.length; i++)
-                      Container(
-                        decoration: i < variables.length - 1
-                            ? BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: colorScheme.outline.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : null,
-                        child: ListTile(
-                          title: Text(
-                            variables[i].key,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text(variables[i].value),
-                          trailing: variables[i].key == 'baseUrl'
-                              ? null
-                              : IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    size: 20,
-                                  ),
-                                  onPressed: () =>
-                                      db.deleteVariable(variables[i].id),
-                                ),
-                          onTap: () => _showEditVariableDialog(
-                            context,
-                            variables[i],
-                            workspaceId,
-                          ),
+            if (variables.isNotEmpty) ...[
+              XoloSectionHeader(
+                title: l10n.keyLabel.toUpperCase(),
+                padding: const EdgeInsets.only(bottom: XoloSpacing.sm),
+              ),
+              ...variables.map(
+                (variable) => XoloInteractiveCard(
+                  onTap: () => _showEditVariableDialog(
+                    context,
+                    variable,
+                    workspaceId,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              variable.key,
+                              style: XoloTypography.cardTitle(colorScheme),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              variable.value,
+                              style: XoloTypography.cardSubtitle(colorScheme),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ),
-                  ],
-                ),
-              )
-            else
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Text(
-                    l10n.noVariablesDefined,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                      if (variable.key != 'baseUrl')
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, size: 20),
+                          onPressed: () => db.deleteVariable(variable.id),
+                        ),
+                    ],
                   ),
                 ),
               ),
-
-            const SizedBox(height: 20),
-            Center(
-              child: FilledButton.tonalIcon(
-                onPressed: () =>
-                    _showEditVariableDialog(context, null, workspaceId),
-                icon: const Icon(Icons.add),
-                label: Text(l10n.addVariable),
+            ] else
+              XoloEmptyState(
+                icon: Icons.data_object_outlined,
+                title: l10n.noVariablesDefined.split('\n').first,
+                subtitle: l10n.variableUsageHint('{{host}}'),
+                actions: [
+                  FilledButton.tonalIcon(
+                    onPressed: () =>
+                        _showEditVariableDialog(context, null, workspaceId),
+                    icon: const Icon(Icons.add),
+                    label: Text(l10n.addVariable),
+                  ),
+                ],
               ),
-            ),
+
+            if (variables.isNotEmpty) ...[
+              const SizedBox(height: XoloSpacing.lg),
+              Center(
+                child: FilledButton.tonalIcon(
+                  onPressed: () =>
+                      _showEditVariableDialog(context, null, workspaceId),
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.addVariable),
+                ),
+              ),
+            ],
           ],
         );
       },

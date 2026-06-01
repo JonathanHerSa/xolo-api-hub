@@ -21,21 +21,30 @@ class BiometricService {
   bool _isAuthenticating = false;
   bool get isAuthenticating => _isAuthenticating;
 
-  Future<bool> authenticate({required String reason}) async {
+  Future<bool> authenticate({
+    required String reason,
+    bool biometricOnly = false,
+  }) async {
+    if (_isAuthenticating) return false;
+
     try {
+      if (!await isAvailable) {
+        AppLogger.warn('Biometric auth unavailable on this device');
+        return false;
+      }
+
       _isAuthenticating = true;
       final result = await _auth.authenticate(
         localizedReason: reason,
-        biometricOnly: true,
+        biometricOnly: biometricOnly,
         persistAcrossBackgrounding: true,
       );
-      _isAuthenticating = false;
       return result;
     } on PlatformException catch (e) {
-      _isAuthenticating = false;
-      // Handle error or return false
       AppLogger.warn('Biometric error: $e');
       return false;
+    } finally {
+      _isAuthenticating = false;
     }
   }
 
@@ -56,31 +65,45 @@ class BiometricService {
     await _storage.write(key: _kBiometricEnabledKey, value: enabled.toString());
   }
 
-  // --- Lock Delay Logic ---
+  /// Disables lock when the device cannot run local auth (e.g. Linux desktop).
+  Future<bool> disableIfUnavailable() async {
+    if (await isAvailable) return false;
+    if (!await getBiometricEnabled()) return false;
+    await setBiometricEnabled(false);
+    AppLogger.warn('Biometric lock disabled: device auth unavailable');
+    return true;
+  }
+
+  /// Whether the app should show the lock overlay on cold start.
+  Future<bool> shouldLockOnColdStart() async {
+    if (!await getBiometricEnabled()) return false;
+    if (!await isAvailable) {
+      await setBiometricEnabled(false);
+      return false;
+    }
+    return true;
+  }
+
   static const _kLockDelayKey = 'lock_delay';
   DateTime? _backgroundedTime;
 
-  /// Called when app goes to background (Paused/Inactive)
   void markAppBackgrounded() {
     _backgroundedTime = DateTime.now();
   }
 
-  /// Called when app resumes. Returns true if we should lock.
   Future<bool> shouldLockApp({int? forceDelaySeconds}) async {
     final enabled = await getBiometricEnabled();
     if (!enabled) return false;
-
-    // specific logic: if _backgroundedTime is null, it might be first launch or logic error.
-    // But Cold Start is handled in main.dart manually.
-    // This is for Resume. If null, maybe we shouldn't lock? Or secure default?
-    // If null, it means we didn't track pause. Assume no lock needed (or user didn't pause).
+    if (!await isAvailable) {
+      await setBiometricEnabled(false);
+      return false;
+    }
     if (_backgroundedTime == null) return false;
 
     final diff = DateTime.now().difference(_backgroundedTime!);
     final delaySeconds = forceDelaySeconds ?? await getLockDelay();
-
     final result = diff.inSeconds >= delaySeconds;
-    _backgroundedTime = null; // Always clear on evaluation during resume
+    _backgroundedTime = null;
     return result;
   }
 
@@ -99,11 +122,15 @@ final biometricEnabledProvider = FutureProvider<bool>((ref) async {
   return service.getBiometricEnabled();
 });
 
+final biometricAvailableProvider = FutureProvider<bool>((ref) async {
+  final service = ref.watch(biometricServiceProvider);
+  return service.isAvailable;
+});
+
 final biometricServiceProvider = Provider<BiometricService>((ref) {
   return BiometricService();
 });
 
-// State provider to track if the app is currently locked
 final isAppLockedProvider = NotifierProvider<BooleanNotifier, bool>(
   BooleanNotifier.new,
 );

@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:xolo/presentation/screens/active_workspace_explorer.dart';
 import 'package:xolo/presentation/screens/composer_screen.dart';
+import 'package:xolo/presentation/screens/environments_screen.dart';
 import 'package:xolo/presentation/screens/history_screen.dart';
 import 'package:xolo/presentation/screens/home_screen.dart';
 import 'package:xolo/presentation/screens/settings_screen.dart';
@@ -12,6 +13,7 @@ abstract final class AppRoutes {
   static const history = '/history';
   static const composer = '/composer';
   static const sync = '/sync';
+  static const environments = '/environments';
   static const settings = '/settings';
 }
 
@@ -42,6 +44,11 @@ final appRouter = GoRouter(
               const NoTransitionPage(child: SyncScreen()),
         ),
         GoRoute(
+          path: AppRoutes.environments,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: EnvironmentsScreen()),
+        ),
+        GoRoute(
           path: AppRoutes.settings,
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: SettingsScreen()),
@@ -69,4 +76,24 @@ int tabIndexForRoute(String location) {
   if (location.startsWith(AppRoutes.sync)) return 3;
   if (location.startsWith(AppRoutes.settings)) return 4;
   return 0;
+}
+
+/// Desktop rail order: composer, collections, history, environments, settings.
+int railIndexForRoute(String location) {
+  if (location.startsWith(AppRoutes.composer)) return 0;
+  if (location.startsWith(AppRoutes.history)) return 2;
+  if (location.startsWith(AppRoutes.environments)) return 3;
+  if (location.startsWith(AppRoutes.settings)) return 4;
+  return 1;
+}
+
+String routeForRailIndex(int index) {
+  return switch (index) {
+    0 => AppRoutes.composer,
+    1 => AppRoutes.explorer,
+    2 => AppRoutes.history,
+    3 => AppRoutes.environments,
+    4 => AppRoutes.settings,
+    _ => AppRoutes.explorer,
+  };
 }

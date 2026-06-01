@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xolo/core/theme/xolo_design_tokens.dart';
 import 'package:xolo/l10n/app_localizations.dart';
 import 'package:xolo/presentation/providers/workspace_provider.dart';
-import 'package:xolo/presentation/widgets/import_collection_dialog.dart';
 import 'package:xolo/presentation/widgets/xolo_brand_mark.dart';
 
 class PremiumSidebar extends ConsumerWidget {
@@ -23,46 +22,16 @@ class PremiumSidebar extends ConsumerWidget {
     final activeWorkspace = ref.watch(activeWorkspaceProvider).value;
 
     return Container(
-      width: 264,
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(
-          right: BorderSide(color: colorScheme.outline.withValues(alpha: 0.55)),
-        ),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            colorScheme.surface,
-            Color.alphaBlend(
-              colorScheme.primary.withValues(alpha: 0.04),
-              colorScheme.surfaceContainerHighest,
-            ),
-          ],
-        ),
-      ),
+      width: 240,
+      color: colorScheme.surface,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              child: XoloBrandMark(
-                subtitle: activeWorkspace?.name,
-                compact: true,
-              ),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+              child: XoloBrandMark(subtitle: activeWorkspace?.name),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                l10n.projectsSection.toUpperCase(),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
             _SidebarItem(
               icon: Icons.send_rounded,
               label: l10n.composer,
@@ -87,31 +56,15 @@ class PremiumSidebar extends ConsumerWidget {
               isSelected: selectedIndex == 3,
               onTap: () => onIndexChanged(3),
             ),
-            _SidebarItem(
-              icon: Icons.cloud_download_outlined,
-              label: l10n.import,
-              isSelected: false,
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const ImportCollectionDialog(),
-                );
-              },
-            ),
             const Spacer(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Divider(
-                color: colorScheme.outline.withValues(alpha: 0.35),
-              ),
-            ),
+            const Divider(height: 1),
             _SidebarItem(
               icon: Icons.settings_rounded,
               label: l10n.settings,
               isSelected: selectedIndex == 4,
               onTap: () => onIndexChanged(4),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -137,50 +90,19 @@ class _SidebarItem extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
       child: Material(
-        color: Colors.transparent,
+        color: isSelected
+            ? colorScheme.primary.withValues(alpha: 0.1)
+            : Colors.transparent,
+        borderRadius: XoloRadius.md,
         child: InkWell(
           onTap: onTap,
           borderRadius: XoloRadius.md,
-          child: AnimatedContainer(
-            duration: XoloMotion.normal,
-            curve: XoloMotion.standard,
-            height: 44,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? colorScheme.primary.withValues(alpha: 0.12)
-                  : Colors.transparent,
-              borderRadius: XoloRadius.md,
-              border: Border.all(
-                color: isSelected
-                    ? colorScheme.primary.withValues(alpha: 0.28)
-                    : Colors.transparent,
-              ),
-            ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                AnimatedContainer(
-                  duration: XoloMotion.normal,
-                  width: 3,
-                  height: isSelected ? 18 : 0,
-                  margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    borderRadius: BorderRadius.circular(99),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: colorScheme.primary.withValues(
-                                alpha: 0.45,
-                              ),
-                              blurRadius: 8,
-                            ),
-                          ]
-                        : null,
-                  ),
-                ),
                 Icon(
                   icon,
                   size: 18,
@@ -188,7 +110,7 @@ class _SidebarItem extends StatelessWidget {
                       ? colorScheme.primary
                       : colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     label,
@@ -197,8 +119,8 @@ class _SidebarItem extends StatelessWidget {
                           ? colorScheme.onSurface
                           : colorScheme.onSurfaceVariant,
                       fontWeight: isSelected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                     ),
                   ),
                 ),

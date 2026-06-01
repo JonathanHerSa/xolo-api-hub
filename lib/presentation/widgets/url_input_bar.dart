@@ -268,7 +268,12 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
     final showPrefix = hasBaseUrl;
 
     return Container(
-      decoration: XoloSurfaces.panel(colorScheme, borderRadius: XoloRadius.lg),
+      height: XoloLayout.urlBarHeight,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: XoloRadius.lg,
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.55)),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Row(
         children: [
@@ -390,59 +395,23 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
           ),
 
           Padding(
-            padding: const EdgeInsets.all(6),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient:
-                    XoloThemeExtension.of(context)?.accentGradient ??
-                    XoloSurfaces.accentGradient(colorScheme.primary),
-                borderRadius: XoloRadius.md,
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+            child: FilledButton(
+              onPressed: requestAsync.isLoading ? null : _sendRequest,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(96, 40),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
               ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: requestAsync.isLoading ? null : _sendRequest,
-                  borderRadius: XoloRadius.md,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 11,
-                    ),
-                    child: requestAsync.isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Send',
-                                style: Theme.of(context).textTheme.labelLarge
-                                    ?.copyWith(color: Colors.white),
-                              ),
-                              const SizedBox(width: 6),
-                              const Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
-              ),
+              child: requestAsync.isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
+                    )
+                  : const Text('Send'),
             ),
           ),
         ],
@@ -473,7 +442,9 @@ class _UrlInputBarState extends ConsumerState<UrlInputBar> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       color: colorScheme.surfaceContainerHighest,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        height: double.infinity,
+        alignment: Alignment.center,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

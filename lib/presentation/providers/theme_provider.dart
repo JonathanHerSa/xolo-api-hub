@@ -17,8 +17,8 @@ final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(() {
 });
 
 class ThemeColorNotifier extends Notifier<int> {
-  // Color por defecto: Ember (Xolo accent)
-  static const int defaultColor = 0xFFF97316;
+  // Color por defecto: azul sistema
+  static const int defaultColor = 0xFF0A84FF;
 
   @override
   int build() {

@@ -13,44 +13,62 @@ class BiometricLockScreen extends ConsumerStatefulWidget {
       _BiometricLockScreenState();
 }
 
-class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen>
-    with WidgetsBindingObserver {
+class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
   bool _isAuthenticating = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _authenticate();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _authenticate();
+  Future<void> _bootstrap() async {
+    final service = ref.read(biometricServiceProvider);
+    if (await service.disableIfUnavailable()) {
+      if (mounted) {
+        ref.read(isAppLockedProvider.notifier).set(false);
+      }
+      return;
     }
+    await _authenticate(auto: true);
   }
 
-  Future<void> _authenticate() async {
+  Future<void> _authenticate({bool auto = false}) async {
     if (_isAuthenticating) return;
-    setState(() => _isAuthenticating = true);
+
+    setState(() {
+      _isAuthenticating = true;
+      if (!auto) _errorMessage = null;
+    });
 
     final l10n = AppLocalizations.of(context)!;
     final service = ref.read(biometricServiceProvider);
-    final authenticated = await service.authenticate(reason: l10n.unlockReason);
 
-    if (mounted) {
-      if (authenticated) {
+    if (!await service.isAvailable) {
+      await service.setBiometricEnabled(false);
+      if (mounted) {
         ref.read(isAppLockedProvider.notifier).set(false);
       }
-      setState(() => _isAuthenticating = false);
+      return;
     }
+
+    final authenticated = await service.authenticate(
+      reason: l10n.unlockReason,
+      biometricOnly: false,
+    );
+
+    if (!mounted) return;
+
+    if (authenticated) {
+      ref.read(isAppLockedProvider.notifier).set(false);
+      return;
+    }
+
+    setState(() {
+      _isAuthenticating = false;
+      _errorMessage = auto ? null : l10n.biometricAuthFailed;
+    });
   }
 
   @override
@@ -59,88 +77,68 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Material(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surfaceContainerLowest,
-              Color.alphaBlend(
-                colorScheme.primary.withValues(alpha: 0.12),
-                colorScheme.surface,
-              ),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
-              child: Padding(
-                padding: const EdgeInsets.all(XoloSpacing.xl),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const XoloBrandMark(size: 56, showLabel: false),
-                    const SizedBox(height: XoloSpacing.xxl),
-                    Container(
-                      width: 88,
-                      height: 88,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: colorScheme.primary.withValues(alpha: 0.12),
-                        border: Border.all(
-                          color: colorScheme.primary.withValues(alpha: 0.35),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: colorScheme.primary.withValues(alpha: 0.25),
-                            blurRadius: 24,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.fingerprint_rounded,
-                        size: 42,
-                        color: colorScheme.primary,
-                      ),
+      color: colorScheme.surface,
+      child: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: Padding(
+              padding: const EdgeInsets.all(XoloSpacing.xl),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const XoloBrandMark(size: 44, showLabel: true),
+                  const SizedBox(height: XoloSpacing.xxl),
+                  Icon(
+                    Icons.lock_outline_rounded,
+                    size: 56,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: XoloSpacing.lg),
+                  Text(
+                    l10n.biometricLockedTitle,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: XoloSpacing.xl),
+                  ),
+                  const SizedBox(height: XoloSpacing.sm),
+                  Text(
+                    l10n.biometricVaultSubtitle,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: XoloSpacing.lg),
                     Text(
-                      l10n.biometricLockedTitle,
+                      _errorMessage!,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: XoloSpacing.md),
-                    Text(
-                      l10n.biometricVaultSubtitle,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: XoloSpacing.xxl),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: _isAuthenticating ? null : _authenticate,
-                        icon: _isAuthenticating
-                            ? SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: colorScheme.onPrimary,
-                                ),
-                              )
-                            : const Icon(Icons.lock_open_rounded),
-                        label: Text(l10n.unlock),
-                      ),
+                      style: TextStyle(color: colorScheme.error, fontSize: 13),
                     ),
                   ],
-                ),
+                  const SizedBox(height: XoloSpacing.xxl),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _isAuthenticating
+                          ? null
+                          : () => _authenticate(),
+                      icon: _isAuthenticating
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: colorScheme.onPrimary,
+                              ),
+                            )
+                          : const Icon(Icons.lock_open_rounded),
+                      label: Text(l10n.unlock),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

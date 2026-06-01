@@ -819,6 +819,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get biometricLockSubtitle => 'Require FaceID/Fingerprint to open';
 
   @override
+  String get biometricAuthFailed =>
+      'Could not verify your identity. Try again.';
+
+  @override
+  String get biometricUnavailable => 'Not available on this device';
+
+  @override
   String get verifyToEnableLock => 'Verify to enable lock';
 
   @override

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:xolo/core/theme/xolo_design_tokens.dart';
 import 'package:xolo/l10n/app_localizations.dart';
 
 class NeoNavBar extends StatelessWidget {
-  final int currentIndex;
-  final Function(int) onTap;
-
   const NeoNavBar({super.key, required this.currentIndex, required this.onTap});
+
+  final int currentIndex;
+  final ValueChanged<int> onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -15,89 +14,63 @@ class NeoNavBar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     final items = [
-      (icon: Icons.grid_view_rounded, label: l10n.projects),
-      (icon: Icons.history_rounded, label: l10n.history),
-      (icon: Icons.bolt_rounded, label: l10n.compose),
-      (icon: Icons.backup_rounded, label: l10n.backup),
-      (icon: Icons.tune_rounded, label: l10n.settings),
+      (Icons.grid_view_rounded, l10n.projects),
+      (Icons.history_rounded, l10n.history),
+      (Icons.bolt_rounded, l10n.compose),
+      (Icons.backup_rounded, l10n.backup),
+      (Icons.settings_rounded, l10n.settings),
     ];
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: colorScheme.surface.withValues(alpha: 0.92),
-            borderRadius: XoloRadius.xl,
-            border: Border.all(
-              color: colorScheme.outline.withValues(alpha: 0.55),
-            ),
-            boxShadow: XoloSurfaces.floatingShadow(opacity: 0.22),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-            child: Row(
-              children: List.generate(items.length, (index) {
-                final isActive = index == currentIndex;
-                final item = items[index];
-                return Expanded(
-                  child: Semantics(
-                    button: true,
-                    selected: isActive,
-                    label: item.label,
-                    child: InkWell(
-                      borderRadius: XoloRadius.lg,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        onTap(index);
-                      },
-                      child: AnimatedContainer(
-                        duration: XoloMotion.normal,
-                        curve: XoloMotion.standard,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          borderRadius: XoloRadius.lg,
-                          color: isActive
-                              ? colorScheme.primary.withValues(alpha: 0.14)
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: isActive
-                                ? colorScheme.primary.withValues(alpha: 0.28)
-                                : Colors.transparent,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              item.icon,
-                              size: 21,
-                              color: isActive
-                                  ? colorScheme.primary
-                                  : colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item.label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    fontSize: 10,
-                                    color: isActive
-                                        ? colorScheme.primary
-                                        : colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
-                          ],
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest,
+        border: Border(
+          top: BorderSide(color: colorScheme.outline.withValues(alpha: 0.7)),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: List.generate(items.length, (i) {
+              final active = i == currentIndex;
+              return Expanded(
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    onTap(i);
+                  },
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        items[i].$1,
+                        size: 24,
+                        color: active
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        items[i].$2,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: active
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                          color: active
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                );
-              }),
-            ),
+                ),
+              );
+            }),
           ),
         ),
       ),

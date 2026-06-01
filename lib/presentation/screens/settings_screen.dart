@@ -10,7 +10,7 @@ import 'package:xolo/l10n/app_localizations.dart';
 import 'package:xolo/presentation/providers/database_providers.dart';
 import 'package:xolo/presentation/providers/incognito_provider.dart';
 import 'package:xolo/presentation/providers/theme_provider.dart';
-import 'package:xolo/presentation/widgets/advanced_color_picker.dart';
+import 'package:xolo/presentation/widgets/ui/xolo_section_header.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -63,7 +63,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
         title: Text(l10n.settings),
-        centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -74,7 +73,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           vertical: XoloSpacing.sm,
         ),
         children: [
-          _buildAppearanceCard(context, ref, l10n),
+          _buildThemeModeCard(context, ref, l10n),
 
           const SizedBox(height: XoloSpacing.xl),
           _buildSectionTitle(context, l10n.securityAndPrivacy),
@@ -86,46 +85,74 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(height: 1, indent: 64),
 
             // Biometric
-            biometricAsync.when(
-              data: (enabled) => SwitchListTile.adaptive(
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                title: Text(
-                  l10n.biometricLock,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text(
-                  l10n.biometricLockSubtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                secondary: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+            ref
+                .watch(biometricAvailableProvider)
+                .when(
+                  data: (available) => biometricAsync.when(
+                    data: (enabled) => SwitchListTile.adaptive(
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(16),
+                        ),
+                      ),
+                      title: Text(
+                        l10n.biometricLock,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        available
+                            ? l10n.biometricLockSubtitle
+                            : l10n.biometricUnavailable,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: available
+                              ? colorScheme.onSurfaceVariant
+                              : colorScheme.error,
+                        ),
+                      ),
+                      secondary: Icon(
+                        Icons.fingerprint,
+                        color: available
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                      value: enabled && available,
+                      onChanged: available
+                          ? (val) async {
+                              final service = ref.read(
+                                biometricServiceProvider,
+                              );
+                              if (val) {
+                                final authenticated = await service
+                                    .authenticate(
+                                      reason: l10n.verifyToEnableLock,
+                                      biometricOnly: false,
+                                    );
+                                if (!authenticated) return;
+                              }
+                              await service.setBiometricEnabled(val);
+                              ref.invalidate(biometricEnabledProvider);
+                            }
+                          : null,
+                    ),
+                    loading: () => const LinearProgressIndicator(),
+                    error: (e, s) => ListTile(
+                      title: Text(l10n.authError(e.toString())),
+                      leading: Icon(Icons.error, color: colorScheme.error),
+                    ),
                   ),
-                  child: const Icon(Icons.fingerprint, color: Colors.blue),
+                  loading: () => const LinearProgressIndicator(),
+                  error: (_, _) => biometricAsync.when(
+                    data: (enabled) => SwitchListTile.adaptive(
+                      title: Text(l10n.biometricLock),
+                      value: enabled,
+                      onChanged: null,
+                    ),
+                    loading: () => const LinearProgressIndicator(),
+                    error: (e, s) =>
+                        ListTile(title: Text(l10n.authError(e.toString()))),
+                  ),
                 ),
-                value: enabled,
-                onChanged: (val) async {
-                  final service = ref.read(biometricServiceProvider);
-                  if (val) {
-                    final authenticated = await service.authenticate(
-                      reason: l10n.verifyToEnableLock,
-                    );
-                    if (!authenticated) return;
-                  }
-                  await service.setBiometricEnabled(val);
-                  ref.invalidate(biometricEnabledProvider);
-                },
-              ),
-              loading: () => const LinearProgressIndicator(),
-              error: (e, s) => ListTile(
-                title: Text(l10n.authError(e.toString())),
-                leading: const Icon(Icons.error, color: Colors.red),
-              ),
-            ),
 
             const Divider(height: 1, indent: 64),
 
@@ -362,97 +389,70 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.primary,
-          letterSpacing: 1.2,
-        ),
-      ),
+    return XoloSectionHeader(
+      title: title.toUpperCase(),
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, XoloSpacing.sm),
     );
   }
 
-  // Group container for IOS-style settings
   Widget _buildSettingsGroup(BuildContext context, List<Widget> children) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: XoloRadius.lg,
-      ),
+      decoration: XoloSurfaces.panel(colorScheme, borderRadius: XoloRadius.lg),
+      clipBehavior: Clip.antiAlias,
       child: Column(children: children),
     );
   }
 
-  Widget _buildAppearanceCard(
+  Widget _buildThemeModeCard(
     BuildContext context,
     WidgetRef ref,
     AppLocalizations l10n,
   ) {
-    try {
-      final currentColorInt = ref.watch(themeColorProvider);
-      final currentColor = Color(currentColorInt);
+    final themeMode = ref.watch(themeModeProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              currentColor.withValues(alpha: 0.2),
-              currentColor.withValues(alpha: 0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: XoloRadius.xl,
-          border: Border.all(
-            color: currentColor.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.palette_outlined),
-                const SizedBox(width: 8),
-                Text(
-                  l10n.appTheme,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
+    return _buildSettingsGroup(context, [
+      ListTile(
+        leading: Icon(Icons.dark_mode_outlined, color: colorScheme.primary),
+        title: Text(l10n.appTheme),
+        subtitle: Text(_themeModeLabel(l10n, themeMode)),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: SegmentedButton<ThemeMode>(
+          segments: [
+            ButtonSegment(
+              value: ThemeMode.light,
+              label: Text(l10n.themeLight),
+              icon: const Icon(Icons.light_mode_outlined, size: 16),
             ),
-            const SizedBox(height: 16),
-            AdvancedColorPicker(
-              currentColor: currentColor,
-              onColorChanged: (newColor) {
-                ref
-                    .read(themeColorProvider.notifier)
-                    .setColor(newColor.toARGB32());
-              },
+            ButtonSegment(
+              value: ThemeMode.dark,
+              label: Text(l10n.themeDark),
+              icon: const Icon(Icons.dark_mode_outlined, size: 16),
+            ),
+            ButtonSegment(
+              value: ThemeMode.system,
+              label: Text(l10n.themeSystem),
+              icon: const Icon(Icons.settings_brightness_outlined, size: 16),
             ),
           ],
+          selected: {themeMode},
+          onSelectionChanged: (selection) {
+            ref.read(themeModeProvider.notifier).setMode(selection.first);
+          },
         ),
-      );
-    } catch (e) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.red.withValues(alpha: 0.1),
-        child: Text(
-          l10n.themeWidgetError(e.toString()),
-          style: const TextStyle(color: Colors.red),
-        ),
-      );
-    }
+      ),
+    ]);
+  }
+
+  String _themeModeLabel(AppLocalizations l10n, ThemeMode mode) {
+    return switch (mode) {
+      ThemeMode.light => l10n.themeLight,
+      ThemeMode.dark => l10n.themeDark,
+      ThemeMode.system => l10n.themeSystem,
+    };
   }
 
   String _getDelayLabel(AppLocalizations l10n, int seconds) {

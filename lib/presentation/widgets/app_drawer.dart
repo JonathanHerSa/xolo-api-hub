@@ -29,17 +29,10 @@ class AppDrawer extends ConsumerWidget {
             margin: EdgeInsets.zero,
             padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.primary.withValues(alpha: 0.16),
-                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                ],
-              ),
+              color: colorScheme.surfaceContainerHigh,
               border: Border(
                 bottom: BorderSide(
-                  color: colorScheme.outline.withValues(alpha: 0.35),
+                  color: colorScheme.outline.withValues(alpha: 0.65),
                 ),
               ),
             ),
@@ -52,19 +45,6 @@ class AppDrawer extends ConsumerWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                /*
-                ListTile(
-                  leading: const Icon(Icons.folder_special),
-                  title: Text(l10n.allRequests),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SavedRequestsScreen()),
-                    );
-                  },
-                ),
-                */
                 ListTile(
                   leading: const Icon(Icons.history),
                   title: Text(l10n.history),
@@ -89,35 +69,22 @@ class AppDrawer extends ConsumerWidget {
                     );
                   },
                 ),
-                ListTile(
-                  leading: const Icon(Icons.cloud_download),
-                  title: Text(l10n.importCollection),
-                  onTap: () {
-                    Navigator.pop(context);
-                    showDialog(
-                      context: context,
-                      builder: (context) => const ImportCollectionDialog(),
-                    );
-                  },
-                ),
-
                 const Divider(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Text(
                     l10n.projectsSection,
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.secondary,
-                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-
                 collectionsAsync.when(
                   data: (flattened) {
                     if (flattened.isEmpty) {
                       return Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(16),
                         child: Text(l10n.noProjectsFound),
                       );
                     }
@@ -145,9 +112,7 @@ class AppDrawer extends ConsumerWidget {
                             }
                           },
                           child: Padding(
-                            padding: EdgeInsets.only(
-                              left: 16.0 + (depth * 16.0),
-                            ),
+                            padding: EdgeInsets.only(left: 16 + (depth * 16)),
                             child: ListTile(
                               dense: true,
                               visualDensity: VisualDensity.compact,
@@ -161,7 +126,7 @@ class AppDrawer extends ConsumerWidget {
                                 col.name,
                                 style: TextStyle(
                                   fontWeight: depth == 0
-                                      ? FontWeight.bold
+                                      ? FontWeight.w600
                                       : FontWeight.normal,
                                   color: isActive ? colorScheme.primary : null,
                                 ),
@@ -243,15 +208,14 @@ class AppDrawer extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     child: Text(
                       l10n.errorMessage(err.toString()),
-                      style: const TextStyle(color: Colors.red),
+                      style: TextStyle(color: colorScheme.error),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-
-          const Divider(),
+          const Divider(height: 1),
         ],
       ),
     );

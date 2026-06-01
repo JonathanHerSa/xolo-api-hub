@@ -325,6 +325,8 @@
   "obtainNewToken": "Obtain new token",
   "biometricLock": "Biometric Lock",
   "biometricLockSubtitle": "Require FaceID/Fingerprint to open",
+  "biometricAuthFailed": "Could not verify your identity. Try again.",
+  "biometricUnavailable": "Not available on this device",
   "verifyToEnableLock": "Verify to enable lock",
   "authError": "Auth Error: {message}",
   "@authError": {
