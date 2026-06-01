@@ -19,6 +19,7 @@ class RequestSession {
   final String? schemaJson;
   final String? scriptsJson;
   final String? preScriptsJson;
+  final String? assertionsJson;
   final int? collectionId;
 
   RequestSession({
@@ -34,6 +35,7 @@ class RequestSession {
     this.schemaJson,
     this.scriptsJson,
     this.preScriptsJson,
+    this.assertionsJson,
     this.collectionId,
   });
 
@@ -50,6 +52,7 @@ class RequestSession {
     String? schemaJson,
     String? scriptsJson,
     String? preScriptsJson,
+    String? assertionsJson,
     int? collectionId,
   }) {
     return RequestSession(
@@ -65,6 +68,7 @@ class RequestSession {
       schemaJson: schemaJson ?? this.schemaJson,
       scriptsJson: scriptsJson ?? this.scriptsJson,
       preScriptsJson: preScriptsJson ?? this.preScriptsJson,
+      assertionsJson: assertionsJson ?? this.assertionsJson,
       collectionId: collectionId ?? this.collectionId,
     );
   }
@@ -144,6 +148,10 @@ class RequestSessionController {
     _update(_state.copyWith(preScriptsJson: value));
   }
 
+  void setAssertionsJson(String? value) {
+    _update(_state.copyWith(assertionsJson: value));
+  }
+
   void updateHeaders(List<KeyValuePair> newHeaders) {
     _update(_state.copyWith(headers: _ensureEmptyRow(newHeaders)));
   }
@@ -199,6 +207,7 @@ class RequestSessionController {
         params: _ensureEmptyRow(parseKV(req.paramsJson)),
         scriptsJson: req.scriptsJson,
         preScriptsJson: req.preScriptsJson,
+        assertionsJson: req.assertionsJson,
       ),
     );
   }

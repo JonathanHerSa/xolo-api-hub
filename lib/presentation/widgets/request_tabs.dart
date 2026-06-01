@@ -6,6 +6,7 @@ import 'package:xolo/presentation/providers/request_provider.dart';
 import 'package:xolo/presentation/widgets/auth_tab.dart';
 import 'package:xolo/presentation/widgets/code_snippet_dialog.dart';
 import 'package:xolo/presentation/widgets/key_value_table.dart';
+import 'package:xolo/presentation/widgets/request/assertions_tab.dart';
 import 'package:xolo/presentation/widgets/request/request_body_tab.dart';
 import 'package:xolo/presentation/widgets/request/request_response_tab.dart';
 import 'package:xolo/presentation/widgets/request/request_scripts_tab.dart';
@@ -26,7 +27,7 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
   }
 
   @override
@@ -60,7 +61,7 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
       if (prevLoading &&
           !nextLoading &&
           (nextData != null || nextError != null)) {
-        _tabController.animateTo(5);
+        _tabController.animateTo(6);
       }
     });
 
@@ -126,6 +127,7 @@ class _RequestTabsState extends ConsumerState<RequestTabs>
               ),
               RequestBodyTab(tabId: widget.tabId),
               ScriptsTab(tabId: widget.tabId),
+              AssertionsTab(tabId: widget.tabId),
               RequestResponseTab(
                 isLoading: isLoading,
                 data: data,

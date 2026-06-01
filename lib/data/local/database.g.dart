@@ -609,6 +609,17 @@ class $SavedRequestsTable extends SavedRequests
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _assertionsJsonMeta = const VerificationMeta(
+    'assertionsJson',
+  );
+  @override
+  late final GeneratedColumn<String> assertionsJson = GeneratedColumn<String>(
+    'assertions_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _collectionIdMeta = const VerificationMeta(
     'collectionId',
   );
@@ -676,6 +687,7 @@ class $SavedRequestsTable extends SavedRequests
     schemaJson,
     preScriptsJson,
     scriptsJson,
+    assertionsJson,
     collectionId,
     createdAt,
     updatedAt,
@@ -777,6 +789,15 @@ class $SavedRequestsTable extends SavedRequests
         ),
       );
     }
+    if (data.containsKey('assertions_json')) {
+      context.handle(
+        _assertionsJsonMeta,
+        assertionsJson.isAcceptableOrUnknown(
+          data['assertions_json']!,
+          _assertionsJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('collection_id')) {
       context.handle(
         _collectionIdMeta,
@@ -861,6 +882,10 @@ class $SavedRequestsTable extends SavedRequests
         DriftSqlType.string,
         data['${effectivePrefix}scripts_json'],
       ),
+      assertionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assertions_json'],
+      ),
       collectionId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}collection_id'],
@@ -899,6 +924,7 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
   final String? schemaJson;
   final String? preScriptsJson;
   final String? scriptsJson;
+  final String? assertionsJson;
   final int? collectionId;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -916,6 +942,7 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     this.schemaJson,
     this.preScriptsJson,
     this.scriptsJson,
+    this.assertionsJson,
     this.collectionId,
     required this.createdAt,
     required this.updatedAt,
@@ -951,6 +978,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     }
     if (!nullToAbsent || scriptsJson != null) {
       map['scripts_json'] = Variable<String>(scriptsJson);
+    }
+    if (!nullToAbsent || assertionsJson != null) {
+      map['assertions_json'] = Variable<String>(assertionsJson);
     }
     if (!nullToAbsent || collectionId != null) {
       map['collection_id'] = Variable<int>(collectionId);
@@ -989,6 +1019,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
       scriptsJson: scriptsJson == null && nullToAbsent
           ? const Value.absent()
           : Value(scriptsJson),
+      assertionsJson: assertionsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assertionsJson),
       collectionId: collectionId == null && nullToAbsent
           ? const Value.absent()
           : Value(collectionId),
@@ -1016,6 +1049,7 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
       schemaJson: serializer.fromJson<String?>(json['schemaJson']),
       preScriptsJson: serializer.fromJson<String?>(json['preScriptsJson']),
       scriptsJson: serializer.fromJson<String?>(json['scriptsJson']),
+      assertionsJson: serializer.fromJson<String?>(json['assertionsJson']),
       collectionId: serializer.fromJson<int?>(json['collectionId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1038,6 +1072,7 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
       'schemaJson': serializer.toJson<String?>(schemaJson),
       'preScriptsJson': serializer.toJson<String?>(preScriptsJson),
       'scriptsJson': serializer.toJson<String?>(scriptsJson),
+      'assertionsJson': serializer.toJson<String?>(assertionsJson),
       'collectionId': serializer.toJson<int?>(collectionId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -1058,6 +1093,7 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     Value<String?> schemaJson = const Value.absent(),
     Value<String?> preScriptsJson = const Value.absent(),
     Value<String?> scriptsJson = const Value.absent(),
+    Value<String?> assertionsJson = const Value.absent(),
     Value<int?> collectionId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -1077,6 +1113,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
         ? preScriptsJson.value
         : this.preScriptsJson,
     scriptsJson: scriptsJson.present ? scriptsJson.value : this.scriptsJson,
+    assertionsJson: assertionsJson.present
+        ? assertionsJson.value
+        : this.assertionsJson,
     collectionId: collectionId.present ? collectionId.value : this.collectionId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1106,6 +1145,9 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
       scriptsJson: data.scriptsJson.present
           ? data.scriptsJson.value
           : this.scriptsJson,
+      assertionsJson: data.assertionsJson.present
+          ? data.assertionsJson.value
+          : this.assertionsJson,
       collectionId: data.collectionId.present
           ? data.collectionId.value
           : this.collectionId,
@@ -1130,6 +1172,7 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
           ..write('schemaJson: $schemaJson, ')
           ..write('preScriptsJson: $preScriptsJson, ')
           ..write('scriptsJson: $scriptsJson, ')
+          ..write('assertionsJson: $assertionsJson, ')
           ..write('collectionId: $collectionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1152,6 +1195,7 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
     schemaJson,
     preScriptsJson,
     scriptsJson,
+    assertionsJson,
     collectionId,
     createdAt,
     updatedAt,
@@ -1173,6 +1217,7 @@ class SavedRequest extends DataClass implements Insertable<SavedRequest> {
           other.schemaJson == this.schemaJson &&
           other.preScriptsJson == this.preScriptsJson &&
           other.scriptsJson == this.scriptsJson &&
+          other.assertionsJson == this.assertionsJson &&
           other.collectionId == this.collectionId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -1192,6 +1237,7 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
   final Value<String?> schemaJson;
   final Value<String?> preScriptsJson;
   final Value<String?> scriptsJson;
+  final Value<String?> assertionsJson;
   final Value<int?> collectionId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1209,6 +1255,7 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     this.schemaJson = const Value.absent(),
     this.preScriptsJson = const Value.absent(),
     this.scriptsJson = const Value.absent(),
+    this.assertionsJson = const Value.absent(),
     this.collectionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1227,6 +1274,7 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     this.schemaJson = const Value.absent(),
     this.preScriptsJson = const Value.absent(),
     this.scriptsJson = const Value.absent(),
+    this.assertionsJson = const Value.absent(),
     this.collectionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1247,6 +1295,7 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     Expression<String>? schemaJson,
     Expression<String>? preScriptsJson,
     Expression<String>? scriptsJson,
+    Expression<String>? assertionsJson,
     Expression<int>? collectionId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -1265,6 +1314,7 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
       if (schemaJson != null) 'schema_json': schemaJson,
       if (preScriptsJson != null) 'pre_scripts_json': preScriptsJson,
       if (scriptsJson != null) 'scripts_json': scriptsJson,
+      if (assertionsJson != null) 'assertions_json': assertionsJson,
       if (collectionId != null) 'collection_id': collectionId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1285,6 +1335,7 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     Value<String?>? schemaJson,
     Value<String?>? preScriptsJson,
     Value<String?>? scriptsJson,
+    Value<String?>? assertionsJson,
     Value<int?>? collectionId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -1303,6 +1354,7 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
       schemaJson: schemaJson ?? this.schemaJson,
       preScriptsJson: preScriptsJson ?? this.preScriptsJson,
       scriptsJson: scriptsJson ?? this.scriptsJson,
+      assertionsJson: assertionsJson ?? this.assertionsJson,
       collectionId: collectionId ?? this.collectionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1349,6 +1401,9 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
     if (scriptsJson.present) {
       map['scripts_json'] = Variable<String>(scriptsJson.value);
     }
+    if (assertionsJson.present) {
+      map['assertions_json'] = Variable<String>(assertionsJson.value);
+    }
     if (collectionId.present) {
       map['collection_id'] = Variable<int>(collectionId.value);
     }
@@ -1379,6 +1434,7 @@ class SavedRequestsCompanion extends UpdateCompanion<SavedRequest> {
           ..write('schemaJson: $schemaJson, ')
           ..write('preScriptsJson: $preScriptsJson, ')
           ..write('scriptsJson: $scriptsJson, ')
+          ..write('assertionsJson: $assertionsJson, ')
           ..write('collectionId: $collectionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -3310,6 +3366,1709 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   }
 }
 
+class $CollectionRunsTable extends CollectionRuns
+    with TableInfo<$CollectionRunsTable, CollectionRun> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CollectionRunsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _collectionIdMeta = const VerificationMeta(
+    'collectionId',
+  );
+  @override
+  late final GeneratedColumn<int> collectionId = GeneratedColumn<int>(
+    'collection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES collections (id)',
+    ),
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<int> workspaceId = GeneratedColumn<int>(
+    'workspace_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES collections (id)',
+    ),
+  );
+  static const VerificationMeta _environmentIdMeta = const VerificationMeta(
+    'environmentId',
+  );
+  @override
+  late final GeneratedColumn<int> environmentId = GeneratedColumn<int>(
+    'environment_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES environments (id)',
+    ),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 20,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalStepsMeta = const VerificationMeta(
+    'totalSteps',
+  );
+  @override
+  late final GeneratedColumn<int> totalSteps = GeneratedColumn<int>(
+    'total_steps',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _passedStepsMeta = const VerificationMeta(
+    'passedSteps',
+  );
+  @override
+  late final GeneratedColumn<int> passedSteps = GeneratedColumn<int>(
+    'passed_steps',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _failedStepsMeta = const VerificationMeta(
+    'failedSteps',
+  );
+  @override
+  late final GeneratedColumn<int> failedSteps = GeneratedColumn<int>(
+    'failed_steps',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _skippedStepsMeta = const VerificationMeta(
+    'skippedSteps',
+  );
+  @override
+  late final GeneratedColumn<int> skippedSteps = GeneratedColumn<int>(
+    'skipped_steps',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _stopOnFailureMeta = const VerificationMeta(
+    'stopOnFailure',
+  );
+  @override
+  late final GeneratedColumn<bool> stopOnFailure = GeneratedColumn<bool>(
+    'stop_on_failure',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("stop_on_failure" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _runOptionsJsonMeta = const VerificationMeta(
+    'runOptionsJson',
+  );
+  @override
+  late final GeneratedColumn<String> runOptionsJson = GeneratedColumn<String>(
+    'run_options_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _variablesSnapshotJsonMeta =
+      const VerificationMeta('variablesSnapshotJson');
+  @override
+  late final GeneratedColumn<String> variablesSnapshotJson =
+      GeneratedColumn<String>(
+        'variables_snapshot_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _finishedAtMeta = const VerificationMeta(
+    'finishedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> finishedAt = GeneratedColumn<DateTime>(
+    'finished_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    collectionId,
+    workspaceId,
+    environmentId,
+    status,
+    totalSteps,
+    passedSteps,
+    failedSteps,
+    skippedSteps,
+    stopOnFailure,
+    runOptionsJson,
+    variablesSnapshotJson,
+    startedAt,
+    finishedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'collection_runs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CollectionRun> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('collection_id')) {
+      context.handle(
+        _collectionIdMeta,
+        collectionId.isAcceptableOrUnknown(
+          data['collection_id']!,
+          _collectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_collectionIdMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('environment_id')) {
+      context.handle(
+        _environmentIdMeta,
+        environmentId.isAcceptableOrUnknown(
+          data['environment_id']!,
+          _environmentIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('total_steps')) {
+      context.handle(
+        _totalStepsMeta,
+        totalSteps.isAcceptableOrUnknown(data['total_steps']!, _totalStepsMeta),
+      );
+    }
+    if (data.containsKey('passed_steps')) {
+      context.handle(
+        _passedStepsMeta,
+        passedSteps.isAcceptableOrUnknown(
+          data['passed_steps']!,
+          _passedStepsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('failed_steps')) {
+      context.handle(
+        _failedStepsMeta,
+        failedSteps.isAcceptableOrUnknown(
+          data['failed_steps']!,
+          _failedStepsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('skipped_steps')) {
+      context.handle(
+        _skippedStepsMeta,
+        skippedSteps.isAcceptableOrUnknown(
+          data['skipped_steps']!,
+          _skippedStepsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('stop_on_failure')) {
+      context.handle(
+        _stopOnFailureMeta,
+        stopOnFailure.isAcceptableOrUnknown(
+          data['stop_on_failure']!,
+          _stopOnFailureMeta,
+        ),
+      );
+    }
+    if (data.containsKey('run_options_json')) {
+      context.handle(
+        _runOptionsJsonMeta,
+        runOptionsJson.isAcceptableOrUnknown(
+          data['run_options_json']!,
+          _runOptionsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('variables_snapshot_json')) {
+      context.handle(
+        _variablesSnapshotJsonMeta,
+        variablesSnapshotJson.isAcceptableOrUnknown(
+          data['variables_snapshot_json']!,
+          _variablesSnapshotJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    }
+    if (data.containsKey('finished_at')) {
+      context.handle(
+        _finishedAtMeta,
+        finishedAt.isAcceptableOrUnknown(data['finished_at']!, _finishedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CollectionRun map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CollectionRun(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      collectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}collection_id'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}workspace_id'],
+      ),
+      environmentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}environment_id'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      totalSteps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_steps'],
+      )!,
+      passedSteps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}passed_steps'],
+      )!,
+      failedSteps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}failed_steps'],
+      )!,
+      skippedSteps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}skipped_steps'],
+      )!,
+      stopOnFailure: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}stop_on_failure'],
+      )!,
+      runOptionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}run_options_json'],
+      ),
+      variablesSnapshotJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}variables_snapshot_json'],
+      ),
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      finishedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}finished_at'],
+      ),
+    );
+  }
+
+  @override
+  $CollectionRunsTable createAlias(String alias) {
+    return $CollectionRunsTable(attachedDatabase, alias);
+  }
+}
+
+class CollectionRun extends DataClass implements Insertable<CollectionRun> {
+  final int id;
+  final int collectionId;
+  final int? workspaceId;
+  final int? environmentId;
+  final String status;
+  final int totalSteps;
+  final int passedSteps;
+  final int failedSteps;
+  final int skippedSteps;
+  final bool stopOnFailure;
+  final String? runOptionsJson;
+  final String? variablesSnapshotJson;
+  final DateTime startedAt;
+  final DateTime? finishedAt;
+  const CollectionRun({
+    required this.id,
+    required this.collectionId,
+    this.workspaceId,
+    this.environmentId,
+    required this.status,
+    required this.totalSteps,
+    required this.passedSteps,
+    required this.failedSteps,
+    required this.skippedSteps,
+    required this.stopOnFailure,
+    this.runOptionsJson,
+    this.variablesSnapshotJson,
+    required this.startedAt,
+    this.finishedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['collection_id'] = Variable<int>(collectionId);
+    if (!nullToAbsent || workspaceId != null) {
+      map['workspace_id'] = Variable<int>(workspaceId);
+    }
+    if (!nullToAbsent || environmentId != null) {
+      map['environment_id'] = Variable<int>(environmentId);
+    }
+    map['status'] = Variable<String>(status);
+    map['total_steps'] = Variable<int>(totalSteps);
+    map['passed_steps'] = Variable<int>(passedSteps);
+    map['failed_steps'] = Variable<int>(failedSteps);
+    map['skipped_steps'] = Variable<int>(skippedSteps);
+    map['stop_on_failure'] = Variable<bool>(stopOnFailure);
+    if (!nullToAbsent || runOptionsJson != null) {
+      map['run_options_json'] = Variable<String>(runOptionsJson);
+    }
+    if (!nullToAbsent || variablesSnapshotJson != null) {
+      map['variables_snapshot_json'] = Variable<String>(variablesSnapshotJson);
+    }
+    map['started_at'] = Variable<DateTime>(startedAt);
+    if (!nullToAbsent || finishedAt != null) {
+      map['finished_at'] = Variable<DateTime>(finishedAt);
+    }
+    return map;
+  }
+
+  CollectionRunsCompanion toCompanion(bool nullToAbsent) {
+    return CollectionRunsCompanion(
+      id: Value(id),
+      collectionId: Value(collectionId),
+      workspaceId: workspaceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workspaceId),
+      environmentId: environmentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(environmentId),
+      status: Value(status),
+      totalSteps: Value(totalSteps),
+      passedSteps: Value(passedSteps),
+      failedSteps: Value(failedSteps),
+      skippedSteps: Value(skippedSteps),
+      stopOnFailure: Value(stopOnFailure),
+      runOptionsJson: runOptionsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(runOptionsJson),
+      variablesSnapshotJson: variablesSnapshotJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(variablesSnapshotJson),
+      startedAt: Value(startedAt),
+      finishedAt: finishedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(finishedAt),
+    );
+  }
+
+  factory CollectionRun.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CollectionRun(
+      id: serializer.fromJson<int>(json['id']),
+      collectionId: serializer.fromJson<int>(json['collectionId']),
+      workspaceId: serializer.fromJson<int?>(json['workspaceId']),
+      environmentId: serializer.fromJson<int?>(json['environmentId']),
+      status: serializer.fromJson<String>(json['status']),
+      totalSteps: serializer.fromJson<int>(json['totalSteps']),
+      passedSteps: serializer.fromJson<int>(json['passedSteps']),
+      failedSteps: serializer.fromJson<int>(json['failedSteps']),
+      skippedSteps: serializer.fromJson<int>(json['skippedSteps']),
+      stopOnFailure: serializer.fromJson<bool>(json['stopOnFailure']),
+      runOptionsJson: serializer.fromJson<String?>(json['runOptionsJson']),
+      variablesSnapshotJson: serializer.fromJson<String?>(
+        json['variablesSnapshotJson'],
+      ),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      finishedAt: serializer.fromJson<DateTime?>(json['finishedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'collectionId': serializer.toJson<int>(collectionId),
+      'workspaceId': serializer.toJson<int?>(workspaceId),
+      'environmentId': serializer.toJson<int?>(environmentId),
+      'status': serializer.toJson<String>(status),
+      'totalSteps': serializer.toJson<int>(totalSteps),
+      'passedSteps': serializer.toJson<int>(passedSteps),
+      'failedSteps': serializer.toJson<int>(failedSteps),
+      'skippedSteps': serializer.toJson<int>(skippedSteps),
+      'stopOnFailure': serializer.toJson<bool>(stopOnFailure),
+      'runOptionsJson': serializer.toJson<String?>(runOptionsJson),
+      'variablesSnapshotJson': serializer.toJson<String?>(
+        variablesSnapshotJson,
+      ),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'finishedAt': serializer.toJson<DateTime?>(finishedAt),
+    };
+  }
+
+  CollectionRun copyWith({
+    int? id,
+    int? collectionId,
+    Value<int?> workspaceId = const Value.absent(),
+    Value<int?> environmentId = const Value.absent(),
+    String? status,
+    int? totalSteps,
+    int? passedSteps,
+    int? failedSteps,
+    int? skippedSteps,
+    bool? stopOnFailure,
+    Value<String?> runOptionsJson = const Value.absent(),
+    Value<String?> variablesSnapshotJson = const Value.absent(),
+    DateTime? startedAt,
+    Value<DateTime?> finishedAt = const Value.absent(),
+  }) => CollectionRun(
+    id: id ?? this.id,
+    collectionId: collectionId ?? this.collectionId,
+    workspaceId: workspaceId.present ? workspaceId.value : this.workspaceId,
+    environmentId: environmentId.present
+        ? environmentId.value
+        : this.environmentId,
+    status: status ?? this.status,
+    totalSteps: totalSteps ?? this.totalSteps,
+    passedSteps: passedSteps ?? this.passedSteps,
+    failedSteps: failedSteps ?? this.failedSteps,
+    skippedSteps: skippedSteps ?? this.skippedSteps,
+    stopOnFailure: stopOnFailure ?? this.stopOnFailure,
+    runOptionsJson: runOptionsJson.present
+        ? runOptionsJson.value
+        : this.runOptionsJson,
+    variablesSnapshotJson: variablesSnapshotJson.present
+        ? variablesSnapshotJson.value
+        : this.variablesSnapshotJson,
+    startedAt: startedAt ?? this.startedAt,
+    finishedAt: finishedAt.present ? finishedAt.value : this.finishedAt,
+  );
+  CollectionRun copyWithCompanion(CollectionRunsCompanion data) {
+    return CollectionRun(
+      id: data.id.present ? data.id.value : this.id,
+      collectionId: data.collectionId.present
+          ? data.collectionId.value
+          : this.collectionId,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      environmentId: data.environmentId.present
+          ? data.environmentId.value
+          : this.environmentId,
+      status: data.status.present ? data.status.value : this.status,
+      totalSteps: data.totalSteps.present
+          ? data.totalSteps.value
+          : this.totalSteps,
+      passedSteps: data.passedSteps.present
+          ? data.passedSteps.value
+          : this.passedSteps,
+      failedSteps: data.failedSteps.present
+          ? data.failedSteps.value
+          : this.failedSteps,
+      skippedSteps: data.skippedSteps.present
+          ? data.skippedSteps.value
+          : this.skippedSteps,
+      stopOnFailure: data.stopOnFailure.present
+          ? data.stopOnFailure.value
+          : this.stopOnFailure,
+      runOptionsJson: data.runOptionsJson.present
+          ? data.runOptionsJson.value
+          : this.runOptionsJson,
+      variablesSnapshotJson: data.variablesSnapshotJson.present
+          ? data.variablesSnapshotJson.value
+          : this.variablesSnapshotJson,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      finishedAt: data.finishedAt.present
+          ? data.finishedAt.value
+          : this.finishedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CollectionRun(')
+          ..write('id: $id, ')
+          ..write('collectionId: $collectionId, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('environmentId: $environmentId, ')
+          ..write('status: $status, ')
+          ..write('totalSteps: $totalSteps, ')
+          ..write('passedSteps: $passedSteps, ')
+          ..write('failedSteps: $failedSteps, ')
+          ..write('skippedSteps: $skippedSteps, ')
+          ..write('stopOnFailure: $stopOnFailure, ')
+          ..write('runOptionsJson: $runOptionsJson, ')
+          ..write('variablesSnapshotJson: $variablesSnapshotJson, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('finishedAt: $finishedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    collectionId,
+    workspaceId,
+    environmentId,
+    status,
+    totalSteps,
+    passedSteps,
+    failedSteps,
+    skippedSteps,
+    stopOnFailure,
+    runOptionsJson,
+    variablesSnapshotJson,
+    startedAt,
+    finishedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CollectionRun &&
+          other.id == this.id &&
+          other.collectionId == this.collectionId &&
+          other.workspaceId == this.workspaceId &&
+          other.environmentId == this.environmentId &&
+          other.status == this.status &&
+          other.totalSteps == this.totalSteps &&
+          other.passedSteps == this.passedSteps &&
+          other.failedSteps == this.failedSteps &&
+          other.skippedSteps == this.skippedSteps &&
+          other.stopOnFailure == this.stopOnFailure &&
+          other.runOptionsJson == this.runOptionsJson &&
+          other.variablesSnapshotJson == this.variablesSnapshotJson &&
+          other.startedAt == this.startedAt &&
+          other.finishedAt == this.finishedAt);
+}
+
+class CollectionRunsCompanion extends UpdateCompanion<CollectionRun> {
+  final Value<int> id;
+  final Value<int> collectionId;
+  final Value<int?> workspaceId;
+  final Value<int?> environmentId;
+  final Value<String> status;
+  final Value<int> totalSteps;
+  final Value<int> passedSteps;
+  final Value<int> failedSteps;
+  final Value<int> skippedSteps;
+  final Value<bool> stopOnFailure;
+  final Value<String?> runOptionsJson;
+  final Value<String?> variablesSnapshotJson;
+  final Value<DateTime> startedAt;
+  final Value<DateTime?> finishedAt;
+  const CollectionRunsCompanion({
+    this.id = const Value.absent(),
+    this.collectionId = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.environmentId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.totalSteps = const Value.absent(),
+    this.passedSteps = const Value.absent(),
+    this.failedSteps = const Value.absent(),
+    this.skippedSteps = const Value.absent(),
+    this.stopOnFailure = const Value.absent(),
+    this.runOptionsJson = const Value.absent(),
+    this.variablesSnapshotJson = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.finishedAt = const Value.absent(),
+  });
+  CollectionRunsCompanion.insert({
+    this.id = const Value.absent(),
+    required int collectionId,
+    this.workspaceId = const Value.absent(),
+    this.environmentId = const Value.absent(),
+    required String status,
+    this.totalSteps = const Value.absent(),
+    this.passedSteps = const Value.absent(),
+    this.failedSteps = const Value.absent(),
+    this.skippedSteps = const Value.absent(),
+    this.stopOnFailure = const Value.absent(),
+    this.runOptionsJson = const Value.absent(),
+    this.variablesSnapshotJson = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.finishedAt = const Value.absent(),
+  }) : collectionId = Value(collectionId),
+       status = Value(status);
+  static Insertable<CollectionRun> custom({
+    Expression<int>? id,
+    Expression<int>? collectionId,
+    Expression<int>? workspaceId,
+    Expression<int>? environmentId,
+    Expression<String>? status,
+    Expression<int>? totalSteps,
+    Expression<int>? passedSteps,
+    Expression<int>? failedSteps,
+    Expression<int>? skippedSteps,
+    Expression<bool>? stopOnFailure,
+    Expression<String>? runOptionsJson,
+    Expression<String>? variablesSnapshotJson,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? finishedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (collectionId != null) 'collection_id': collectionId,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (environmentId != null) 'environment_id': environmentId,
+      if (status != null) 'status': status,
+      if (totalSteps != null) 'total_steps': totalSteps,
+      if (passedSteps != null) 'passed_steps': passedSteps,
+      if (failedSteps != null) 'failed_steps': failedSteps,
+      if (skippedSteps != null) 'skipped_steps': skippedSteps,
+      if (stopOnFailure != null) 'stop_on_failure': stopOnFailure,
+      if (runOptionsJson != null) 'run_options_json': runOptionsJson,
+      if (variablesSnapshotJson != null)
+        'variables_snapshot_json': variablesSnapshotJson,
+      if (startedAt != null) 'started_at': startedAt,
+      if (finishedAt != null) 'finished_at': finishedAt,
+    });
+  }
+
+  CollectionRunsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? collectionId,
+    Value<int?>? workspaceId,
+    Value<int?>? environmentId,
+    Value<String>? status,
+    Value<int>? totalSteps,
+    Value<int>? passedSteps,
+    Value<int>? failedSteps,
+    Value<int>? skippedSteps,
+    Value<bool>? stopOnFailure,
+    Value<String?>? runOptionsJson,
+    Value<String?>? variablesSnapshotJson,
+    Value<DateTime>? startedAt,
+    Value<DateTime?>? finishedAt,
+  }) {
+    return CollectionRunsCompanion(
+      id: id ?? this.id,
+      collectionId: collectionId ?? this.collectionId,
+      workspaceId: workspaceId ?? this.workspaceId,
+      environmentId: environmentId ?? this.environmentId,
+      status: status ?? this.status,
+      totalSteps: totalSteps ?? this.totalSteps,
+      passedSteps: passedSteps ?? this.passedSteps,
+      failedSteps: failedSteps ?? this.failedSteps,
+      skippedSteps: skippedSteps ?? this.skippedSteps,
+      stopOnFailure: stopOnFailure ?? this.stopOnFailure,
+      runOptionsJson: runOptionsJson ?? this.runOptionsJson,
+      variablesSnapshotJson:
+          variablesSnapshotJson ?? this.variablesSnapshotJson,
+      startedAt: startedAt ?? this.startedAt,
+      finishedAt: finishedAt ?? this.finishedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (collectionId.present) {
+      map['collection_id'] = Variable<int>(collectionId.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<int>(workspaceId.value);
+    }
+    if (environmentId.present) {
+      map['environment_id'] = Variable<int>(environmentId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (totalSteps.present) {
+      map['total_steps'] = Variable<int>(totalSteps.value);
+    }
+    if (passedSteps.present) {
+      map['passed_steps'] = Variable<int>(passedSteps.value);
+    }
+    if (failedSteps.present) {
+      map['failed_steps'] = Variable<int>(failedSteps.value);
+    }
+    if (skippedSteps.present) {
+      map['skipped_steps'] = Variable<int>(skippedSteps.value);
+    }
+    if (stopOnFailure.present) {
+      map['stop_on_failure'] = Variable<bool>(stopOnFailure.value);
+    }
+    if (runOptionsJson.present) {
+      map['run_options_json'] = Variable<String>(runOptionsJson.value);
+    }
+    if (variablesSnapshotJson.present) {
+      map['variables_snapshot_json'] = Variable<String>(
+        variablesSnapshotJson.value,
+      );
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (finishedAt.present) {
+      map['finished_at'] = Variable<DateTime>(finishedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CollectionRunsCompanion(')
+          ..write('id: $id, ')
+          ..write('collectionId: $collectionId, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('environmentId: $environmentId, ')
+          ..write('status: $status, ')
+          ..write('totalSteps: $totalSteps, ')
+          ..write('passedSteps: $passedSteps, ')
+          ..write('failedSteps: $failedSteps, ')
+          ..write('skippedSteps: $skippedSteps, ')
+          ..write('stopOnFailure: $stopOnFailure, ')
+          ..write('runOptionsJson: $runOptionsJson, ')
+          ..write('variablesSnapshotJson: $variablesSnapshotJson, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('finishedAt: $finishedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RunStepResultsTable extends RunStepResults
+    with TableInfo<$RunStepResultsTable, RunStepResult> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RunStepResultsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _runIdMeta = const VerificationMeta('runId');
+  @override
+  late final GeneratedColumn<int> runId = GeneratedColumn<int>(
+    'run_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES collection_runs (id)',
+    ),
+  );
+  static const VerificationMeta _savedRequestIdMeta = const VerificationMeta(
+    'savedRequestId',
+  );
+  @override
+  late final GeneratedColumn<int> savedRequestId = GeneratedColumn<int>(
+    'saved_request_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES saved_requests (id)',
+    ),
+  );
+  static const VerificationMeta _stepIndexMeta = const VerificationMeta(
+    'stepIndex',
+  );
+  @override
+  late final GeneratedColumn<int> stepIndex = GeneratedColumn<int>(
+    'step_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _methodMeta = const VerificationMeta('method');
+  @override
+  late final GeneratedColumn<String> method = GeneratedColumn<String>(
+    'method',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _urlMeta = const VerificationMeta('url');
+  @override
+  late final GeneratedColumn<String> url = GeneratedColumn<String>(
+    'url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stepStatusMeta = const VerificationMeta(
+    'stepStatus',
+  );
+  @override
+  late final GeneratedColumn<String> stepStatus = GeneratedColumn<String>(
+    'step_status',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 20,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusCodeMeta = const VerificationMeta(
+    'statusCode',
+  );
+  @override
+  late final GeneratedColumn<int> statusCode = GeneratedColumn<int>(
+    'status_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _durationMsMeta = const VerificationMeta(
+    'durationMs',
+  );
+  @override
+  late final GeneratedColumn<int> durationMs = GeneratedColumn<int>(
+    'duration_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _passedMeta = const VerificationMeta('passed');
+  @override
+  late final GeneratedColumn<bool> passed = GeneratedColumn<bool>(
+    'passed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("passed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _assertionResultsJsonMeta =
+      const VerificationMeta('assertionResultsJson');
+  @override
+  late final GeneratedColumn<String> assertionResultsJson =
+      GeneratedColumn<String>(
+        'assertion_results_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _errorMessageMeta = const VerificationMeta(
+    'errorMessage',
+  );
+  @override
+  late final GeneratedColumn<String> errorMessage = GeneratedColumn<String>(
+    'error_message',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _responseBodySnippetMeta =
+      const VerificationMeta('responseBodySnippet');
+  @override
+  late final GeneratedColumn<String> responseBodySnippet =
+      GeneratedColumn<String>(
+        'response_body_snippet',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    runId,
+    savedRequestId,
+    stepIndex,
+    name,
+    method,
+    url,
+    stepStatus,
+    statusCode,
+    durationMs,
+    passed,
+    assertionResultsJson,
+    errorMessage,
+    responseBodySnippet,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'run_step_results';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RunStepResult> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('run_id')) {
+      context.handle(
+        _runIdMeta,
+        runId.isAcceptableOrUnknown(data['run_id']!, _runIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_runIdMeta);
+    }
+    if (data.containsKey('saved_request_id')) {
+      context.handle(
+        _savedRequestIdMeta,
+        savedRequestId.isAcceptableOrUnknown(
+          data['saved_request_id']!,
+          _savedRequestIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('step_index')) {
+      context.handle(
+        _stepIndexMeta,
+        stepIndex.isAcceptableOrUnknown(data['step_index']!, _stepIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stepIndexMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('method')) {
+      context.handle(
+        _methodMeta,
+        method.isAcceptableOrUnknown(data['method']!, _methodMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_methodMeta);
+    }
+    if (data.containsKey('url')) {
+      context.handle(
+        _urlMeta,
+        url.isAcceptableOrUnknown(data['url']!, _urlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_urlMeta);
+    }
+    if (data.containsKey('step_status')) {
+      context.handle(
+        _stepStatusMeta,
+        stepStatus.isAcceptableOrUnknown(data['step_status']!, _stepStatusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stepStatusMeta);
+    }
+    if (data.containsKey('status_code')) {
+      context.handle(
+        _statusCodeMeta,
+        statusCode.isAcceptableOrUnknown(data['status_code']!, _statusCodeMeta),
+      );
+    }
+    if (data.containsKey('duration_ms')) {
+      context.handle(
+        _durationMsMeta,
+        durationMs.isAcceptableOrUnknown(data['duration_ms']!, _durationMsMeta),
+      );
+    }
+    if (data.containsKey('passed')) {
+      context.handle(
+        _passedMeta,
+        passed.isAcceptableOrUnknown(data['passed']!, _passedMeta),
+      );
+    }
+    if (data.containsKey('assertion_results_json')) {
+      context.handle(
+        _assertionResultsJsonMeta,
+        assertionResultsJson.isAcceptableOrUnknown(
+          data['assertion_results_json']!,
+          _assertionResultsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('error_message')) {
+      context.handle(
+        _errorMessageMeta,
+        errorMessage.isAcceptableOrUnknown(
+          data['error_message']!,
+          _errorMessageMeta,
+        ),
+      );
+    }
+    if (data.containsKey('response_body_snippet')) {
+      context.handle(
+        _responseBodySnippetMeta,
+        responseBodySnippet.isAcceptableOrUnknown(
+          data['response_body_snippet']!,
+          _responseBodySnippetMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RunStepResult map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RunStepResult(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      runId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}run_id'],
+      )!,
+      savedRequestId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}saved_request_id'],
+      ),
+      stepIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}step_index'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      method: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}method'],
+      )!,
+      url: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}url'],
+      )!,
+      stepStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}step_status'],
+      )!,
+      statusCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}status_code'],
+      ),
+      durationMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_ms'],
+      ),
+      passed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}passed'],
+      )!,
+      assertionResultsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assertion_results_json'],
+      ),
+      errorMessage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error_message'],
+      ),
+      responseBodySnippet: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}response_body_snippet'],
+      ),
+    );
+  }
+
+  @override
+  $RunStepResultsTable createAlias(String alias) {
+    return $RunStepResultsTable(attachedDatabase, alias);
+  }
+}
+
+class RunStepResult extends DataClass implements Insertable<RunStepResult> {
+  final int id;
+  final int runId;
+  final int? savedRequestId;
+  final int stepIndex;
+  final String name;
+  final String method;
+  final String url;
+  final String stepStatus;
+  final int? statusCode;
+  final int? durationMs;
+  final bool passed;
+  final String? assertionResultsJson;
+  final String? errorMessage;
+  final String? responseBodySnippet;
+  const RunStepResult({
+    required this.id,
+    required this.runId,
+    this.savedRequestId,
+    required this.stepIndex,
+    required this.name,
+    required this.method,
+    required this.url,
+    required this.stepStatus,
+    this.statusCode,
+    this.durationMs,
+    required this.passed,
+    this.assertionResultsJson,
+    this.errorMessage,
+    this.responseBodySnippet,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['run_id'] = Variable<int>(runId);
+    if (!nullToAbsent || savedRequestId != null) {
+      map['saved_request_id'] = Variable<int>(savedRequestId);
+    }
+    map['step_index'] = Variable<int>(stepIndex);
+    map['name'] = Variable<String>(name);
+    map['method'] = Variable<String>(method);
+    map['url'] = Variable<String>(url);
+    map['step_status'] = Variable<String>(stepStatus);
+    if (!nullToAbsent || statusCode != null) {
+      map['status_code'] = Variable<int>(statusCode);
+    }
+    if (!nullToAbsent || durationMs != null) {
+      map['duration_ms'] = Variable<int>(durationMs);
+    }
+    map['passed'] = Variable<bool>(passed);
+    if (!nullToAbsent || assertionResultsJson != null) {
+      map['assertion_results_json'] = Variable<String>(assertionResultsJson);
+    }
+    if (!nullToAbsent || errorMessage != null) {
+      map['error_message'] = Variable<String>(errorMessage);
+    }
+    if (!nullToAbsent || responseBodySnippet != null) {
+      map['response_body_snippet'] = Variable<String>(responseBodySnippet);
+    }
+    return map;
+  }
+
+  RunStepResultsCompanion toCompanion(bool nullToAbsent) {
+    return RunStepResultsCompanion(
+      id: Value(id),
+      runId: Value(runId),
+      savedRequestId: savedRequestId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(savedRequestId),
+      stepIndex: Value(stepIndex),
+      name: Value(name),
+      method: Value(method),
+      url: Value(url),
+      stepStatus: Value(stepStatus),
+      statusCode: statusCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(statusCode),
+      durationMs: durationMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationMs),
+      passed: Value(passed),
+      assertionResultsJson: assertionResultsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assertionResultsJson),
+      errorMessage: errorMessage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorMessage),
+      responseBodySnippet: responseBodySnippet == null && nullToAbsent
+          ? const Value.absent()
+          : Value(responseBodySnippet),
+    );
+  }
+
+  factory RunStepResult.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RunStepResult(
+      id: serializer.fromJson<int>(json['id']),
+      runId: serializer.fromJson<int>(json['runId']),
+      savedRequestId: serializer.fromJson<int?>(json['savedRequestId']),
+      stepIndex: serializer.fromJson<int>(json['stepIndex']),
+      name: serializer.fromJson<String>(json['name']),
+      method: serializer.fromJson<String>(json['method']),
+      url: serializer.fromJson<String>(json['url']),
+      stepStatus: serializer.fromJson<String>(json['stepStatus']),
+      statusCode: serializer.fromJson<int?>(json['statusCode']),
+      durationMs: serializer.fromJson<int?>(json['durationMs']),
+      passed: serializer.fromJson<bool>(json['passed']),
+      assertionResultsJson: serializer.fromJson<String?>(
+        json['assertionResultsJson'],
+      ),
+      errorMessage: serializer.fromJson<String?>(json['errorMessage']),
+      responseBodySnippet: serializer.fromJson<String?>(
+        json['responseBodySnippet'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'runId': serializer.toJson<int>(runId),
+      'savedRequestId': serializer.toJson<int?>(savedRequestId),
+      'stepIndex': serializer.toJson<int>(stepIndex),
+      'name': serializer.toJson<String>(name),
+      'method': serializer.toJson<String>(method),
+      'url': serializer.toJson<String>(url),
+      'stepStatus': serializer.toJson<String>(stepStatus),
+      'statusCode': serializer.toJson<int?>(statusCode),
+      'durationMs': serializer.toJson<int?>(durationMs),
+      'passed': serializer.toJson<bool>(passed),
+      'assertionResultsJson': serializer.toJson<String?>(assertionResultsJson),
+      'errorMessage': serializer.toJson<String?>(errorMessage),
+      'responseBodySnippet': serializer.toJson<String?>(responseBodySnippet),
+    };
+  }
+
+  RunStepResult copyWith({
+    int? id,
+    int? runId,
+    Value<int?> savedRequestId = const Value.absent(),
+    int? stepIndex,
+    String? name,
+    String? method,
+    String? url,
+    String? stepStatus,
+    Value<int?> statusCode = const Value.absent(),
+    Value<int?> durationMs = const Value.absent(),
+    bool? passed,
+    Value<String?> assertionResultsJson = const Value.absent(),
+    Value<String?> errorMessage = const Value.absent(),
+    Value<String?> responseBodySnippet = const Value.absent(),
+  }) => RunStepResult(
+    id: id ?? this.id,
+    runId: runId ?? this.runId,
+    savedRequestId: savedRequestId.present
+        ? savedRequestId.value
+        : this.savedRequestId,
+    stepIndex: stepIndex ?? this.stepIndex,
+    name: name ?? this.name,
+    method: method ?? this.method,
+    url: url ?? this.url,
+    stepStatus: stepStatus ?? this.stepStatus,
+    statusCode: statusCode.present ? statusCode.value : this.statusCode,
+    durationMs: durationMs.present ? durationMs.value : this.durationMs,
+    passed: passed ?? this.passed,
+    assertionResultsJson: assertionResultsJson.present
+        ? assertionResultsJson.value
+        : this.assertionResultsJson,
+    errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
+    responseBodySnippet: responseBodySnippet.present
+        ? responseBodySnippet.value
+        : this.responseBodySnippet,
+  );
+  RunStepResult copyWithCompanion(RunStepResultsCompanion data) {
+    return RunStepResult(
+      id: data.id.present ? data.id.value : this.id,
+      runId: data.runId.present ? data.runId.value : this.runId,
+      savedRequestId: data.savedRequestId.present
+          ? data.savedRequestId.value
+          : this.savedRequestId,
+      stepIndex: data.stepIndex.present ? data.stepIndex.value : this.stepIndex,
+      name: data.name.present ? data.name.value : this.name,
+      method: data.method.present ? data.method.value : this.method,
+      url: data.url.present ? data.url.value : this.url,
+      stepStatus: data.stepStatus.present
+          ? data.stepStatus.value
+          : this.stepStatus,
+      statusCode: data.statusCode.present
+          ? data.statusCode.value
+          : this.statusCode,
+      durationMs: data.durationMs.present
+          ? data.durationMs.value
+          : this.durationMs,
+      passed: data.passed.present ? data.passed.value : this.passed,
+      assertionResultsJson: data.assertionResultsJson.present
+          ? data.assertionResultsJson.value
+          : this.assertionResultsJson,
+      errorMessage: data.errorMessage.present
+          ? data.errorMessage.value
+          : this.errorMessage,
+      responseBodySnippet: data.responseBodySnippet.present
+          ? data.responseBodySnippet.value
+          : this.responseBodySnippet,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RunStepResult(')
+          ..write('id: $id, ')
+          ..write('runId: $runId, ')
+          ..write('savedRequestId: $savedRequestId, ')
+          ..write('stepIndex: $stepIndex, ')
+          ..write('name: $name, ')
+          ..write('method: $method, ')
+          ..write('url: $url, ')
+          ..write('stepStatus: $stepStatus, ')
+          ..write('statusCode: $statusCode, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('passed: $passed, ')
+          ..write('assertionResultsJson: $assertionResultsJson, ')
+          ..write('errorMessage: $errorMessage, ')
+          ..write('responseBodySnippet: $responseBodySnippet')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    runId,
+    savedRequestId,
+    stepIndex,
+    name,
+    method,
+    url,
+    stepStatus,
+    statusCode,
+    durationMs,
+    passed,
+    assertionResultsJson,
+    errorMessage,
+    responseBodySnippet,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RunStepResult &&
+          other.id == this.id &&
+          other.runId == this.runId &&
+          other.savedRequestId == this.savedRequestId &&
+          other.stepIndex == this.stepIndex &&
+          other.name == this.name &&
+          other.method == this.method &&
+          other.url == this.url &&
+          other.stepStatus == this.stepStatus &&
+          other.statusCode == this.statusCode &&
+          other.durationMs == this.durationMs &&
+          other.passed == this.passed &&
+          other.assertionResultsJson == this.assertionResultsJson &&
+          other.errorMessage == this.errorMessage &&
+          other.responseBodySnippet == this.responseBodySnippet);
+}
+
+class RunStepResultsCompanion extends UpdateCompanion<RunStepResult> {
+  final Value<int> id;
+  final Value<int> runId;
+  final Value<int?> savedRequestId;
+  final Value<int> stepIndex;
+  final Value<String> name;
+  final Value<String> method;
+  final Value<String> url;
+  final Value<String> stepStatus;
+  final Value<int?> statusCode;
+  final Value<int?> durationMs;
+  final Value<bool> passed;
+  final Value<String?> assertionResultsJson;
+  final Value<String?> errorMessage;
+  final Value<String?> responseBodySnippet;
+  const RunStepResultsCompanion({
+    this.id = const Value.absent(),
+    this.runId = const Value.absent(),
+    this.savedRequestId = const Value.absent(),
+    this.stepIndex = const Value.absent(),
+    this.name = const Value.absent(),
+    this.method = const Value.absent(),
+    this.url = const Value.absent(),
+    this.stepStatus = const Value.absent(),
+    this.statusCode = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.passed = const Value.absent(),
+    this.assertionResultsJson = const Value.absent(),
+    this.errorMessage = const Value.absent(),
+    this.responseBodySnippet = const Value.absent(),
+  });
+  RunStepResultsCompanion.insert({
+    this.id = const Value.absent(),
+    required int runId,
+    this.savedRequestId = const Value.absent(),
+    required int stepIndex,
+    required String name,
+    required String method,
+    required String url,
+    required String stepStatus,
+    this.statusCode = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.passed = const Value.absent(),
+    this.assertionResultsJson = const Value.absent(),
+    this.errorMessage = const Value.absent(),
+    this.responseBodySnippet = const Value.absent(),
+  }) : runId = Value(runId),
+       stepIndex = Value(stepIndex),
+       name = Value(name),
+       method = Value(method),
+       url = Value(url),
+       stepStatus = Value(stepStatus);
+  static Insertable<RunStepResult> custom({
+    Expression<int>? id,
+    Expression<int>? runId,
+    Expression<int>? savedRequestId,
+    Expression<int>? stepIndex,
+    Expression<String>? name,
+    Expression<String>? method,
+    Expression<String>? url,
+    Expression<String>? stepStatus,
+    Expression<int>? statusCode,
+    Expression<int>? durationMs,
+    Expression<bool>? passed,
+    Expression<String>? assertionResultsJson,
+    Expression<String>? errorMessage,
+    Expression<String>? responseBodySnippet,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (runId != null) 'run_id': runId,
+      if (savedRequestId != null) 'saved_request_id': savedRequestId,
+      if (stepIndex != null) 'step_index': stepIndex,
+      if (name != null) 'name': name,
+      if (method != null) 'method': method,
+      if (url != null) 'url': url,
+      if (stepStatus != null) 'step_status': stepStatus,
+      if (statusCode != null) 'status_code': statusCode,
+      if (durationMs != null) 'duration_ms': durationMs,
+      if (passed != null) 'passed': passed,
+      if (assertionResultsJson != null)
+        'assertion_results_json': assertionResultsJson,
+      if (errorMessage != null) 'error_message': errorMessage,
+      if (responseBodySnippet != null)
+        'response_body_snippet': responseBodySnippet,
+    });
+  }
+
+  RunStepResultsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? runId,
+    Value<int?>? savedRequestId,
+    Value<int>? stepIndex,
+    Value<String>? name,
+    Value<String>? method,
+    Value<String>? url,
+    Value<String>? stepStatus,
+    Value<int?>? statusCode,
+    Value<int?>? durationMs,
+    Value<bool>? passed,
+    Value<String?>? assertionResultsJson,
+    Value<String?>? errorMessage,
+    Value<String?>? responseBodySnippet,
+  }) {
+    return RunStepResultsCompanion(
+      id: id ?? this.id,
+      runId: runId ?? this.runId,
+      savedRequestId: savedRequestId ?? this.savedRequestId,
+      stepIndex: stepIndex ?? this.stepIndex,
+      name: name ?? this.name,
+      method: method ?? this.method,
+      url: url ?? this.url,
+      stepStatus: stepStatus ?? this.stepStatus,
+      statusCode: statusCode ?? this.statusCode,
+      durationMs: durationMs ?? this.durationMs,
+      passed: passed ?? this.passed,
+      assertionResultsJson: assertionResultsJson ?? this.assertionResultsJson,
+      errorMessage: errorMessage ?? this.errorMessage,
+      responseBodySnippet: responseBodySnippet ?? this.responseBodySnippet,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (runId.present) {
+      map['run_id'] = Variable<int>(runId.value);
+    }
+    if (savedRequestId.present) {
+      map['saved_request_id'] = Variable<int>(savedRequestId.value);
+    }
+    if (stepIndex.present) {
+      map['step_index'] = Variable<int>(stepIndex.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (method.present) {
+      map['method'] = Variable<String>(method.value);
+    }
+    if (url.present) {
+      map['url'] = Variable<String>(url.value);
+    }
+    if (stepStatus.present) {
+      map['step_status'] = Variable<String>(stepStatus.value);
+    }
+    if (statusCode.present) {
+      map['status_code'] = Variable<int>(statusCode.value);
+    }
+    if (durationMs.present) {
+      map['duration_ms'] = Variable<int>(durationMs.value);
+    }
+    if (passed.present) {
+      map['passed'] = Variable<bool>(passed.value);
+    }
+    if (assertionResultsJson.present) {
+      map['assertion_results_json'] = Variable<String>(
+        assertionResultsJson.value,
+      );
+    }
+    if (errorMessage.present) {
+      map['error_message'] = Variable<String>(errorMessage.value);
+    }
+    if (responseBodySnippet.present) {
+      map['response_body_snippet'] = Variable<String>(
+        responseBodySnippet.value,
+      );
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RunStepResultsCompanion(')
+          ..write('id: $id, ')
+          ..write('runId: $runId, ')
+          ..write('savedRequestId: $savedRequestId, ')
+          ..write('stepIndex: $stepIndex, ')
+          ..write('name: $name, ')
+          ..write('method: $method, ')
+          ..write('url: $url, ')
+          ..write('stepStatus: $stepStatus, ')
+          ..write('statusCode: $statusCode, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('passed: $passed, ')
+          ..write('assertionResultsJson: $assertionResultsJson, ')
+          ..write('errorMessage: $errorMessage, ')
+          ..write('responseBodySnippet: $responseBodySnippet')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3319,6 +5078,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $EnvironmentsTable environments = $EnvironmentsTable(this);
   late final $EnvVariablesTable envVariables = $EnvVariablesTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
+  late final $CollectionRunsTable collectionRuns = $CollectionRunsTable(this);
+  late final $RunStepResultsTable runStepResults = $RunStepResultsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3330,6 +5091,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     environments,
     envVariables,
     appSettings,
+    collectionRuns,
+    runStepResults,
   ];
 }
 
@@ -4095,6 +5858,7 @@ typedef $$SavedRequestsTableCreateCompanionBuilder =
       Value<String?> schemaJson,
       Value<String?> preScriptsJson,
       Value<String?> scriptsJson,
+      Value<String?> assertionsJson,
       Value<int?> collectionId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -4114,6 +5878,7 @@ typedef $$SavedRequestsTableUpdateCompanionBuilder =
       Value<String?> schemaJson,
       Value<String?> preScriptsJson,
       Value<String?> scriptsJson,
+      Value<String?> assertionsJson,
       Value<int?> collectionId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -4163,6 +5928,27 @@ final class $$SavedRequestsTableReferences
     ).filter((f) => f.savedRequestId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_historyEntriesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$RunStepResultsTable, List<RunStepResult>>
+  _runStepResultsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.runStepResults,
+    aliasName: $_aliasNameGenerator(
+      db.savedRequests.id,
+      db.runStepResults.savedRequestId,
+    ),
+  );
+
+  $$RunStepResultsTableProcessedTableManager get runStepResultsRefs {
+    final manager = $$RunStepResultsTableTableManager(
+      $_db,
+      $_db.runStepResults,
+    ).filter((f) => f.savedRequestId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_runStepResultsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4238,6 +6024,11 @@ class $$SavedRequestsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get assertionsJson => $composableBuilder(
+    column: $table.assertionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -4292,6 +6083,31 @@ class $$SavedRequestsTableFilterComposer
           }) => $$HistoryEntriesTableFilterComposer(
             $db: $db,
             $table: $db.historyEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> runStepResultsRefs(
+    Expression<bool> Function($$RunStepResultsTableFilterComposer f) f,
+  ) {
+    final $$RunStepResultsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.runStepResults,
+      getReferencedColumn: (t) => t.savedRequestId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RunStepResultsTableFilterComposer(
+            $db: $db,
+            $table: $db.runStepResults,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4368,6 +6184,11 @@ class $$SavedRequestsTableOrderingComposer
 
   ColumnOrderings<String> get scriptsJson => $composableBuilder(
     column: $table.scriptsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assertionsJson => $composableBuilder(
+    column: $table.assertionsJson,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4465,6 +6286,11 @@ class $$SavedRequestsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get assertionsJson => $composableBuilder(
+    column: $table.assertionsJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -4521,6 +6347,31 @@ class $$SavedRequestsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> runStepResultsRefs<T extends Object>(
+    Expression<T> Function($$RunStepResultsTableAnnotationComposer a) f,
+  ) {
+    final $$RunStepResultsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.runStepResults,
+      getReferencedColumn: (t) => t.savedRequestId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RunStepResultsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.runStepResults,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$SavedRequestsTableTableManager
@@ -4536,7 +6387,11 @@ class $$SavedRequestsTableTableManager
           $$SavedRequestsTableUpdateCompanionBuilder,
           (SavedRequest, $$SavedRequestsTableReferences),
           SavedRequest,
-          PrefetchHooks Function({bool collectionId, bool historyEntriesRefs})
+          PrefetchHooks Function({
+            bool collectionId,
+            bool historyEntriesRefs,
+            bool runStepResultsRefs,
+          })
         > {
   $$SavedRequestsTableTableManager(_$AppDatabase db, $SavedRequestsTable table)
     : super(
@@ -4563,6 +6418,7 @@ class $$SavedRequestsTableTableManager
                 Value<String?> schemaJson = const Value.absent(),
                 Value<String?> preScriptsJson = const Value.absent(),
                 Value<String?> scriptsJson = const Value.absent(),
+                Value<String?> assertionsJson = const Value.absent(),
                 Value<int?> collectionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -4580,6 +6436,7 @@ class $$SavedRequestsTableTableManager
                 schemaJson: schemaJson,
                 preScriptsJson: preScriptsJson,
                 scriptsJson: scriptsJson,
+                assertionsJson: assertionsJson,
                 collectionId: collectionId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -4599,6 +6456,7 @@ class $$SavedRequestsTableTableManager
                 Value<String?> schemaJson = const Value.absent(),
                 Value<String?> preScriptsJson = const Value.absent(),
                 Value<String?> scriptsJson = const Value.absent(),
+                Value<String?> assertionsJson = const Value.absent(),
                 Value<int?> collectionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -4616,6 +6474,7 @@ class $$SavedRequestsTableTableManager
                 schemaJson: schemaJson,
                 preScriptsJson: preScriptsJson,
                 scriptsJson: scriptsJson,
+                assertionsJson: assertionsJson,
                 collectionId: collectionId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -4630,11 +6489,16 @@ class $$SavedRequestsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({collectionId = false, historyEntriesRefs = false}) {
+              ({
+                collectionId = false,
+                historyEntriesRefs = false,
+                runStepResultsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (historyEntriesRefs) db.historyEntries,
+                    if (runStepResultsRefs) db.runStepResults,
                   ],
                   addJoins:
                       <
@@ -4693,6 +6557,27 @@ class $$SavedRequestsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (runStepResultsRefs)
+                        await $_getPrefetchedData<
+                          SavedRequest,
+                          $SavedRequestsTable,
+                          RunStepResult
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SavedRequestsTableReferences
+                              ._runStepResultsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SavedRequestsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).runStepResultsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.savedRequestId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4713,7 +6598,11 @@ typedef $$SavedRequestsTableProcessedTableManager =
       $$SavedRequestsTableUpdateCompanionBuilder,
       (SavedRequest, $$SavedRequestsTableReferences),
       SavedRequest,
-      PrefetchHooks Function({bool collectionId, bool historyEntriesRefs})
+      PrefetchHooks Function({
+        bool collectionId,
+        bool historyEntriesRefs,
+        bool runStepResultsRefs,
+      })
     >;
 typedef $$HistoryEntriesTableCreateCompanionBuilder =
     HistoryEntriesCompanion Function({
@@ -5394,6 +7283,27 @@ final class $$EnvironmentsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$CollectionRunsTable, List<CollectionRun>>
+  _collectionRunsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.collectionRuns,
+    aliasName: $_aliasNameGenerator(
+      db.environments.id,
+      db.collectionRuns.environmentId,
+    ),
+  );
+
+  $$CollectionRunsTableProcessedTableManager get collectionRunsRefs {
+    final manager = $$CollectionRunsTableTableManager(
+      $_db,
+      $_db.collectionRuns,
+    ).filter((f) => f.environmentId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_collectionRunsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$EnvironmentsTableFilterComposer
@@ -5464,6 +7374,31 @@ class $$EnvironmentsTableFilterComposer
           }) => $$EnvVariablesTableFilterComposer(
             $db: $db,
             $table: $db.envVariables,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> collectionRunsRefs(
+    Expression<bool> Function($$CollectionRunsTableFilterComposer f) f,
+  ) {
+    final $$CollectionRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.collectionRuns,
+      getReferencedColumn: (t) => t.environmentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.collectionRuns,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5595,6 +7530,31 @@ class $$EnvironmentsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> collectionRunsRefs<T extends Object>(
+    Expression<T> Function($$CollectionRunsTableAnnotationComposer a) f,
+  ) {
+    final $$CollectionRunsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.collectionRuns,
+      getReferencedColumn: (t) => t.environmentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionRunsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.collectionRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$EnvironmentsTableTableManager
@@ -5610,7 +7570,11 @@ class $$EnvironmentsTableTableManager
           $$EnvironmentsTableUpdateCompanionBuilder,
           (Environment, $$EnvironmentsTableReferences),
           Environment,
-          PrefetchHooks Function({bool collectionId, bool envVariablesRefs})
+          PrefetchHooks Function({
+            bool collectionId,
+            bool envVariablesRefs,
+            bool collectionRunsRefs,
+          })
         > {
   $$EnvironmentsTableTableManager(_$AppDatabase db, $EnvironmentsTable table)
     : super(
@@ -5660,11 +7624,16 @@ class $$EnvironmentsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({collectionId = false, envVariablesRefs = false}) {
+              ({
+                collectionId = false,
+                envVariablesRefs = false,
+                collectionRunsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (envVariablesRefs) db.envVariables,
+                    if (collectionRunsRefs) db.collectionRuns,
                   ],
                   addJoins:
                       <
@@ -5723,6 +7692,27 @@ class $$EnvironmentsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (collectionRunsRefs)
+                        await $_getPrefetchedData<
+                          Environment,
+                          $EnvironmentsTable,
+                          CollectionRun
+                        >(
+                          currentTable: table,
+                          referencedTable: $$EnvironmentsTableReferences
+                              ._collectionRunsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$EnvironmentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).collectionRunsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.environmentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -5743,7 +7733,11 @@ typedef $$EnvironmentsTableProcessedTableManager =
       $$EnvironmentsTableUpdateCompanionBuilder,
       (Environment, $$EnvironmentsTableReferences),
       Environment,
-      PrefetchHooks Function({bool collectionId, bool envVariablesRefs})
+      PrefetchHooks Function({
+        bool collectionId,
+        bool envVariablesRefs,
+        bool collectionRunsRefs,
+      })
     >;
 typedef $$EnvVariablesTableCreateCompanionBuilder =
     EnvVariablesCompanion Function({
@@ -6328,6 +8322,1403 @@ typedef $$AppSettingsTableProcessedTableManager =
       AppSetting,
       PrefetchHooks Function()
     >;
+typedef $$CollectionRunsTableCreateCompanionBuilder =
+    CollectionRunsCompanion Function({
+      Value<int> id,
+      required int collectionId,
+      Value<int?> workspaceId,
+      Value<int?> environmentId,
+      required String status,
+      Value<int> totalSteps,
+      Value<int> passedSteps,
+      Value<int> failedSteps,
+      Value<int> skippedSteps,
+      Value<bool> stopOnFailure,
+      Value<String?> runOptionsJson,
+      Value<String?> variablesSnapshotJson,
+      Value<DateTime> startedAt,
+      Value<DateTime?> finishedAt,
+    });
+typedef $$CollectionRunsTableUpdateCompanionBuilder =
+    CollectionRunsCompanion Function({
+      Value<int> id,
+      Value<int> collectionId,
+      Value<int?> workspaceId,
+      Value<int?> environmentId,
+      Value<String> status,
+      Value<int> totalSteps,
+      Value<int> passedSteps,
+      Value<int> failedSteps,
+      Value<int> skippedSteps,
+      Value<bool> stopOnFailure,
+      Value<String?> runOptionsJson,
+      Value<String?> variablesSnapshotJson,
+      Value<DateTime> startedAt,
+      Value<DateTime?> finishedAt,
+    });
+
+final class $$CollectionRunsTableReferences
+    extends BaseReferences<_$AppDatabase, $CollectionRunsTable, CollectionRun> {
+  $$CollectionRunsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $CollectionsTable _collectionIdTable(_$AppDatabase db) =>
+      db.collections.createAlias(
+        $_aliasNameGenerator(db.collectionRuns.collectionId, db.collections.id),
+      );
+
+  $$CollectionsTableProcessedTableManager get collectionId {
+    final $_column = $_itemColumn<int>('collection_id')!;
+
+    final manager = $$CollectionsTableTableManager(
+      $_db,
+      $_db.collections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_collectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $CollectionsTable _workspaceIdTable(_$AppDatabase db) =>
+      db.collections.createAlias(
+        $_aliasNameGenerator(db.collectionRuns.workspaceId, db.collections.id),
+      );
+
+  $$CollectionsTableProcessedTableManager? get workspaceId {
+    final $_column = $_itemColumn<int>('workspace_id');
+    if ($_column == null) return null;
+    final manager = $$CollectionsTableTableManager(
+      $_db,
+      $_db.collections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $EnvironmentsTable _environmentIdTable(_$AppDatabase db) =>
+      db.environments.createAlias(
+        $_aliasNameGenerator(
+          db.collectionRuns.environmentId,
+          db.environments.id,
+        ),
+      );
+
+  $$EnvironmentsTableProcessedTableManager? get environmentId {
+    final $_column = $_itemColumn<int>('environment_id');
+    if ($_column == null) return null;
+    final manager = $$EnvironmentsTableTableManager(
+      $_db,
+      $_db.environments,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_environmentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$RunStepResultsTable, List<RunStepResult>>
+  _runStepResultsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.runStepResults,
+    aliasName: $_aliasNameGenerator(
+      db.collectionRuns.id,
+      db.runStepResults.runId,
+    ),
+  );
+
+  $$RunStepResultsTableProcessedTableManager get runStepResultsRefs {
+    final manager = $$RunStepResultsTableTableManager(
+      $_db,
+      $_db.runStepResults,
+    ).filter((f) => f.runId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_runStepResultsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$CollectionRunsTableFilterComposer
+    extends Composer<_$AppDatabase, $CollectionRunsTable> {
+  $$CollectionRunsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalSteps => $composableBuilder(
+    column: $table.totalSteps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get passedSteps => $composableBuilder(
+    column: $table.passedSteps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get failedSteps => $composableBuilder(
+    column: $table.failedSteps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get skippedSteps => $composableBuilder(
+    column: $table.skippedSteps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get stopOnFailure => $composableBuilder(
+    column: $table.stopOnFailure,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get runOptionsJson => $composableBuilder(
+    column: $table.runOptionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get variablesSnapshotJson => $composableBuilder(
+    column: $table.variablesSnapshotJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CollectionsTableFilterComposer get collectionId {
+    final $$CollectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CollectionsTableFilterComposer get workspaceId {
+    final $$CollectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$EnvironmentsTableFilterComposer get environmentId {
+    final $$EnvironmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.environmentId,
+      referencedTable: $db.environments,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EnvironmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.environments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> runStepResultsRefs(
+    Expression<bool> Function($$RunStepResultsTableFilterComposer f) f,
+  ) {
+    final $$RunStepResultsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.runStepResults,
+      getReferencedColumn: (t) => t.runId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RunStepResultsTableFilterComposer(
+            $db: $db,
+            $table: $db.runStepResults,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CollectionRunsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CollectionRunsTable> {
+  $$CollectionRunsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalSteps => $composableBuilder(
+    column: $table.totalSteps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get passedSteps => $composableBuilder(
+    column: $table.passedSteps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get failedSteps => $composableBuilder(
+    column: $table.failedSteps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get skippedSteps => $composableBuilder(
+    column: $table.skippedSteps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get stopOnFailure => $composableBuilder(
+    column: $table.stopOnFailure,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get runOptionsJson => $composableBuilder(
+    column: $table.runOptionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get variablesSnapshotJson => $composableBuilder(
+    column: $table.variablesSnapshotJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CollectionsTableOrderingComposer get collectionId {
+    final $$CollectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CollectionsTableOrderingComposer get workspaceId {
+    final $$CollectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$EnvironmentsTableOrderingComposer get environmentId {
+    final $$EnvironmentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.environmentId,
+      referencedTable: $db.environments,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EnvironmentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.environments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CollectionRunsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CollectionRunsTable> {
+  $$CollectionRunsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get totalSteps => $composableBuilder(
+    column: $table.totalSteps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get passedSteps => $composableBuilder(
+    column: $table.passedSteps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get failedSteps => $composableBuilder(
+    column: $table.failedSteps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get skippedSteps => $composableBuilder(
+    column: $table.skippedSteps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get stopOnFailure => $composableBuilder(
+    column: $table.stopOnFailure,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get runOptionsJson => $composableBuilder(
+    column: $table.runOptionsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get variablesSnapshotJson => $composableBuilder(
+    column: $table.variablesSnapshotJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => column,
+  );
+
+  $$CollectionsTableAnnotationComposer get collectionId {
+    final $$CollectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.collectionId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CollectionsTableAnnotationComposer get workspaceId {
+    final $$CollectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.collections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.collections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$EnvironmentsTableAnnotationComposer get environmentId {
+    final $$EnvironmentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.environmentId,
+      referencedTable: $db.environments,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EnvironmentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.environments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> runStepResultsRefs<T extends Object>(
+    Expression<T> Function($$RunStepResultsTableAnnotationComposer a) f,
+  ) {
+    final $$RunStepResultsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.runStepResults,
+      getReferencedColumn: (t) => t.runId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RunStepResultsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.runStepResults,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CollectionRunsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CollectionRunsTable,
+          CollectionRun,
+          $$CollectionRunsTableFilterComposer,
+          $$CollectionRunsTableOrderingComposer,
+          $$CollectionRunsTableAnnotationComposer,
+          $$CollectionRunsTableCreateCompanionBuilder,
+          $$CollectionRunsTableUpdateCompanionBuilder,
+          (CollectionRun, $$CollectionRunsTableReferences),
+          CollectionRun,
+          PrefetchHooks Function({
+            bool collectionId,
+            bool workspaceId,
+            bool environmentId,
+            bool runStepResultsRefs,
+          })
+        > {
+  $$CollectionRunsTableTableManager(
+    _$AppDatabase db,
+    $CollectionRunsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CollectionRunsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CollectionRunsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CollectionRunsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> collectionId = const Value.absent(),
+                Value<int?> workspaceId = const Value.absent(),
+                Value<int?> environmentId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> totalSteps = const Value.absent(),
+                Value<int> passedSteps = const Value.absent(),
+                Value<int> failedSteps = const Value.absent(),
+                Value<int> skippedSteps = const Value.absent(),
+                Value<bool> stopOnFailure = const Value.absent(),
+                Value<String?> runOptionsJson = const Value.absent(),
+                Value<String?> variablesSnapshotJson = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime?> finishedAt = const Value.absent(),
+              }) => CollectionRunsCompanion(
+                id: id,
+                collectionId: collectionId,
+                workspaceId: workspaceId,
+                environmentId: environmentId,
+                status: status,
+                totalSteps: totalSteps,
+                passedSteps: passedSteps,
+                failedSteps: failedSteps,
+                skippedSteps: skippedSteps,
+                stopOnFailure: stopOnFailure,
+                runOptionsJson: runOptionsJson,
+                variablesSnapshotJson: variablesSnapshotJson,
+                startedAt: startedAt,
+                finishedAt: finishedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int collectionId,
+                Value<int?> workspaceId = const Value.absent(),
+                Value<int?> environmentId = const Value.absent(),
+                required String status,
+                Value<int> totalSteps = const Value.absent(),
+                Value<int> passedSteps = const Value.absent(),
+                Value<int> failedSteps = const Value.absent(),
+                Value<int> skippedSteps = const Value.absent(),
+                Value<bool> stopOnFailure = const Value.absent(),
+                Value<String?> runOptionsJson = const Value.absent(),
+                Value<String?> variablesSnapshotJson = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime?> finishedAt = const Value.absent(),
+              }) => CollectionRunsCompanion.insert(
+                id: id,
+                collectionId: collectionId,
+                workspaceId: workspaceId,
+                environmentId: environmentId,
+                status: status,
+                totalSteps: totalSteps,
+                passedSteps: passedSteps,
+                failedSteps: failedSteps,
+                skippedSteps: skippedSteps,
+                stopOnFailure: stopOnFailure,
+                runOptionsJson: runOptionsJson,
+                variablesSnapshotJson: variablesSnapshotJson,
+                startedAt: startedAt,
+                finishedAt: finishedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CollectionRunsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                collectionId = false,
+                workspaceId = false,
+                environmentId = false,
+                runStepResultsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (runStepResultsRefs) db.runStepResults,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (collectionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.collectionId,
+                                    referencedTable:
+                                        $$CollectionRunsTableReferences
+                                            ._collectionIdTable(db),
+                                    referencedColumn:
+                                        $$CollectionRunsTableReferences
+                                            ._collectionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (workspaceId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.workspaceId,
+                                    referencedTable:
+                                        $$CollectionRunsTableReferences
+                                            ._workspaceIdTable(db),
+                                    referencedColumn:
+                                        $$CollectionRunsTableReferences
+                                            ._workspaceIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (environmentId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.environmentId,
+                                    referencedTable:
+                                        $$CollectionRunsTableReferences
+                                            ._environmentIdTable(db),
+                                    referencedColumn:
+                                        $$CollectionRunsTableReferences
+                                            ._environmentIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (runStepResultsRefs)
+                        await $_getPrefetchedData<
+                          CollectionRun,
+                          $CollectionRunsTable,
+                          RunStepResult
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CollectionRunsTableReferences
+                              ._runStepResultsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CollectionRunsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).runStepResultsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.runId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$CollectionRunsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CollectionRunsTable,
+      CollectionRun,
+      $$CollectionRunsTableFilterComposer,
+      $$CollectionRunsTableOrderingComposer,
+      $$CollectionRunsTableAnnotationComposer,
+      $$CollectionRunsTableCreateCompanionBuilder,
+      $$CollectionRunsTableUpdateCompanionBuilder,
+      (CollectionRun, $$CollectionRunsTableReferences),
+      CollectionRun,
+      PrefetchHooks Function({
+        bool collectionId,
+        bool workspaceId,
+        bool environmentId,
+        bool runStepResultsRefs,
+      })
+    >;
+typedef $$RunStepResultsTableCreateCompanionBuilder =
+    RunStepResultsCompanion Function({
+      Value<int> id,
+      required int runId,
+      Value<int?> savedRequestId,
+      required int stepIndex,
+      required String name,
+      required String method,
+      required String url,
+      required String stepStatus,
+      Value<int?> statusCode,
+      Value<int?> durationMs,
+      Value<bool> passed,
+      Value<String?> assertionResultsJson,
+      Value<String?> errorMessage,
+      Value<String?> responseBodySnippet,
+    });
+typedef $$RunStepResultsTableUpdateCompanionBuilder =
+    RunStepResultsCompanion Function({
+      Value<int> id,
+      Value<int> runId,
+      Value<int?> savedRequestId,
+      Value<int> stepIndex,
+      Value<String> name,
+      Value<String> method,
+      Value<String> url,
+      Value<String> stepStatus,
+      Value<int?> statusCode,
+      Value<int?> durationMs,
+      Value<bool> passed,
+      Value<String?> assertionResultsJson,
+      Value<String?> errorMessage,
+      Value<String?> responseBodySnippet,
+    });
+
+final class $$RunStepResultsTableReferences
+    extends BaseReferences<_$AppDatabase, $RunStepResultsTable, RunStepResult> {
+  $$RunStepResultsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $CollectionRunsTable _runIdTable(_$AppDatabase db) =>
+      db.collectionRuns.createAlias(
+        $_aliasNameGenerator(db.runStepResults.runId, db.collectionRuns.id),
+      );
+
+  $$CollectionRunsTableProcessedTableManager get runId {
+    final $_column = $_itemColumn<int>('run_id')!;
+
+    final manager = $$CollectionRunsTableTableManager(
+      $_db,
+      $_db.collectionRuns,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_runIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $SavedRequestsTable _savedRequestIdTable(_$AppDatabase db) =>
+      db.savedRequests.createAlias(
+        $_aliasNameGenerator(
+          db.runStepResults.savedRequestId,
+          db.savedRequests.id,
+        ),
+      );
+
+  $$SavedRequestsTableProcessedTableManager? get savedRequestId {
+    final $_column = $_itemColumn<int>('saved_request_id');
+    if ($_column == null) return null;
+    final manager = $$SavedRequestsTableTableManager(
+      $_db,
+      $_db.savedRequests,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_savedRequestIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RunStepResultsTableFilterComposer
+    extends Composer<_$AppDatabase, $RunStepResultsTable> {
+  $$RunStepResultsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stepIndex => $composableBuilder(
+    column: $table.stepIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get method => $composableBuilder(
+    column: $table.method,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stepStatus => $composableBuilder(
+    column: $table.stepStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get statusCode => $composableBuilder(
+    column: $table.statusCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get passed => $composableBuilder(
+    column: $table.passed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assertionResultsJson => $composableBuilder(
+    column: $table.assertionResultsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get responseBodySnippet => $composableBuilder(
+    column: $table.responseBodySnippet,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CollectionRunsTableFilterComposer get runId {
+    final $$CollectionRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.runId,
+      referencedTable: $db.collectionRuns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.collectionRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SavedRequestsTableFilterComposer get savedRequestId {
+    final $$SavedRequestsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.savedRequestId,
+      referencedTable: $db.savedRequests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SavedRequestsTableFilterComposer(
+            $db: $db,
+            $table: $db.savedRequests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RunStepResultsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RunStepResultsTable> {
+  $$RunStepResultsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get stepIndex => $composableBuilder(
+    column: $table.stepIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get method => $composableBuilder(
+    column: $table.method,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stepStatus => $composableBuilder(
+    column: $table.stepStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get statusCode => $composableBuilder(
+    column: $table.statusCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get passed => $composableBuilder(
+    column: $table.passed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assertionResultsJson => $composableBuilder(
+    column: $table.assertionResultsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get responseBodySnippet => $composableBuilder(
+    column: $table.responseBodySnippet,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CollectionRunsTableOrderingComposer get runId {
+    final $$CollectionRunsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.runId,
+      referencedTable: $db.collectionRuns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionRunsTableOrderingComposer(
+            $db: $db,
+            $table: $db.collectionRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SavedRequestsTableOrderingComposer get savedRequestId {
+    final $$SavedRequestsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.savedRequestId,
+      referencedTable: $db.savedRequests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SavedRequestsTableOrderingComposer(
+            $db: $db,
+            $table: $db.savedRequests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RunStepResultsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RunStepResultsTable> {
+  $$RunStepResultsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get stepIndex =>
+      $composableBuilder(column: $table.stepIndex, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get method =>
+      $composableBuilder(column: $table.method, builder: (column) => column);
+
+  GeneratedColumn<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumn<String> get stepStatus => $composableBuilder(
+    column: $table.stepStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get statusCode => $composableBuilder(
+    column: $table.statusCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get passed =>
+      $composableBuilder(column: $table.passed, builder: (column) => column);
+
+  GeneratedColumn<String> get assertionResultsJson => $composableBuilder(
+    column: $table.assertionResultsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get responseBodySnippet => $composableBuilder(
+    column: $table.responseBodySnippet,
+    builder: (column) => column,
+  );
+
+  $$CollectionRunsTableAnnotationComposer get runId {
+    final $$CollectionRunsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.runId,
+      referencedTable: $db.collectionRuns,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CollectionRunsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.collectionRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SavedRequestsTableAnnotationComposer get savedRequestId {
+    final $$SavedRequestsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.savedRequestId,
+      referencedTable: $db.savedRequests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SavedRequestsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.savedRequests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RunStepResultsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RunStepResultsTable,
+          RunStepResult,
+          $$RunStepResultsTableFilterComposer,
+          $$RunStepResultsTableOrderingComposer,
+          $$RunStepResultsTableAnnotationComposer,
+          $$RunStepResultsTableCreateCompanionBuilder,
+          $$RunStepResultsTableUpdateCompanionBuilder,
+          (RunStepResult, $$RunStepResultsTableReferences),
+          RunStepResult,
+          PrefetchHooks Function({bool runId, bool savedRequestId})
+        > {
+  $$RunStepResultsTableTableManager(
+    _$AppDatabase db,
+    $RunStepResultsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RunStepResultsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RunStepResultsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RunStepResultsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> runId = const Value.absent(),
+                Value<int?> savedRequestId = const Value.absent(),
+                Value<int> stepIndex = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> method = const Value.absent(),
+                Value<String> url = const Value.absent(),
+                Value<String> stepStatus = const Value.absent(),
+                Value<int?> statusCode = const Value.absent(),
+                Value<int?> durationMs = const Value.absent(),
+                Value<bool> passed = const Value.absent(),
+                Value<String?> assertionResultsJson = const Value.absent(),
+                Value<String?> errorMessage = const Value.absent(),
+                Value<String?> responseBodySnippet = const Value.absent(),
+              }) => RunStepResultsCompanion(
+                id: id,
+                runId: runId,
+                savedRequestId: savedRequestId,
+                stepIndex: stepIndex,
+                name: name,
+                method: method,
+                url: url,
+                stepStatus: stepStatus,
+                statusCode: statusCode,
+                durationMs: durationMs,
+                passed: passed,
+                assertionResultsJson: assertionResultsJson,
+                errorMessage: errorMessage,
+                responseBodySnippet: responseBodySnippet,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int runId,
+                Value<int?> savedRequestId = const Value.absent(),
+                required int stepIndex,
+                required String name,
+                required String method,
+                required String url,
+                required String stepStatus,
+                Value<int?> statusCode = const Value.absent(),
+                Value<int?> durationMs = const Value.absent(),
+                Value<bool> passed = const Value.absent(),
+                Value<String?> assertionResultsJson = const Value.absent(),
+                Value<String?> errorMessage = const Value.absent(),
+                Value<String?> responseBodySnippet = const Value.absent(),
+              }) => RunStepResultsCompanion.insert(
+                id: id,
+                runId: runId,
+                savedRequestId: savedRequestId,
+                stepIndex: stepIndex,
+                name: name,
+                method: method,
+                url: url,
+                stepStatus: stepStatus,
+                statusCode: statusCode,
+                durationMs: durationMs,
+                passed: passed,
+                assertionResultsJson: assertionResultsJson,
+                errorMessage: errorMessage,
+                responseBodySnippet: responseBodySnippet,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RunStepResultsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({runId = false, savedRequestId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (runId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.runId,
+                                referencedTable: $$RunStepResultsTableReferences
+                                    ._runIdTable(db),
+                                referencedColumn:
+                                    $$RunStepResultsTableReferences
+                                        ._runIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (savedRequestId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.savedRequestId,
+                                referencedTable: $$RunStepResultsTableReferences
+                                    ._savedRequestIdTable(db),
+                                referencedColumn:
+                                    $$RunStepResultsTableReferences
+                                        ._savedRequestIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RunStepResultsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RunStepResultsTable,
+      RunStepResult,
+      $$RunStepResultsTableFilterComposer,
+      $$RunStepResultsTableOrderingComposer,
+      $$RunStepResultsTableAnnotationComposer,
+      $$RunStepResultsTableCreateCompanionBuilder,
+      $$RunStepResultsTableUpdateCompanionBuilder,
+      (RunStepResult, $$RunStepResultsTableReferences),
+      RunStepResult,
+      PrefetchHooks Function({bool runId, bool savedRequestId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6344,4 +9735,8 @@ class $AppDatabaseManager {
       $$EnvVariablesTableTableManager(_db, _db.envVariables);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
+  $$CollectionRunsTableTableManager get collectionRuns =>
+      $$CollectionRunsTableTableManager(_db, _db.collectionRuns);
+  $$RunStepResultsTableTableManager get runStepResults =>
+      $$RunStepResultsTableTableManager(_db, _db.runStepResults);
 }

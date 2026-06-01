@@ -42,6 +42,9 @@ class SavedRequests extends Table {
   // Post-Request Scripts (Request Chaining)
   TextColumn get scriptsJson => text().nullable()();
 
+  // Declarative test assertions for collection runs
+  TextColumn get assertionsJson => text().nullable()();
+
   IntColumn get collectionId =>
       integer().nullable().references(Collections, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -124,4 +127,43 @@ class EnvVariables extends Table {
   // scope 'user_global' = both null (si lo soportamos)
 
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Collection run execution records.
+class CollectionRuns extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get collectionId => integer().references(Collections, #id)();
+  IntColumn get workspaceId =>
+      integer().nullable().references(Collections, #id)();
+  IntColumn get environmentId =>
+      integer().nullable().references(Environments, #id)();
+  TextColumn get status => text().withLength(min: 1, max: 20)();
+  IntColumn get totalSteps => integer().withDefault(const Constant(0))();
+  IntColumn get passedSteps => integer().withDefault(const Constant(0))();
+  IntColumn get failedSteps => integer().withDefault(const Constant(0))();
+  IntColumn get skippedSteps => integer().withDefault(const Constant(0))();
+  BoolColumn get stopOnFailure => boolean().withDefault(const Constant(true))();
+  TextColumn get runOptionsJson => text().nullable()();
+  TextColumn get variablesSnapshotJson => text().nullable()();
+  DateTimeColumn get startedAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get finishedAt => dateTime().nullable()();
+}
+
+/// Per-step results for a collection run.
+class RunStepResults extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get runId => integer().references(CollectionRuns, #id)();
+  IntColumn get savedRequestId =>
+      integer().nullable().references(SavedRequests, #id)();
+  IntColumn get stepIndex => integer()();
+  TextColumn get name => text()();
+  TextColumn get method => text().withLength(min: 1, max: 10)();
+  TextColumn get url => text()();
+  TextColumn get stepStatus => text().withLength(min: 1, max: 20)();
+  IntColumn get statusCode => integer().nullable()();
+  IntColumn get durationMs => integer().nullable()();
+  BoolColumn get passed => boolean().withDefault(const Constant(false))();
+  TextColumn get assertionResultsJson => text().nullable()();
+  TextColumn get errorMessage => text().nullable()();
+  TextColumn get responseBodySnippet => text().nullable()();
 }

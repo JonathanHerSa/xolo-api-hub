@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:xolo/data/local/database.dart';
+import 'package:xolo/domain/entities/collection_run_entity.dart';
 import 'package:xolo/domain/entities/collection_entity.dart';
 import 'package:xolo/domain/entities/env_variable_entity.dart';
 import 'package:xolo/domain/entities/environment_entity.dart';
@@ -31,6 +34,7 @@ extension SavedRequestEntityMapper on SavedRequest {
     schemaJson: schemaJson,
     preScriptsJson: preScriptsJson,
     scriptsJson: scriptsJson,
+    assertionsJson: assertionsJson,
     collectionId: collectionId,
     createdAt: createdAt,
     updatedAt: updatedAt,
@@ -93,6 +97,66 @@ List<EnvironmentEntity> mapEnvironments(List<Environment> rows) =>
     rows.map((row) => row.toEntity()).toList(growable: false);
 
 List<EnvVariableEntity> mapEnvVariables(List<EnvVariable> rows) =>
+    rows.map((row) => row.toEntity()).toList(growable: false);
+
+extension CollectionRunEntityMapper on CollectionRun {
+  CollectionRunEntity toEntity() => CollectionRunEntity(
+    id: id,
+    collectionId: collectionId,
+    workspaceId: workspaceId,
+    environmentId: environmentId,
+    status: RunStatus.values.firstWhere(
+      (s) => s.name == status,
+      orElse: () => RunStatus.completed,
+    ),
+    totalSteps: totalSteps,
+    passedSteps: passedSteps,
+    failedSteps: failedSteps,
+    skippedSteps: skippedSteps,
+    startedAt: startedAt,
+    finishedAt: finishedAt,
+    stopOnFailure: stopOnFailure,
+    variablesSnapshotJson: variablesSnapshotJson,
+  );
+}
+
+extension RunStepResultEntityMapper on RunStepResult {
+  RunStepResultEntity toEntity() {
+    final assertions = <AssertionResultEntity>[];
+    if (assertionResultsJson != null && assertionResultsJson!.isNotEmpty) {
+      try {
+        final list = jsonDecode(assertionResultsJson!) as List<dynamic>;
+        for (final item in list) {
+          assertions.add(
+            AssertionResultEntity.fromJson(item as Map<String, dynamic>),
+          );
+        }
+      } catch (_) {}
+    }
+    return RunStepResultEntity(
+      stepIndex: stepIndex,
+      savedRequestId: savedRequestId,
+      name: name,
+      method: method,
+      url: url,
+      status: RunStepStatus.values.firstWhere(
+        (s) => s.name == stepStatus,
+        orElse: () => RunStepStatus.error,
+      ),
+      statusCode: statusCode,
+      durationMs: durationMs,
+      passed: passed,
+      assertionResults: assertions,
+      errorMessage: errorMessage,
+      responseBodySnippet: responseBodySnippet,
+    );
+  }
+}
+
+List<CollectionRunEntity> mapCollectionRuns(List<CollectionRun> rows) =>
+    rows.map((row) => row.toEntity()).toList(growable: false);
+
+List<RunStepResultEntity> mapRunStepResults(List<RunStepResult> rows) =>
     rows.map((row) => row.toEntity()).toList(growable: false);
 
 HistoryEntry toHistoryRow(HistoryEntryEntity entity) => HistoryEntry(

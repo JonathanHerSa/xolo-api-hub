@@ -53,13 +53,83 @@ class OAuth2Service {
       );
 
       if (response.statusCode == 200) {
-        final body = response.data;
-        return body['access_token'] ?? '';
+        final body = response.data is Map<String, dynamic>
+            ? response.data as Map<String, dynamic>
+            : <String, dynamic>{};
+        return body['access_token']?.toString() ?? '';
       } else {
         throw Exception('Failed to get access token: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error fetching OAuth2 token: $e');
+    }
+  }
+
+  /// Refresh OAuth2 access token using refresh_token grant.
+  Future<Map<String, dynamic>> refreshAccessToken({
+    required String tokenUrl,
+    required String clientId,
+    required String clientSecret,
+    required String refreshToken,
+  }) async {
+    final response = await _dio.post(
+      tokenUrl,
+      data: {
+        'grant_type': 'refresh_token',
+        'client_id': clientId,
+        'client_secret': clientSecret,
+        'refresh_token': refreshToken,
+      },
+      options: Options(contentType: Headers.formUrlEncodedContentType),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Token refresh failed: ${response.statusCode}');
+    }
+
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  /// Returns updated authData JSON if token was refreshed, else null.
+  Future<String?> maybeRefreshOAuth2AuthData(String authDataJson) async {
+    try {
+      final authMap = jsonDecode(authDataJson) as Map<String, dynamic>;
+      if (authMap['grantType'] != 'authorization_code' &&
+          authMap['grantType'] != 'refresh_token') {
+        return null;
+      }
+
+      final refreshToken = authMap['refreshToken']?.toString();
+      final expiresAtMs = int.tryParse(authMap['expiresAt']?.toString() ?? '');
+      if (refreshToken == null || refreshToken.isEmpty) return null;
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (expiresAtMs != null && now < expiresAtMs - 60000) return null;
+
+      final tokenUrl = authMap['tokenUrl']?.toString() ?? '';
+      final clientId = authMap['clientId']?.toString() ?? '';
+      final clientSecret = authMap['clientSecret']?.toString() ?? '';
+      if (tokenUrl.isEmpty || clientId.isEmpty) return null;
+
+      final refreshed = await refreshAccessToken(
+        tokenUrl: tokenUrl,
+        clientId: clientId,
+        clientSecret: clientSecret,
+        refreshToken: refreshToken,
+      );
+
+      authMap['accessToken'] = refreshed['access_token'];
+      if (refreshed['refresh_token'] != null) {
+        authMap['refreshToken'] = refreshed['refresh_token'];
+      }
+      final expiresIn = int.tryParse(refreshed['expires_in']?.toString() ?? '');
+      if (expiresIn != null) {
+        authMap['expiresAt'] =
+            DateTime.now().add(Duration(seconds: expiresIn)).millisecondsSinceEpoch;
+      }
+      return jsonEncode(authMap);
+    } catch (_) {
+      return null;
     }
   }
 

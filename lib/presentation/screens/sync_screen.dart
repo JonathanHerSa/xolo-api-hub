@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:xolo/core/services/cloud_sync_service.dart';
 import 'package:xolo/core/services/encryption_service.dart';
 import 'package:xolo/core/services/security_profile_service.dart';
 import 'package:xolo/core/theme/xolo_design_tokens.dart';
@@ -105,11 +106,14 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
                 ),
 
                 const SizedBox(height: XoloSpacing.xxl),
-                Center(
-                  child: Text(
-                    l10n.cloudSyncComingSoon,
-                    style: XoloTypography.meta(colorScheme),
-                  ),
+                XoloSectionHeader(
+                  title: l10n.cloudSync.toUpperCase(),
+                  padding: const EdgeInsets.only(bottom: XoloSpacing.md),
+                ),
+                _CloudSyncSection(
+                  onBusyChanged: (busy) => setState(() => _isLoading = busy),
+                  askPassword: (title, subtitle) =>
+                      _promptPassword(context, title, subtitle),
                 ),
               ],
             ),
@@ -383,6 +387,98 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
             onPressed: () => Navigator.pop(ctx, val),
             child: Text(l10n.confirm),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CloudSyncSection extends ConsumerStatefulWidget {
+  const _CloudSyncSection({
+    required this.onBusyChanged,
+    required this.askPassword,
+  });
+
+  final ValueChanged<bool> onBusyChanged;
+  final Future<String?> Function(String title, String subtitle) askPassword;
+
+  @override
+  ConsumerState<_CloudSyncSection> createState() => _CloudSyncSectionState();
+}
+
+class _CloudSyncSectionState extends ConsumerState<_CloudSyncSection> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ref.read(cloudSyncServiceProvider).signInSilently().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final sync = ref.watch(cloudSyncServiceProvider);
+    final user = sync.currentUser;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return XoloInteractiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l10n.cloudSyncDescription, style: XoloTypography.cardSubtitle(colorScheme)),
+          const SizedBox(height: XoloSpacing.md),
+          if (user != null)
+            Text(l10n.signedInAs(user.email), style: XoloTypography.meta(colorScheme)),
+          const SizedBox(height: XoloSpacing.md),
+          if (user == null)
+            FilledButton(
+              onPressed: () async {
+                widget.onBusyChanged(true);
+                await sync.signIn();
+                if (mounted) setState(() {});
+                widget.onBusyChanged(false);
+              },
+              child: Text(l10n.signInGoogle),
+            )
+          else ...[
+            FilledButton(
+              onPressed: () async {
+                final password = await widget.askPassword(
+                  l10n.createBackupPassword,
+                  l10n.createBackupPasswordDescription,
+                );
+                if (password == null || password.isEmpty) return;
+                widget.onBusyChanged(true);
+                try {
+                  final db = ref.read(databaseProvider);
+                  await sync.syncUpload(db: db, password: password);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.syncSuccess)),
+                    );
+                  }
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.syncFailed)),
+                    );
+                  }
+                } finally {
+                  widget.onBusyChanged(false);
+                  if (mounted) setState(() {});
+                }
+              },
+              child: Text(l10n.syncNow),
+            ),
+            TextButton(
+              onPressed: () async {
+                await sync.signOut();
+                if (mounted) setState(() {});
+              },
+              child: Text(l10n.signOut),
+            ),
+          ],
         ],
       ),
     );

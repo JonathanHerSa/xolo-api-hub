@@ -6,11 +6,11 @@ import 'package:xolo/data/local/database.dart';
 
 void main() {
   group('AppDatabase', () {
-    test('schemaVersion is 7', () {
+    test('schemaVersion is 8', () {
       final db = AppDatabase.memory();
       addTearDown(db.close);
 
-      expect(db.schemaVersion, 7);
+      expect(db.schemaVersion, 8);
     });
 
     test('onCreate creates all tables and accepts inserts', () async {
@@ -174,7 +174,7 @@ void main() {
         final db = AppDatabase(executor);
         addTearDown(db.close);
 
-        expect(db.schemaVersion, 7);
+        expect(db.schemaVersion, 8);
 
         final collectionId = await db
             .into(db.collections)

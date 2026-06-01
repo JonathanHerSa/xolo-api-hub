@@ -1861,6 +1861,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error:\n{message}'**
   String responseErrorPrefix(String message);
+
+  /// No description provided for @runCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Run Collection'**
+  String get runCollection;
+
+  /// No description provided for @runningCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Running Collection'**
+  String get runningCollection;
+
+  /// No description provided for @runReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Run Report'**
+  String get runReport;
+
+  /// No description provided for @runHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Run History'**
+  String get runHistory;
+
+  /// No description provided for @noRunHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No collection runs yet'**
+  String get noRunHistory;
+
+  /// No description provided for @runNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Run not found'**
+  String get runNotFound;
+
+  /// No description provided for @stopOnFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop on failure'**
+  String get stopOnFailure;
+
+  /// No description provided for @delayBetweenSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Delay between steps'**
+  String get delayBetweenSteps;
+
+  /// No description provided for @runningStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String runningStep(int current, int total);
+
+  /// No description provided for @stepsPassed.
+  ///
+  /// In en, this message translates to:
+  /// **'{passed} / {total} passed'**
+  String stepsPassed(int passed, int total);
+
+  /// No description provided for @runFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get runFailed;
+
+  /// No description provided for @runSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get runSkipped;
+
+  /// No description provided for @reRunFromFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-run from failure'**
+  String get reRunFromFailure;
+
+  /// No description provided for @reRunFromStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-run from step {step}'**
+  String reRunFromStep(int step);
+
+  /// No description provided for @tabAssertions.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests'**
+  String get tabAssertions;
+
+  /// No description provided for @addAssertion.
+  ///
+  /// In en, this message translates to:
+  /// **'Add assertion'**
+  String get addAssertion;
+
+  /// No description provided for @assertionType.
+  ///
+  /// In en, this message translates to:
+  /// **'Assertion type'**
+  String get assertionType;
+
+  /// No description provided for @assertionTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target (JSONPath)'**
+  String get assertionTarget;
+
+  /// No description provided for @assertionExpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected value'**
+  String get assertionExpected;
+
+  /// No description provided for @cloudSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Sync'**
+  String get cloudSync;
+
+  /// No description provided for @cloudSyncDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync encrypted backup with Google Drive (manual, on-demand).'**
+  String get cloudSyncDescription;
+
+  /// No description provided for @signInGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get signInGoogle;
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get syncNow;
+
+  /// No description provided for @lastSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced: {date}'**
+  String lastSynced(String date);
+
+  /// No description provided for @signedInAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as {email}'**
+  String signedInAs(String email);
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
+  /// No description provided for @syncSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync completed'**
+  String get syncSuccess;
+
+  /// No description provided for @syncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed'**
+  String get syncFailed;
 }
 
 class _AppLocalizationsDelegate

@@ -480,7 +480,7 @@ void main() {
       );
 
       expect(controller.state.isLoading, isFalse);
-      expect(controller.state.error, contains('Error de red'));
+      expect(controller.state.error, contains('Network error'));
       expect(
         controller.state.error,
         contains('https://api.example.com/network-error'),
@@ -791,7 +791,7 @@ void main() {
         method: 'GET',
         url: 'https://api.example.com/auth-type-error',
         authType: 'bearer',
-        authData: '{"token":12345}',
+        authData: 'not-valid-json',
       );
 
       expect(

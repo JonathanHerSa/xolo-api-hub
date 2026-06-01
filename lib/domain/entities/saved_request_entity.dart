@@ -12,6 +12,7 @@ class SavedRequestEntity {
     this.schemaJson,
     this.preScriptsJson,
     this.scriptsJson,
+    this.assertionsJson,
     this.collectionId,
     required this.createdAt,
     required this.updatedAt,
@@ -30,6 +31,7 @@ class SavedRequestEntity {
   final String? schemaJson;
   final String? preScriptsJson;
   final String? scriptsJson;
+  final String? assertionsJson;
   final int? collectionId;
   final DateTime createdAt;
   final DateTime updatedAt;

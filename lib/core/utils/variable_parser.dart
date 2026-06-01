@@ -26,7 +26,7 @@ class VariableParser {
     // Regex para {{variable}}, :path_param y {:path_param}
     // Añadido \$ para soportar variables dinámicas como {{$timestamp}}
     final regex = RegExp(
-      r'(\{\{([a-zA-Z0-9_\$]+)\}\})|(:([a-zA-Z0-9_]+))|(\{:[a-zA-Z0-9_]+\})',
+      r'(\{\{([a-zA-Z0-9_\$:\-]+)\}\})|(:([a-zA-Z0-9_]+))|(\{:[a-zA-Z0-9_]+\})',
     );
 
     final result = input.replaceAllMapped(regex, (match) {
@@ -53,6 +53,25 @@ class VariableParser {
       if (key == r'$randomInt') {
         return Random().nextInt(1000).toString();
       }
+      if (key == r'$isoDate') {
+        return DateTime.now().toIso8601String().split('T').first;
+      }
+      if (key == r'$isoDateTime') {
+        return DateTime.now().toIso8601String();
+      }
+      if (key == r'$randomEmail') {
+        return 'user${Random().nextInt(99999)}@xolo.test';
+      }
+      if (key.startsWith(r'$randomString')) {
+        final len = _randomStringLength(key);
+        return _randomAlphanumeric(len);
+      }
+      if (key.startsWith(r'$randomIntRange')) {
+        final range = _randomIntRange(key);
+        if (range != null) {
+          return (range.$1 + Random().nextInt(range.$2 - range.$1 + 1)).toString();
+        }
+      }
 
       // Buscar variable en el mapa (case sensitive para mantener consistencia)
       final value = variables[key];
@@ -66,6 +85,34 @@ class VariableParser {
       return parse(result, variables, depth: depth + 1);
     }
     return result;
+  }
+
+  static int _randomStringLength(String key) {
+    // {{$randomString:8}} encoded as key $randomString:8 in regex group
+    if (key.contains(':')) {
+      return int.tryParse(key.split(':').last) ?? 8;
+    }
+    return 8;
+  }
+
+  static (int, int)? _randomIntRange(String key) {
+    // {{$randomIntRange:1:100}} -> key $randomIntRange:1:100
+    final parts = key.split(':');
+    if (parts.length >= 3) {
+      final min = int.tryParse(parts[1]);
+      final max = int.tryParse(parts[2]);
+      if (min != null && max != null && min <= max) return (min, max);
+    }
+    return null;
+  }
+
+  static String _randomAlphanumeric(int length) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final random = Random();
+    return List.generate(
+      length.clamp(1, 64),
+      (_) => chars[random.nextInt(chars.length)],
+    ).join();
   }
 
   /// Parsea un mapa de headers o params

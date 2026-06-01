@@ -969,4 +969,99 @@ class AppLocalizationsEs extends AppLocalizations {
   String responseErrorPrefix(String message) {
     return 'Error:\n$message';
   }
+
+  @override
+  String get runCollection => 'Ejecutar colección';
+
+  @override
+  String get runningCollection => 'Ejecutando colección';
+
+  @override
+  String get runReport => 'Reporte de ejecución';
+
+  @override
+  String get runHistory => 'Historial de runs';
+
+  @override
+  String get noRunHistory => 'Aún no hay ejecuciones de colección';
+
+  @override
+  String get runNotFound => 'Ejecución no encontrada';
+
+  @override
+  String get stopOnFailure => 'Detener al fallar';
+
+  @override
+  String get delayBetweenSteps => 'Retraso entre pasos';
+
+  @override
+  String runningStep(int current, int total) {
+    return 'Paso $current de $total';
+  }
+
+  @override
+  String stepsPassed(int passed, int total) {
+    return '$passed / $total aprobados';
+  }
+
+  @override
+  String get runFailed => 'Fallidos';
+
+  @override
+  String get runSkipped => 'Omitidos';
+
+  @override
+  String get reRunFromFailure => 'Re-ejecutar desde el fallo';
+
+  @override
+  String reRunFromStep(int step) {
+    return 'Re-ejecutar desde paso $step';
+  }
+
+  @override
+  String get tabAssertions => 'Tests';
+
+  @override
+  String get addAssertion => 'Añadir assertion';
+
+  @override
+  String get assertionType => 'Tipo de assertion';
+
+  @override
+  String get assertionTarget => 'Objetivo (JSONPath)';
+
+  @override
+  String get assertionExpected => 'Valor esperado';
+
+  @override
+  String get cloudSync => 'Sync en la nube';
+
+  @override
+  String get cloudSyncDescription =>
+      'Sincroniza copia cifrada con Google Drive (manual, bajo demanda).';
+
+  @override
+  String get signInGoogle => 'Iniciar sesión con Google';
+
+  @override
+  String get syncNow => 'Sincronizar ahora';
+
+  @override
+  String lastSynced(String date) {
+    return 'Última sync: $date';
+  }
+
+  @override
+  String signedInAs(String email) {
+    return 'Sesión: $email';
+  }
+
+  @override
+  String get signOut => 'Cerrar sesión';
+
+  @override
+  String get syncSuccess => 'Sincronización completada';
+
+  @override
+  String get syncFailed => 'Error de sincronización';
 }

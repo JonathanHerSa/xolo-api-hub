@@ -11,6 +11,7 @@ part 'settings_queries.dart';
 part 'collection_queries.dart';
 part 'history_queries.dart';
 part 'environment_queries.dart';
+part 'run_queries.dart';
 part 'database.g.dart';
 
 // =============================================================================
@@ -25,6 +26,8 @@ part 'database.g.dart';
     Environments,
     EnvVariables,
     AppSettings,
+    CollectionRuns,
+    RunStepResults,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -34,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
   factory AppDatabase.memory() => AppDatabase(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 7; // Bump version for History originalUrl
+  int get schemaVersion => 8; // Collection runs + assertionsJson
 
   @override
   MigrationStrategy get migration {
@@ -70,6 +73,11 @@ class AppDatabase extends _$AppDatabase {
         if (from < 7) {
           // Add originalUrl to history (v7)
           await m.addColumn(historyEntries, historyEntries.originalUrl);
+        }
+        if (from < 8) {
+          await m.addColumn(savedRequests, savedRequests.assertionsJson);
+          await m.createTable(collectionRuns);
+          await m.createTable(runStepResults);
         }
       },
     );

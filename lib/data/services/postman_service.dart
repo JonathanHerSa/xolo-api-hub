@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xolo/data/local/database.dart';
+import 'package:xolo/data/services/postman_assertion_mapper.dart';
 
 final postmanServiceProvider = Provider((ref) => PostmanService());
 
@@ -153,6 +154,11 @@ class PostmanService {
         ? jsonEncode(paramsList)
         : null;
 
+    final assertionRules = PostmanAssertionMapper.fromPostmanEvents(
+      item['event'] as List<dynamic>?,
+    );
+    final assertionsJson = PostmanAssertionMapper.encodeRules(assertionRules);
+
     // Update or Create
     final existing = await db.findRequestInCollection(
       collectionId: collectionId,
@@ -168,8 +174,11 @@ class PostmanService {
         paramsJson: paramsJson,
         body: body,
       );
+      if (assertionsJson != null) {
+        await db.updateRequestAssertions(existing.id, assertionsJson);
+      }
     } else {
-      await db.createRequest(
+      final id = await db.createRequest(
         name: name,
         method: method.toUpperCase(),
         url: url,
@@ -178,6 +187,9 @@ class PostmanService {
         paramsJson: paramsJson,
         body: body,
       );
+      if (assertionsJson != null) {
+        await db.updateRequestAssertions(id, assertionsJson);
+      }
     }
   }
 }

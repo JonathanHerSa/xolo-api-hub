@@ -4,11 +4,10 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:json_path/json_path.dart';
-import 'package:xolo/core/network/http_client_provider.dart';
+import 'package:xolo/core/network/request_pipeline.dart';
 import 'package:xolo/core/services/app_logger.dart';
 import 'package:xolo/core/services/auth_resolver_service.dart';
 import 'package:xolo/core/utils/script_executor.dart';
-import 'package:xolo/core/utils/variable_parser.dart';
 import 'package:xolo/presentation/providers/database_providers.dart';
 import 'package:xolo/presentation/providers/environment_provider.dart';
 import 'package:xolo/presentation/providers/incognito_provider.dart';
@@ -50,18 +49,15 @@ class RequestState {
 
 // --- Manual Controller (Logic) ---
 class RequestController {
+  RequestController(this.ref, this.tabId);
+
   final Ref ref;
   final String tabId;
-  late final Dio _dio;
 
   final StreamController<RequestState> _controller =
       StreamController<RequestState>.broadcast();
   RequestState _state = RequestState();
   CancelToken? _activeCancelToken;
-
-  RequestController(this.ref, this.tabId) {
-    _dio = ref.read(dioProvider);
-  }
 
   RequestState get state => _state;
 
@@ -89,237 +85,93 @@ class RequestController {
     final cancelToken = CancelToken();
     _activeCancelToken = cancelToken;
 
-    // 1. Loading
     _update(_state.copyWith(isLoading: true, error: null, statusCode: null));
 
-    final stopwatch = Stopwatch()..start();
-
-    // Variables for error handling scope
-    String attemptUrl = url;
-    String? errorMsg;
+    var attemptUrl = url;
     int? statusCode;
 
     try {
-      // 2. Variable Parsing (Global + Env + Chains)
       final baseVars = ref.read(resolvedVariablesProvider);
       final session = ref.read(requestSessionProvider(tabId)).asData?.value;
 
-      // Execute Pre-Request Scripts
       final preVars = ScriptExecutor.executePreScripts(
         session?.preScriptsJson,
         baseVars,
       );
       final resolvedVars = {...baseVars, ...preVars};
 
-      // Parse URL
-      final parsedUrl = VariableParser.parse(url, resolvedVars);
-      attemptUrl = parsedUrl;
-
-      // Parse Headers
-      final Map<String, dynamic> parsedHeaders = {};
-      if (headers != null) {
-        for (final entry in headers.entries) {
-          final key = VariableParser.parse(entry.key, resolvedVars);
-          final val = VariableParser.parse(
-            entry.value.toString(),
-            resolvedVars,
-          );
-          parsedHeaders[key] = val;
-        }
-      }
-
-      // 2.1 INJECT AUTH HEADERS (With Inheritance)
-      // Resolve Auth
-      final authResolver = ref.read(authResolverServiceProvider);
-      final resolvedAuth = await authResolver.resolveAuth(
-        requestAuthType: authType,
-        requestAuthData: authData,
+      final output = await ref.read(requestPipelineProvider).send(
+        method: method,
+        url: url,
+        queryParams: queryParams,
+        headers: headers,
+        body: body,
+        authType: authType,
+        authData: authData,
         collectionId: collectionId,
-      );
-
-      final effectiveAuthType = resolvedAuth.type;
-      final effectiveAuthData = resolvedAuth.data;
-
-      if (effectiveAuthType != null && effectiveAuthData != null) {
-        try {
-          final authMap = _parseAuthData(effectiveAuthData);
-
-          if (effectiveAuthType == 'bearer') {
-            final token = VariableParser.parse(
-              authMap['token'] ?? '',
-              resolvedVars,
-            );
-            if (token.isNotEmpty) {
-              parsedHeaders['Authorization'] = 'Bearer $token';
-            }
-          } else if (effectiveAuthType == 'oauth2') {
-            final token = VariableParser.parse(
-              authMap['accessToken'] ?? '',
-              resolvedVars,
-            );
-            if (token.isNotEmpty) {
-              parsedHeaders['Authorization'] = 'Bearer $token';
-            }
-          } else if (effectiveAuthType == 'basic') {
-            final user = VariableParser.parse(
-              authMap['username'] ?? '',
-              resolvedVars,
-            );
-            final pass = VariableParser.parse(
-              authMap['password'] ?? '',
-              resolvedVars,
-            );
-            if (user.isNotEmpty || pass.isNotEmpty) {
-              final bytes = utf8.encode('$user:$pass');
-              final base64Str = base64.encode(bytes);
-              parsedHeaders['Authorization'] = 'Basic $base64Str';
-            }
-          } else if (effectiveAuthType == 'api_key') {
-            final key = VariableParser.parse(
-              authMap['key'] ?? '',
-              resolvedVars,
-            );
-            final val = VariableParser.parse(
-              authMap['value'] ?? '',
-              resolvedVars,
-            );
-            final addTo = authMap['in'] ?? 'header';
-
-            if (key.isNotEmpty && val.isNotEmpty) {
-              if (addTo == 'header') {
-                parsedHeaders[key] = val;
-              } else if (addTo == 'query') {
-                // Should inject into params
-              }
-            }
-          }
-        } catch (e) {
-          AppLogger.warn('Error injecting auth');
-        }
-      }
-
-      // Parse Params
-      final Map<String, dynamic> parsedParams = {};
-      if (queryParams != null) {
-        for (final entry in queryParams.entries) {
-          final key = VariableParser.parse(entry.key, resolvedVars);
-          final val = VariableParser.parse(
-            entry.value.toString(),
-            resolvedVars,
-          );
-          parsedParams[key] = val;
-        }
-      }
-
-      // 2.2 INJECT AUTH PARAMS (API Key Query)
-      if (effectiveAuthType == 'api_key' && effectiveAuthData != null) {
-        try {
-          final authMap = _parseAuthData(effectiveAuthData);
-          final addTo = authMap['in'] ?? 'header';
-          if (addTo == 'query') {
-            final key = VariableParser.parse(
-              authMap['key'] ?? '',
-              resolvedVars,
-            );
-            final val = VariableParser.parse(
-              authMap['value'] ?? '',
-              resolvedVars,
-            );
-            if (key.isNotEmpty && val.isNotEmpty) {
-              parsedParams[key] = val;
-            }
-          }
-        } catch (_) {}
-      }
-
-      // Parse Body (si es String)
-      Object? finalBody = body;
-      if (body is String && body.isNotEmpty) {
-        finalBody = VariableParser.parse(body, resolvedVars);
-      }
-
-      // 3. Execution
-      final response = await _dio.request(
-        parsedUrl,
-        data: finalBody,
-        queryParameters: parsedParams,
+        variables: resolvedVars,
+        authResolver: ref.read(authResolverServiceProvider),
         cancelToken: cancelToken,
-        options: Options(
-          method: method,
-          headers: parsedHeaders,
-          validateStatus: (status) => true, // No lanzar error por status code
-        ),
       );
 
-      stopwatch.stop();
-      statusCode = response.statusCode;
+      attemptUrl = output.resolvedUrl;
+      statusCode = output.statusCode;
 
-      // 4. Success State
-      _update(
-        _state.copyWith(
-          isLoading: false,
-          data: response.data,
-          statusCode: response.statusCode,
-          durationMs: stopwatch.elapsedMilliseconds,
-        ),
-      );
-
-      // 5. Execute Scripts (Request Chaining)
-      await _executeScripts(response.data);
-    } on DioException catch (e) {
-      if (CancelToken.isCancel(e)) {
+      if (output.cancelled) {
         _update(
           _state.copyWith(
             isLoading: false,
             error: 'Request canceled',
-            durationMs: stopwatch.elapsedMilliseconds,
+            durationMs: output.durationMs,
           ),
         );
         return;
       }
-      stopwatch.stop();
-      statusCode = e.response?.statusCode;
 
-      final errorPrefix = e.message ?? 'Error de red';
-      errorMsg = '$errorPrefix\n(URL: $attemptUrl)';
-
-      _update(
-        _state.copyWith(
-          isLoading: false,
-          error: errorMsg,
-          statusCode: statusCode,
-          durationMs: stopwatch.elapsedMilliseconds,
-        ),
-      );
+      if (output.error != null) {
+        _update(
+          _state.copyWith(
+            isLoading: false,
+            error: output.error,
+            statusCode: statusCode,
+            durationMs: output.durationMs,
+            data: output.data,
+          ),
+        );
+      } else {
+        _update(
+          _state.copyWith(
+            isLoading: false,
+            data: output.data,
+            statusCode: output.statusCode,
+            durationMs: output.durationMs,
+          ),
+        );
+        await _executeScripts(output.data);
+      }
     } catch (e, stack) {
-      stopwatch.stop();
       _update(
         _state.copyWith(
           isLoading: false,
           error: e.toString(),
-          durationMs: stopwatch.elapsedMilliseconds,
         ),
       );
       AppLogger.error('Error en request ($tabId)', e, stack);
     }
 
-    // Save History (if not Incognito)
     try {
       final isIncognito = ref.read(isIncognitoProvider);
-      if (isIncognito) {
-        // Skip history
-        return;
-      }
+      if (isIncognito) return;
 
       final repo = ref.read(xoloRepositoryProvider);
       final activeWorkspaceId = ref.read(activeWorkspaceIdProvider);
 
       await repo.addHistoryItem(
         method: method,
-        url: attemptUrl, // Parsed/Resolved URL
-        originalUrl: url, // Template URL
+        url: attemptUrl,
+        originalUrl: url,
         statusCode: statusCode ?? 0,
-        durationMs: stopwatch.elapsedMilliseconds,
+        durationMs: _state.durationMs ?? 0,
         workspaceId: activeWorkspaceId,
       );
     } catch (e) {
@@ -340,14 +192,6 @@ class RequestController {
         error: null,
       ),
     );
-  }
-
-  Map<String, dynamic> _parseAuthData(String jsonStr) {
-    try {
-      return jsonDecode(jsonStr) as Map<String, dynamic>;
-    } catch (_) {
-      return {};
-    }
   }
 
   Future<void> _executeScripts(dynamic responseData) async {

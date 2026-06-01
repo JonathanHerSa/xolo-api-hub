@@ -107,6 +107,7 @@ class RequestSectionTabs extends StatelessWidget {
     l10n.tabHeaders,
     l10n.tabBody,
     l10n.tabScripts,
+    l10n.tabAssertions,
     l10n.tabResponse,
   ];
 }

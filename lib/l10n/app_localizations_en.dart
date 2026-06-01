@@ -964,4 +964,99 @@ class AppLocalizationsEn extends AppLocalizations {
   String responseErrorPrefix(String message) {
     return 'Error:\n$message';
   }
+
+  @override
+  String get runCollection => 'Run Collection';
+
+  @override
+  String get runningCollection => 'Running Collection';
+
+  @override
+  String get runReport => 'Run Report';
+
+  @override
+  String get runHistory => 'Run History';
+
+  @override
+  String get noRunHistory => 'No collection runs yet';
+
+  @override
+  String get runNotFound => 'Run not found';
+
+  @override
+  String get stopOnFailure => 'Stop on failure';
+
+  @override
+  String get delayBetweenSteps => 'Delay between steps';
+
+  @override
+  String runningStep(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String stepsPassed(int passed, int total) {
+    return '$passed / $total passed';
+  }
+
+  @override
+  String get runFailed => 'Failed';
+
+  @override
+  String get runSkipped => 'Skipped';
+
+  @override
+  String get reRunFromFailure => 'Re-run from failure';
+
+  @override
+  String reRunFromStep(int step) {
+    return 'Re-run from step $step';
+  }
+
+  @override
+  String get tabAssertions => 'Tests';
+
+  @override
+  String get addAssertion => 'Add assertion';
+
+  @override
+  String get assertionType => 'Assertion type';
+
+  @override
+  String get assertionTarget => 'Target (JSONPath)';
+
+  @override
+  String get assertionExpected => 'Expected value';
+
+  @override
+  String get cloudSync => 'Cloud Sync';
+
+  @override
+  String get cloudSyncDescription =>
+      'Sync encrypted backup with Google Drive (manual, on-demand).';
+
+  @override
+  String get signInGoogle => 'Sign in with Google';
+
+  @override
+  String get syncNow => 'Sync now';
+
+  @override
+  String lastSynced(String date) {
+    return 'Last synced: $date';
+  }
+
+  @override
+  String signedInAs(String email) {
+    return 'Signed in as $email';
+  }
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get syncSuccess => 'Sync completed';
+
+  @override
+  String get syncFailed => 'Sync failed';
 }

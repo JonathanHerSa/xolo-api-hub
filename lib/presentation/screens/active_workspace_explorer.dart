@@ -13,6 +13,7 @@ import 'package:xolo/presentation/providers/tabs_provider.dart';
 import 'package:xolo/presentation/providers/workspace_provider.dart';
 import 'package:xolo/presentation/widgets/create_collection_dialog.dart';
 import 'package:xolo/presentation/widgets/import_collection_dialog.dart';
+import 'package:xolo/presentation/widgets/run/run_start_sheet.dart';
 import 'package:xolo/presentation/widgets/ui/xolo_empty_state.dart';
 import 'package:xolo/presentation/widgets/ui/xolo_interactive_card.dart';
 import 'package:xolo/presentation/widgets/ui/xolo_section_header.dart';
@@ -43,6 +44,24 @@ class ActiveWorkspaceExplorer extends ConsumerWidget {
           l10n: l10n,
         ),
         actions: [
+          if (activeId != null)
+            IconButton(
+              tooltip: l10n.runCollection,
+              icon: const Icon(Icons.play_arrow_rounded),
+              onPressed: () {
+                final name = projectsAsync.asData?.value
+                        .where((p) => p.id == activeId)
+                        .firstOrNull
+                        ?.name ??
+                    l10n.projects;
+                showRunCollectionSheet(
+                  context: context,
+                  ref: ref,
+                  collectionId: activeId,
+                  collectionName: name,
+                );
+              },
+            ),
           IconButton(
             tooltip: l10n.import,
             icon: const Icon(Icons.upload_file_outlined),

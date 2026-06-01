@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:xolo/data/local/database.dart';
 import 'package:xolo/data/mappers/entity_mappers.dart';
 import 'package:xolo/domain/entities/collection_entity.dart';
+import 'package:xolo/domain/entities/collection_run_entity.dart';
 import 'package:xolo/domain/entities/env_variable_entity.dart';
 import 'package:xolo/domain/entities/environment_entity.dart';
 import 'package:xolo/domain/entities/history_entry_entity.dart';
@@ -269,6 +272,8 @@ class DriftXoloRepository implements XoloRepository {
 
   @override
   Future<void> wipeAllLocalData() async {
+    await _db.delete(_db.runStepResults).go();
+    await _db.delete(_db.collectionRuns).go();
     await _db.delete(_db.historyEntries).go();
     await _db.delete(_db.savedRequests).go();
     await _db.delete(_db.envVariables).go();
@@ -276,4 +281,100 @@ class DriftXoloRepository implements XoloRepository {
     await _db.delete(_db.collections).go();
     await _db.delete(_db.appSettings).go();
   }
+
+  @override
+  Future<List<SavedRequestEntity>> fetchRequestsInCollection(
+    int collectionId,
+  ) async => mapSavedRequests(await _db.fetchRequestsInCollection(collectionId));
+
+  @override
+  Future<List<CollectionEntity>> fetchSubCollections(int parentId) async =>
+      mapCollections(await _db.fetchSubCollections(parentId));
+
+  @override
+  Future<CollectionEntity?> getCollectionById(int id) async {
+    final row = await (_db.select(
+      _db.collections,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    return row?.toEntity();
+  }
+
+  @override
+  Future<int> createCollectionRun({
+    required int collectionId,
+    int? workspaceId,
+    int? environmentId,
+    required int totalSteps,
+    bool stopOnFailure = true,
+    String? runOptionsJson,
+  }) => _db.createCollectionRun(
+    collectionId: collectionId,
+    workspaceId: workspaceId,
+    environmentId: environmentId,
+    totalSteps: totalSteps,
+    stopOnFailure: stopOnFailure,
+    runOptionsJson: runOptionsJson,
+  );
+
+  @override
+  Future<void> finishCollectionRun({
+    required int runId,
+    required RunStatus status,
+    required int passedSteps,
+    required int failedSteps,
+    required int skippedSteps,
+    String? variablesSnapshotJson,
+  }) => _db.finishCollectionRun(
+    runId: runId,
+    status: status.name,
+    passedSteps: passedSteps,
+    failedSteps: failedSteps,
+    skippedSteps: skippedSteps,
+    variablesSnapshotJson: variablesSnapshotJson,
+  );
+
+  @override
+  Future<void> insertRunStepResult({
+    required int runId,
+    required RunStepResultEntity step,
+  }) async {
+    final assertionsJson = step.assertionResults.isEmpty
+        ? null
+        : jsonEncode(step.assertionResults.map((a) => a.toJson()).toList());
+    await _db.insertRunStepResultRow(
+      runId: runId,
+      stepIndex: step.stepIndex,
+      savedRequestId: step.savedRequestId,
+      name: step.name,
+      method: step.method,
+      url: step.url,
+      stepStatus: step.status.name,
+      statusCode: step.statusCode,
+      durationMs: step.durationMs,
+      passed: step.passed,
+      assertionResultsJson: assertionsJson,
+      errorMessage: step.errorMessage,
+      responseBodySnippet: step.responseBodySnippet,
+    );
+  }
+
+  @override
+  Stream<List<CollectionRunEntity>> watchCollectionRuns({int? workspaceId}) =>
+      _db.watchCollectionRuns(workspaceId: workspaceId).map(mapCollectionRuns);
+
+  @override
+  Future<CollectionRunEntity?> getCollectionRunById(int id) async {
+    final row = await _db.getCollectionRunById(id);
+    return row?.toEntity();
+  }
+
+  @override
+  Future<List<RunStepResultEntity>> getRunStepResults(int runId) async =>
+      mapRunStepResults(await _db.getRunStepResults(runId));
+
+  @override
+  Future<bool> updateRequestAssertions(
+    int requestId,
+    String? assertionsJson,
+  ) => _db.updateRequestAssertions(requestId, assertionsJson);
 }

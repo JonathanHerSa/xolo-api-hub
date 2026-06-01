@@ -3,6 +3,7 @@ import 'package:xolo/domain/entities/env_variable_entity.dart';
 import 'package:xolo/domain/entities/environment_entity.dart';
 import 'package:xolo/domain/entities/history_entry_entity.dart';
 import 'package:xolo/domain/entities/saved_request_entity.dart';
+import 'package:xolo/domain/entities/collection_run_entity.dart';
 
 /// Data-access contract for presentation and core services.
 abstract class XoloRepository {
@@ -105,4 +106,38 @@ abstract class XoloRepository {
   Future<int> deleteVariable(int id);
 
   Future<void> wipeAllLocalData();
+
+  // Collection runs
+  Future<List<SavedRequestEntity>> fetchRequestsInCollection(int collectionId);
+  Future<List<CollectionEntity>> fetchSubCollections(int parentId);
+  Future<CollectionEntity?> getCollectionById(int id);
+
+  Future<int> createCollectionRun({
+    required int collectionId,
+    int? workspaceId,
+    int? environmentId,
+    required int totalSteps,
+    bool stopOnFailure,
+    String? runOptionsJson,
+  });
+
+  Future<void> finishCollectionRun({
+    required int runId,
+    required RunStatus status,
+    required int passedSteps,
+    required int failedSteps,
+    required int skippedSteps,
+    String? variablesSnapshotJson,
+  });
+
+  Future<void> insertRunStepResult({
+    required int runId,
+    required RunStepResultEntity step,
+  });
+
+  Stream<List<CollectionRunEntity>> watchCollectionRuns({int? workspaceId});
+  Future<CollectionRunEntity?> getCollectionRunById(int id);
+  Future<List<RunStepResultEntity>> getRunStepResults(int runId);
+
+  Future<bool> updateRequestAssertions(int requestId, String? assertionsJson);
 }

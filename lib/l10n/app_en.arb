@@ -411,5 +411,60 @@
     "placeholders": {
       "message": { "type": "String" }
     }
-  }
+  },
+  "runCollection": "Run Collection",
+  "runningCollection": "Running Collection",
+  "runReport": "Run Report",
+  "runHistory": "Run History",
+  "noRunHistory": "No collection runs yet",
+  "runNotFound": "Run not found",
+  "stopOnFailure": "Stop on failure",
+  "delayBetweenSteps": "Delay between steps",
+  "runningStep": "Step {current} of {total}",
+  "@runningStep": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "stepsPassed": "{passed} / {total} passed",
+  "@stepsPassed": {
+    "placeholders": {
+      "passed": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "runFailed": "Failed",
+  "runSkipped": "Skipped",
+  "reRunFromFailure": "Re-run from failure",
+  "reRunFromStep": "Re-run from step {step}",
+  "@reRunFromStep": {
+    "placeholders": {
+      "step": { "type": "int" }
+    }
+  },
+  "tabAssertions": "Tests",
+  "addAssertion": "Add assertion",
+  "assertionType": "Assertion type",
+  "assertionTarget": "Target (JSONPath)",
+  "assertionExpected": "Expected value",
+  "cloudSync": "Cloud Sync",
+  "cloudSyncDescription": "Sync encrypted backup with Google Drive (manual, on-demand).",
+  "signInGoogle": "Sign in with Google",
+  "syncNow": "Sync now",
+  "lastSynced": "Last synced: {date}",
+  "@lastSynced": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "signedInAs": "Signed in as {email}",
+  "@signedInAs": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "signOut": "Sign out",
+  "syncSuccess": "Sync completed",
+  "syncFailed": "Sync failed"
 }

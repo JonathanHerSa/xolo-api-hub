@@ -5,6 +5,9 @@ import 'package:xolo/presentation/screens/composer_screen.dart';
 import 'package:xolo/presentation/screens/environments_screen.dart';
 import 'package:xolo/presentation/screens/history_screen.dart';
 import 'package:xolo/presentation/screens/home_screen.dart';
+import 'package:xolo/presentation/screens/collection_run_screen.dart';
+import 'package:xolo/presentation/screens/run_history_screen.dart';
+import 'package:xolo/presentation/screens/run_report_screen.dart';
 import 'package:xolo/presentation/screens/settings_screen.dart';
 import 'package:xolo/presentation/screens/sync_screen.dart';
 
@@ -15,6 +18,9 @@ abstract final class AppRoutes {
   static const sync = '/sync';
   static const environments = '/environments';
   static const settings = '/settings';
+  static const runActive = '/runs/active';
+  static const runHistory = '/runs';
+  static const runReport = '/runs/report';
 }
 
 final appRouter = GoRouter(
@@ -52,6 +58,23 @@ final appRouter = GoRouter(
           path: AppRoutes.settings,
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: SettingsScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.runActive,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: CollectionRunScreen()),
+        ),
+        GoRoute(
+          path: AppRoutes.runHistory,
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: RunHistoryScreen()),
+        ),
+        GoRoute(
+          path: '${AppRoutes.runReport}/:runId',
+          pageBuilder: (context, state) {
+            final runId = int.parse(state.pathParameters['runId']!);
+            return NoTransitionPage(child: RunReportScreen(runId: runId));
+          },
         ),
       ],
     ),
